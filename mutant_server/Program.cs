@@ -180,20 +180,18 @@ namespace mutant_server
                 Interlocked.Add(ref m_totalBytesRead, e.BytesTransferred);
                 Console.WriteLine("The server has read a total of {0} bytes", m_totalBytesRead);
 
-                //echo the data received back to the client
-                e.SetBuffer(e.Offset, e.BytesTransferred);
-                bool willRaiseEvent = token.socket.SendAsync(e);
-                if (!willRaiseEvent)
-                {
-                    ProcessSend(e);
-                }
+                byte[] tmp = new byte[e.BytesTransferred];
+                Array.Copy(e.Buffer, e.Offset, tmp, 0, tmp.Length);
+                Console.WriteLine(System.Text.Encoding.UTF8.GetString(tmp));
+
+                //always recv again
+                token.socket.ReceiveAsync(e);
             }
             else
             {
                 CloseClientSocket(e);
             }
         }
-
         // This method is invoked when an asynchronous send operation completes.
         // The method issues another receive on the socket to read any additional
         // data sent from the client
@@ -217,7 +215,6 @@ namespace mutant_server
                 CloseClientSocket(e);
             }
         }
-
         private void CloseClientSocket(SocketAsyncEventArgs e)
         {
             AsyncUserToken token = e.UserToken as AsyncUserToken;
