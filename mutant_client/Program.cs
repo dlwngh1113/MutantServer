@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Windows.Forms;
+using mutant_server;
 
 namespace mutant_client
 {
@@ -27,8 +28,8 @@ namespace mutant_client
             _readEventArgs.UserToken = _socket;
             _writeEventArgs.UserToken = _socket;
 
-            _writeBuffer = new byte[1024];
-            _readBuffer = new byte[1024];
+            _writeBuffer = new byte[MutantGlobal.BUF_SIZE];
+            _readBuffer = new byte[MutantGlobal.BUF_SIZE];
         }
         private void IO_Completed(object sender, SocketAsyncEventArgs e)
         {
@@ -71,7 +72,7 @@ namespace mutant_client
             string serverIp = Console.ReadLine();
             Player p;
             Socket clientSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            clientSocket.Connect(serverIp, 9000);
+            clientSocket.Connect(serverIp, MutantGlobal.PORT);
             p = new Player(clientSocket);
             while (true)
             {
