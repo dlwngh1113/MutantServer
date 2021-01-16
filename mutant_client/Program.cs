@@ -1,8 +1,7 @@
-﻿using System;
+﻿using mutant_server;
+using System;
 using System.Collections.Generic;
 using System.Net.Sockets;
-using System.Windows.Forms;
-using mutant_server;
 
 namespace mutant_client
 {
@@ -47,7 +46,27 @@ namespace mutant_client
         }
         private void ProcessReceive(SocketAsyncEventArgs e)
         {
-            _socket.ReceiveAsync(_readEventArgs);
+            AsyncUserToken token = (AsyncUserToken)e.UserToken;
+            if (e.BytesTransferred > 0 && e.SocketError == SocketError.Success)
+            {
+                switch(token.operation)
+                {
+                    case MutantGlobal.STOC_LOGIN_OK:
+                        break;
+                    case MutantGlobal.STOC_LOGIN_FAIL:
+                        break;
+                    case MutantGlobal.STOC_STATE_CHANGE:
+                        break;
+                    case MutantGlobal.STOC_ENTER:
+                        break;
+                    case MutantGlobal.STOC_LEAVE:
+                        break;
+                    case MutantGlobal.STOC_CHAT:
+                        break;
+                    default:
+                        throw new Exception("operation from server is not valid\n");
+                }
+            }
         }
         private void ProcessSend(SocketAsyncEventArgs e)
         {
@@ -83,7 +102,6 @@ namespace mutant_client
                     {
                         p.MySend();
                     }
-                    //_lisg.Add(new Player(clientSocket));
                 }
                 catch (Exception ex)
                 {

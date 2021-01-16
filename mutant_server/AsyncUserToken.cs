@@ -2,9 +2,10 @@
 
 namespace mutant_server
 {
-    class AsyncUserToken
+    public class AsyncUserToken
     {
         public Socket socket;
+        public byte operation;
         public AsyncUserToken(Socket s)
         {
             this.socket = s;

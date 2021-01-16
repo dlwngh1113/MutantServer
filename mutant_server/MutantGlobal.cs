@@ -10,9 +10,18 @@ namespace mutant_server
 
         public static int id = 0;
 
-        public const byte CTOS_STATE_CHANGE = 0;
+        public const byte CTOS_LOGIN = 0;
+        public const byte CTOS_STATE_CHANGE = 1;
+        public const byte CTOS_ATTACK = 2;
+        public const byte CTOS_CHAT = 3;
+        public const byte CTOS_LOGOUT = 4;
 
-        public const byte STOC_STATE_CHANGE = 0;
+        public const byte STOC_LOGIN_OK = 0;
+        public const byte STOC_STATE_CHANGE = 1;
+        public const byte STOC_ENTER = 2;
+        public const byte STOC_LEAVE = 3;
+        public const byte STOC_CHAT = 4;
+        public const byte STOC_LOGIN_FAIL = 5;
     }
     public class Packet
     {

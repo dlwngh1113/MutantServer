@@ -50,6 +50,7 @@
     <Compile Include="MutantGlobal.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Server.cs" />
     <Compile Include="SocketAsyncEventArgsPool.cs" />
   </ItemGroup>
   <ItemGroup>
