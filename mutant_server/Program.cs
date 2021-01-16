@@ -23,6 +23,8 @@ namespace mutant_server
         int m_totalBytesRead;           // counter of the total # bytes received by the server
         int m_numConnectedSockets;      // the total number of clients connected to the server
 
+        Dictionary<Socket, Client> players;
+
         // Create an uninitialized server instance.
         // To start the server listening for connection requests
         // call the Init method followed by Start method
@@ -35,6 +37,7 @@ namespace mutant_server
             m_numConnectedSockets = 0;
             m_numConnections = numConnections;
             m_receiveBufferSize = receiveBufferSize;
+            players = new Dictionary<Socket, Client>();
             // allocate buffers such that the maximum number of sockets can have one outstanding read and
             //write posted to the socket simultaneously
             m_bufferManager = new BufferManager(receiveBufferSize * numConnections * opsToPreAlloc,
@@ -134,14 +137,20 @@ namespace mutant_server
 
             // Get the socket for the accepted client connection and put it into the
             //ReadEventArg object user token
-            SocketAsyncEventArgs readEventArgs = m_readWritePool.Pop();
-            ((AsyncUserToken)readEventArgs.UserToken).socket = e.AcceptSocket;
+            Interlocked.Increment(ref MutantGlobal.id);
+            Client player = new Client(MutantGlobal.id);
+            player.socketAsyncEventArgs = m_readWritePool.Pop();
+            ((AsyncUserToken)player.socketAsyncEventArgs.UserToken).socket = e.AcceptSocket;
+            lock (players)
+            {
+                players.Add(e.AcceptSocket, player);
+            }
 
             // As soon as the client is connected, post a receive to the connection
-            bool willRaiseEvent = e.AcceptSocket.ReceiveAsync(readEventArgs);
+            bool willRaiseEvent = e.AcceptSocket.ReceiveAsync(player.socketAsyncEventArgs);
             if (!willRaiseEvent)
             {
-                ProcessReceive(readEventArgs);
+                ProcessReceive(player.socketAsyncEventArgs);
             }
 
             // Accept the next connection request
@@ -180,9 +189,19 @@ namespace mutant_server
                 Interlocked.Add(ref m_totalBytesRead, e.BytesTransferred);
                 Console.WriteLine("The server has read a total of {0} bytes", m_totalBytesRead);
 
-                byte[] tmp = new byte[e.BytesTransferred];
-                Array.Copy(e.Buffer, e.Offset, tmp, 0, tmp.Length);
-                Console.WriteLine(System.Text.Encoding.UTF8.GetString(tmp));
+                //received byte processing
+                byte[] receivedAry = new byte[e.BytesTransferred];
+                Array.Copy(e.Buffer, e.Offset, receivedAry, 0, receivedAry.Length);
+
+                //type, size, data
+                switch (receivedAry[0])
+                {
+                    case MutantGlobal.CTOS_STATE_CHANGE:
+                        break;
+                    default:
+                        Console.Write(System.Text.Encoding.UTF8.GetString(receivedAry));
+                        break;
+                }
 
                 //always recv again
                 token.socket.ReceiveAsync(e);

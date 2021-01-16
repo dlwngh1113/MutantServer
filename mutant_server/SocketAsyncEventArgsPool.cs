@@ -13,7 +13,10 @@ namespace mutant_server
         }
         public void Push(SocketAsyncEventArgs ev)
         {
-            if(ev == null) { throw new ArgumentNullException("null SocketAsyncEventArgs tried to push to pool\n"); }
+            if(ev == null) 
+            {
+                throw new ArgumentNullException("null SocketAsyncEventArgs tried to push to pool\n"); 
+            }
             lock(m_pool)
             {
                 m_pool.Push(ev);
