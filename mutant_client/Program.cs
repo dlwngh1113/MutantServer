@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
 
 namespace mutant_client
 {
@@ -12,6 +13,7 @@ namespace mutant_client
         SocketAsyncEventArgs _writeEventArgs;
         byte[] _readBuffer;
         byte[] _writeBuffer;
+        string _name;
         public Player(Socket s)
         {
             _socket = s;
@@ -24,11 +26,28 @@ namespace mutant_client
             _writeEventArgs = new SocketAsyncEventArgs();
             _readEventArgs.Completed += new EventHandler<SocketAsyncEventArgs>(IO_Completed);
             _writeEventArgs.Completed += new EventHandler<SocketAsyncEventArgs>(IO_Completed);
-            _readEventArgs.UserToken = _socket;
-            _writeEventArgs.UserToken = _socket;
+            _readEventArgs.UserToken = new AsyncUserToken();
+            _writeEventArgs.UserToken = new AsyncUserToken();
+            ((AsyncUserToken)_readEventArgs.UserToken).socket = _socket;
+            ((AsyncUserToken)_writeEventArgs.UserToken).socket = _socket;
 
             _writeBuffer = new byte[MutantGlobal.BUF_SIZE];
             _readBuffer = new byte[MutantGlobal.BUF_SIZE];
+
+            Console.Write("플레이어 이름을 입력해주세요:");
+            string name = Console.ReadLine();
+            _name = name;
+
+            Login_Request();
+        }
+        private void Login_Request()
+        {
+            ((AsyncUserToken)_writeEventArgs.UserToken).operation = MutantGlobal.CTOS_LOGIN;
+            Packet p = new Packet();
+            p.name = _name;
+            _writeBuffer = MutantGlobal.ObjectToByteArray(p);
+
+            _socket.SendAsync(_writeEventArgs);
         }
         private void IO_Completed(object sender, SocketAsyncEventArgs e)
         {
@@ -76,6 +95,17 @@ namespace mutant_client
             _writeBuffer = System.Text.Encoding.UTF8.GetBytes("test sending\n");
             _writeEventArgs.SetBuffer(_writeBuffer, 0, _writeBuffer.Length);
             _socket.SendAsync(_writeEventArgs);
+
+        }
+        public void SendChattingPacket()
+        {
+            Console.Write("보낼 메세지를 입력해주세요:");
+            string msg = Console.ReadLine();
+            _writeBuffer = System.Text.Encoding.UTF8.GetBytes(msg);
+            _writeEventArgs.SetBuffer(_writeBuffer, 0, _writeBuffer.Length);
+            ((AsyncUserToken)_writeEventArgs.UserToken).operation = MutantGlobal.CTOS_CHAT;
+
+            _socket.SendAsync(_writeEventArgs);
         }
     }
     class Client
@@ -98,9 +128,9 @@ namespace mutant_client
                 try
                 {
                     int key = Console.Read();
-                    if (key == 'w')
+                    if (key == 'c')
                     {
-                        p.MySend();
+                        p.SendChattingPacket();
                     }
                 }
                 catch (Exception ex)

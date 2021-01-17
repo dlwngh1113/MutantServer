@@ -132,8 +132,8 @@ namespace mutant_server
 
             // Get the socket for the accepted client connection and put it into the
             //ReadEventArg object user token
-            Interlocked.Increment(ref MutantGlobal.id);
             Client player = new Client(MutantGlobal.id);
+            Interlocked.Increment(ref MutantGlobal.id);
             player.socketAsyncEventArgs = m_readWritePool.Pop();
             ((AsyncUserToken)player.socketAsyncEventArgs.UserToken).socket = e.AcceptSocket;
             lock (players)
@@ -261,18 +261,37 @@ namespace mutant_server
         private void ProcessLogin(SocketAsyncEventArgs e)
         {
             AsyncUserToken token = (AsyncUserToken)e.UserToken;
+            //if (DB에서 이미 플레이어의 이름이 존재하고, 서버에서 사용중이지 않다면)
+            //해당 정보로 로그인 login ok 클라이언트로 전송
+            //else if 서버, DB에 모두 존재하지 않는 이름이라면
+            //새롭게 DB에 유저 정보를 입력하고 login ok 전송
+            //else
+            //login fail과 이미
+            byte[] ary = new byte[e.BytesTransferred];
+            Array.Copy(ary, 0, e.Buffer, e.Offset, e.BytesTransferred);
+            string name = ary.ToString();
+            players[token.socket].userName = name;
+
+            token.operation = MutantGlobal.STOC_LOGIN_OK;
+            ary = System.Text.Encoding.UTF8.GetBytes("로그인 성공!");
+            e.SetBuffer(ary, 0, ary.Length);
+            token.socket.SendAsync(e);
         }
         private void ProcessAttack(SocketAsyncEventArgs e)
         {
             AsyncUserToken token = (AsyncUserToken)e.UserToken;
+            //누가 어떤 플레이어를 공격했는가?
+            //공격당한 플레이어를 죽게 하고 공격한 플레이어 타이머 리셋
         }
         private void ProcessChatting(SocketAsyncEventArgs e)
         {
             AsyncUserToken token = (AsyncUserToken)e.UserToken;
+            //클라이언트에서 온 메세지를 모든 클라이언트에 전송
         }
         private void ProcessLogout(SocketAsyncEventArgs e)
         {
             AsyncUserToken token = (AsyncUserToken)e.UserToken;
+            //현재까지의 게임 정보를 DB에 업데이트 후 접속 종료
             CloseClientSocket(e);
         }
     }
