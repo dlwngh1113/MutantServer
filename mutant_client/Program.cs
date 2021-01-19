@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Net.Sockets;
-using System.Runtime.InteropServices;
 
 namespace mutant_client
 {
@@ -43,9 +42,10 @@ namespace mutant_client
         private void Login_Request()
         {
             ((AsyncUserToken)_writeEventArgs.UserToken).operation = MutantGlobal.CTOS_LOGIN;
-            Packet p = new Packet();
+            MutantPacket p = new MutantPacket();
             p.name = _name;
             _writeBuffer = MutantGlobal.ObjectToByteArray(p);
+            _writeEventArgs.SetBuffer(_writeBuffer, 0, _writeBuffer.Length);
 
             _socket.SendAsync(_writeEventArgs);
         }

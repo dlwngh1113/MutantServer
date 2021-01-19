@@ -14,7 +14,8 @@ namespace mutant_server
         const int opsToPreAlloc = 2;    // read, write (don't alloc buffer space for accepts)
         Socket listenSocket;            // the socket used to listen for incoming connection requests
                                         // pool of reusable SocketAsyncEventArgs objects for write, read and accept socket operations
-        SocketAsyncEventArgsPool m_readWritePool;
+        SocketAsyncEventArgsPool m_readPool;
+        SocketAsyncEventArgsPool m_writePool;
         int m_totalBytesRead;           // counter of the total # bytes received by the server
         int m_numConnectedSockets;      // the total number of clients connected to the server
 
@@ -38,7 +39,8 @@ namespace mutant_server
             m_bufferManager = new BufferManager(receiveBufferSize * numConnections * opsToPreAlloc,
                 receiveBufferSize);
 
-            m_readWritePool = new SocketAsyncEventArgsPool(numConnections);
+            m_readPool = new SocketAsyncEventArgsPool(numConnections);
+            m_writePool = new SocketAsyncEventArgsPool(numConnections);
         }
 
         // Initializes the server by preallocating reusable buffers and
@@ -53,20 +55,41 @@ namespace mutant_server
             m_bufferManager.InitBuffer();
 
             // preallocate pool of SocketAsyncEventArgs objects
-            SocketAsyncEventArgs readWriteEventArg;
-
             for (int i = 0; i < m_numConnections; i++)
             {
-                //Pre-allocate a set of reusable SocketAsyncEventArgs
-                readWriteEventArg = new SocketAsyncEventArgs();
-                readWriteEventArg.Completed += new EventHandler<SocketAsyncEventArgs>(IO_Completed);
-                readWriteEventArg.UserToken = new AsyncUserToken();
+                AsyncUserToken token = new AsyncUserToken();
 
-                // assign a byte buffer from the buffer pool to the SocketAsyncEventArg object
-                m_bufferManager.SetBuffer(readWriteEventArg);
+                //read pool
+                {
+                    SocketAsyncEventArgs readEventArg;
+                    //Pre-allocate a set of reusable SocketAsyncEventArgs
+                    readEventArg = new SocketAsyncEventArgs();
+                    readEventArg.Completed += new EventHandler<SocketAsyncEventArgs>(ProcessReceive);
+                    readEventArg.UserToken = token;
+                    token.SetReadEventArgs(readEventArg);
 
-                // add SocketAsyncEventArg to the pool
-                m_readWritePool.Push(readWriteEventArg);
+                    // assign a byte buffer from the buffer pool to the SocketAsyncEventArg object
+                    m_bufferManager.SetBuffer(readEventArg);
+
+                    // add SocketAsyncEventArg to the pool
+                    m_readPool.Push(readEventArg);
+                }
+
+                //write pool
+                {
+                    SocketAsyncEventArgs writeEventArg;
+                    //Pre-allocate a set of reusable SocketAsyncEventArgs
+                    writeEventArg = new SocketAsyncEventArgs();
+                    writeEventArg.Completed += new EventHandler<SocketAsyncEventArgs>(ProcessReceive);
+                    writeEventArg.UserToken = token;
+                    token.SetWriteEventArgs(writeEventArg);
+
+                    // assign a byte buffer from the buffer pool to the SocketAsyncEventArg object
+                    m_bufferManager.SetBuffer(writeEventArg);
+
+                    // add SocketAsyncEventArg to the pool
+                    m_readPool.Push(writeEventArg);
+                }
             }
         }
 
@@ -134,47 +157,33 @@ namespace mutant_server
             //ReadEventArg object user token
             Client player = new Client(MutantGlobal.id);
             Interlocked.Increment(ref MutantGlobal.id);
-            player.socketAsyncEventArgs = m_readWritePool.Pop();
-            ((AsyncUserToken)player.socketAsyncEventArgs.UserToken).socket = e.AcceptSocket;
+
+            AsyncUserToken token = new AsyncUserToken();
+            token.SetReadEventArgs(m_readPool.Pop());
+            token.SetWriteEventArgs(m_writePool.Pop());
+            token.socket = e.AcceptSocket;
+            player.asyncUserToken = token;
+
             lock (players)
             {
                 players.Add(e.AcceptSocket, player);
             }
 
             // As soon as the client is connected, post a receive to the connection
-            bool willRaiseEvent = e.AcceptSocket.ReceiveAsync(player.socketAsyncEventArgs);
+            bool willRaiseEvent = token.socket.ReceiveAsync(player.asyncUserToken.readEventArgs);
             if (!willRaiseEvent)
             {
-                ProcessReceive(player.socketAsyncEventArgs);
+                ProcessReceive(null, player.asyncUserToken.readEventArgs);
             }
 
             // Accept the next connection request
             StartAccept(e);
         }
 
-        // This method is called whenever a receive or send operation is completed on a socket
-        //
-        // <param name="e">SocketAsyncEventArg associated with the completed receive operation</param>
-        void IO_Completed(object sender, SocketAsyncEventArgs e)
-        {
-            // determine which type of operation just completed and call the associated handler
-            switch (e.LastOperation)
-            {
-                case SocketAsyncOperation.Receive:
-                    ProcessReceive(e);
-                    break;
-                case SocketAsyncOperation.Send:
-                    ProcessSend(e);
-                    break;
-                default:
-                    throw new ArgumentException("The last operation completed on the socket was not a receive or send");
-            }
-        }
-
         // This method is invoked when an asynchronous receive operation completes.
         // If the remote host closed the connection, then the socket is closed.
         // If data was received then the data is echoed back to the client.
-        private void ProcessReceive(SocketAsyncEventArgs e)
+        private void ProcessReceive(object sender, SocketAsyncEventArgs e)
         {
             // check if the remote host closed the connection
             AsyncUserToken token = (AsyncUserToken)e.UserToken;
@@ -215,7 +224,7 @@ namespace mutant_server
         // data sent from the client
         //
         // <param name="e"></param>
-        private void ProcessSend(SocketAsyncEventArgs e)
+        private void ProcessSend(object sender, SocketAsyncEventArgs e)
         {
             if (e.SocketError == SocketError.Success)
             {
@@ -225,7 +234,7 @@ namespace mutant_server
                 bool willRaiseEvent = token.socket.ReceiveAsync(e);
                 if (!willRaiseEvent)
                 {
-                    ProcessReceive(e);
+                    ProcessReceive(null, e);
                 }
             }
             else
@@ -250,7 +259,8 @@ namespace mutant_server
             Interlocked.Decrement(ref m_numConnectedSockets);
 
             // Free the SocketAsyncEventArg so they can be reused by another client
-            m_readWritePool.Push(e);
+            m_readPool.Push(token.readEventArgs);
+            m_writePool.Push(token.writeEventArgs);
 
             Console.WriteLine("A client has been disconnected from the server. There are {0} clients connected to the server", m_numConnectedSockets);
         }

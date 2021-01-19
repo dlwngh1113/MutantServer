@@ -4,7 +4,7 @@ namespace mutant_server
 {
     class Client
     {
-        public SocketAsyncEventArgs socketAsyncEventArgs;
+        public AsyncUserToken asyncUserToken;
         public int userID;
         public string userName;
         public Client(int id)
