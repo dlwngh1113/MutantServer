@@ -48,7 +48,6 @@ namespace mutant_server
                     return false;
                 }
                 args.SetBuffer(m_buffer, m_currentIndex, m_bufferSize);
-                m_currentIndex += m_bufferSize;
                 Interlocked.Add(ref m_currentIndex, m_bufferSize);
             }
             return true;
