@@ -53,7 +53,7 @@ namespace mutant_server
         protected string ByteToString()
         {
             int len = ByteToInt();
-            string tmp = BitConverter.ToString(ary, offset, len);
+            string tmp = System.Text.Encoding.UTF8.GetString(ary, offset, len);
             offset += len;
 
             return tmp;

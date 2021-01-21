@@ -165,7 +165,11 @@ namespace mutant_server
             Client player = new Client(MutantGlobal.id);
             Interlocked.Increment(ref MutantGlobal.id);
 
-            player.asyncUserToken = recv_event.UserToken as AsyncUserToken;
+            AsyncUserToken token = recv_event.UserToken as AsyncUserToken;
+            token.socket = socket;
+            token.readEventArgs = recv_event;
+            token.writeEventArgs = send_event;
+            player.asyncUserToken = token;
 
             lock (players)
             {
@@ -261,6 +265,10 @@ namespace mutant_server
             }
             // throws if client process has already closed
             catch (Exception) { }
+            lock(players)
+            {
+                players.Remove(token.socket);
+            }
             token.socket.Close();
 
             // decrement the counter keeping track of the total number of clients connected to the server
@@ -289,6 +297,13 @@ namespace mutant_server
             packet.ByteArrayToPacket();
             Console.WriteLine("{0} client has {1} id, login request!",
                 packet.name, packet.id);
+
+            bool willRaise = ((AsyncUserToken)e.UserToken).socket.ReceiveAsync(e);
+            if(!willRaise)
+            {
+                ProcessReceive(e);
+            }
+            
         }
         private void ProcessAttack(SocketAsyncEventArgs e)
         {
