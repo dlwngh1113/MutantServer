@@ -88,7 +88,7 @@ namespace mutant_server
                     m_bufferManager.SetBuffer(writeEventArg);
 
                     // add SocketAsyncEventArg to the pool
-                    m_readPool.Push(writeEventArg);
+                    m_writePool.Push(writeEventArg);
                 }
             }
         }
@@ -162,6 +162,7 @@ namespace mutant_server
             token.SetReadEventArgs(m_readPool.Pop());
             token.SetWriteEventArgs(m_writePool.Pop());
             token.socket = e.AcceptSocket;
+            e.AcceptSocket.ReceiveAsync(e);
             player.asyncUserToken = token;
 
             lock (players)
@@ -277,15 +278,10 @@ namespace mutant_server
             //새롭게 DB에 유저 정보를 입력하고 login ok 전송
             //else
             //login fail과 이미
-            byte[] ary = new byte[e.BytesTransferred];
-            Array.Copy(ary, 0, e.Buffer, e.Offset, e.BytesTransferred);
-            string name = ary.ToString();
-            players[token.socket].userName = name;
-
-            token.operation = MutantGlobal.STOC_LOGIN_OK;
-            ary = System.Text.Encoding.UTF8.GetBytes("로그인 성공!");
-            e.SetBuffer(ary, 0, ary.Length);
-            token.socket.SendAsync(e);
+            MutantPacket packet = new MutantPacket(e.Buffer, e.Offset);
+            packet.ByteArrayToPacket();
+            Console.WriteLine("{0} client has {1} id, login request!",
+                packet.name, packet.id);
         }
         private void ProcessAttack(SocketAsyncEventArgs e)
         {
@@ -297,6 +293,7 @@ namespace mutant_server
         {
             AsyncUserToken token = (AsyncUserToken)e.UserToken;
             //클라이언트에서 온 메세지를 모든 클라이언트에 전송
+            MutantPacket packet = new MutantPacket(e.Buffer, e.Offset);
         }
         private void ProcessLogout(SocketAsyncEventArgs e)
         {

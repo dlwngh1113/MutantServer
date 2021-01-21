@@ -42,9 +42,10 @@ namespace mutant_client
         private void Login_Request()
         {
             ((AsyncUserToken)_writeEventArgs.UserToken).operation = MutantGlobal.CTOS_LOGIN;
-            MutantPacket p = new MutantPacket();
+            MutantPacket p = new MutantPacket(_writeBuffer, 0);
             p.name = _name;
-            _writeBuffer = MutantGlobal.ObjectToByteArray(p);
+            p.id = 0;
+            p.PacketToByteArray();
             _writeEventArgs.SetBuffer(_writeBuffer, 0, _writeBuffer.Length);
 
             _socket.SendAsync(_writeEventArgs);

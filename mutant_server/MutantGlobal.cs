@@ -7,6 +7,7 @@ namespace mutant_server
     {
         public static short BUF_SIZE = 1024;
         public static short MAX_USERS = 10000;
+        public static short MAX_CHAT_LEN = 100;
         public static short PORT = 9000;
 
         public static int id = 0;

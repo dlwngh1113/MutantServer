@@ -6,7 +6,7 @@ namespace mutant_server
     {
         public AsyncUserToken asyncUserToken;
         public int userID;
-        public string userName;
+        public string userName = null;
         public Client(int id)
         {
             this.userID = id;
