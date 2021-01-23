@@ -10,8 +10,6 @@ namespace mutant_client
         Socket _socket;
         SocketAsyncEventArgs _readEventArgs;
         SocketAsyncEventArgs _writeEventArgs;
-        byte[] _readBuffer;
-        byte[] _writeBuffer;
         string _name;
         public Player(Socket s)
         {
@@ -23,15 +21,16 @@ namespace mutant_client
         {
             _readEventArgs = new SocketAsyncEventArgs();
             _writeEventArgs = new SocketAsyncEventArgs();
-            _readEventArgs.Completed += new EventHandler<SocketAsyncEventArgs>(IO_Completed);
-            _writeEventArgs.Completed += new EventHandler<SocketAsyncEventArgs>(IO_Completed);
-            _readEventArgs.UserToken = new AsyncUserToken();
-            _writeEventArgs.UserToken = new AsyncUserToken();
-            ((AsyncUserToken)_readEventArgs.UserToken).socket = _socket;
-            ((AsyncUserToken)_writeEventArgs.UserToken).socket = _socket;
+            _readEventArgs.SetBuffer(new byte[MutantGlobal.BUF_SIZE], 0, MutantGlobal.BUF_SIZE);
+            _writeEventArgs.SetBuffer(new byte[MutantGlobal.BUF_SIZE], 0, MutantGlobal.BUF_SIZE);
+            _readEventArgs.Completed += new EventHandler<SocketAsyncEventArgs>(RecvCompleted);
+            _writeEventArgs.Completed += new EventHandler<SocketAsyncEventArgs>(SendCompleted);
 
-            _writeBuffer = new byte[MutantGlobal.BUF_SIZE];
-            _readBuffer = new byte[MutantGlobal.BUF_SIZE];
+            AsyncUserToken token = new AsyncUserToken();
+            token.socket = _socket;
+
+            _readEventArgs.UserToken = token;
+            _writeEventArgs.UserToken = token;
 
             Console.Write("플레이어 이름을 입력해주세요:");
             string name = Console.ReadLine();
@@ -42,27 +41,25 @@ namespace mutant_client
         private void Login_Request()
         {
             ((AsyncUserToken)_writeEventArgs.UserToken).operation = MutantGlobal.CTOS_LOGIN;
-            MutantPacket p = new MutantPacket(_writeBuffer, 0);
+            MutantPacket p = new MutantPacket(_writeEventArgs.Buffer, 0);
             p.name = _name;
             p.id = 0;
             p.PacketToByteArray();
-            _writeEventArgs.SetBuffer(_writeBuffer, 0, _writeBuffer.Length);
 
             _socket.SendAsync(_writeEventArgs);
+            _socket.ReceiveAsync(_readEventArgs);
         }
-        private void IO_Completed(object sender, SocketAsyncEventArgs e)
+        private void SendCompleted(object sender, SocketAsyncEventArgs e)
         {
-            switch (e.LastOperation)
-            {
-                case SocketAsyncOperation.Receive:
-                    ProcessReceive(e);
-                    break;
-                case SocketAsyncOperation.Send:
-                    ProcessSend(e);
-                    break;
-                default:
-                    throw new ArgumentException("The last operation completed on the socket was not a receive or send");
-            }
+            ProcessSend(e);
+        }
+        private void ProcessSend(SocketAsyncEventArgs e)
+        {
+
+        }
+        private void RecvCompleted(object sender, SocketAsyncEventArgs e)
+        {
+            ProcessReceive(e);
         }
         private void ProcessReceive(SocketAsyncEventArgs e)
         {
@@ -72,39 +69,55 @@ namespace mutant_client
                 switch(token.operation)
                 {
                     case MutantGlobal.STOC_LOGIN_OK:
+                        //다음 scene 로드
                         break;
                     case MutantGlobal.STOC_LOGIN_FAIL:
+                        //다른 조치를 취하도록 안내메시지 출력
                         break;
                     case MutantGlobal.STOC_STATE_CHANGE:
+                        //플레이어의 상태 position, rotation, scale 변경
                         break;
                     case MutantGlobal.STOC_ENTER:
+                        //주변의 클라이언트에게 새 클라이언트가 있다는 것을 알림
                         break;
                     case MutantGlobal.STOC_LEAVE:
+                        //주변의 클라이언트에게 클라이언트가 시야에서 사라짐을 알림
                         break;
                     case MutantGlobal.STOC_CHAT:
+                        //어떤 클라이언트가 메세지를 보냈는지 말함
+                        ProcessChatting(e);
                         break;
                     default:
                         throw new Exception("operation from server is not valid\n");
                 }
             }
         }
-        private void ProcessSend(SocketAsyncEventArgs e)
+        private void ProcessChatting(SocketAsyncEventArgs e)
         {
+            ChattingPakcet packet = new ChattingPakcet(e.Buffer, e.Offset);
+            packet.ByteArrayToPacket();
+            Console.WriteLine("{0}:{1}", packet.id, packet.message);
+
+            bool willRaise = ((AsyncUserToken)e.UserToken).socket.ReceiveAsync(e);
+            if (!willRaise)
+            {
+                ProcessReceive(e);
+            }
         }
         public void MySend()
         {
-            _writeBuffer = System.Text.Encoding.UTF8.GetBytes("test sending\n");
-            _writeEventArgs.SetBuffer(_writeBuffer, 0, _writeBuffer.Length);
-            _socket.SendAsync(_writeEventArgs);
 
         }
         public void SendChattingPacket()
         {
             Console.Write("보낼 메세지를 입력해주세요:");
             string msg = Console.ReadLine();
-            _writeBuffer = System.Text.Encoding.UTF8.GetBytes(msg);
-            _writeEventArgs.SetBuffer(_writeBuffer, 0, _writeBuffer.Length);
             ((AsyncUserToken)_writeEventArgs.UserToken).operation = MutantGlobal.CTOS_CHAT;
+            ChattingPakcet packet = new ChattingPakcet(_writeEventArgs.Buffer, 0);
+            packet.id = 0;
+            packet.name = this._name;
+            packet.message = msg;
+            packet.PacketToByteArray();
 
             _socket.SendAsync(_writeEventArgs);
         }

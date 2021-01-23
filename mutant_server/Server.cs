@@ -303,7 +303,6 @@ namespace mutant_server
             {
                 ProcessReceive(e);
             }
-            
         }
         private void ProcessAttack(SocketAsyncEventArgs e)
         {
@@ -315,7 +314,19 @@ namespace mutant_server
         {
             AsyncUserToken token = (AsyncUserToken)e.UserToken;
             //클라이언트에서 온 메세지를 모든 클라이언트에 전송
-            MutantPacket packet = new MutantPacket(e.Buffer, e.Offset);
+            ChattingPakcet packet = new ChattingPakcet(e.Buffer, e.Offset);
+            foreach (var p in players)
+            {
+                p.Value.asyncUserToken.operation = MutantGlobal.STOC_CHAT;
+                p.Value.asyncUserToken.writeEventArgs.SetBuffer(e.Offset, MutantGlobal.BUF_SIZE);
+                p.Key.SendAsync(p.Value.asyncUserToken.writeEventArgs);
+            }
+
+            bool willRaise = ((AsyncUserToken)e.UserToken).socket.ReceiveAsync(e);
+            if (!willRaise)
+            {
+                ProcessReceive(e);
+            }
         }
         private void ProcessLogout(SocketAsyncEventArgs e)
         {
