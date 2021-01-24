@@ -74,13 +74,15 @@ namespace mutant_server
 
             return tmp;
         }
-        public virtual void PacketToByteArray()
+        public virtual void PacketToByteArray(byte type)
         {
+            ary[offset++] = type;
             ConvertToByte(this.name);
             ConvertToByte(this.id);
         }
         public virtual void ByteArrayToPacket()
         {
+            ++offset;
             this.name = ByteToString();
             this.id = ByteToInt();
         }
@@ -94,15 +96,16 @@ namespace mutant_server
         {
             
         }
-        public override void PacketToByteArray()
+        public override void PacketToByteArray(byte type)
         {
-            base.PacketToByteArray();
+            base.PacketToByteArray(type);
             ConvertToByte(position);
             ConvertToByte(rotation);
             ConvertToByte(scale);
         }
         public override void ByteArrayToPacket()
         {
+            ++offset;
             base.ByteArrayToPacket();
             this.position = ByteToVector3();
             this.rotation = ByteToVector3();
@@ -116,13 +119,14 @@ namespace mutant_server
         {
 
         }
-        public override void PacketToByteArray()
+        public override void PacketToByteArray(byte type)
         {
-            base.PacketToByteArray();
+            base.PacketToByteArray(type);
             ConvertToByte(message);
         }
         public override void ByteArrayToPacket()
         {
+            ++offset;
             base.ByteArrayToPacket();
             this.message = ByteToString();
         }

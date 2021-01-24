@@ -201,7 +201,7 @@ namespace mutant_server
                 Interlocked.Add(ref m_totalBytesRead, e.BytesTransferred);
                 Console.WriteLine("The server has read a total of {0} bytes", m_totalBytesRead);
 
-                switch (token.operation)
+                switch (token.readEventArgs.Buffer[e.Offset])
                 {
                     case MutantGlobal.CTOS_LOGIN:
                         ProcessLogin(e);
@@ -298,7 +298,7 @@ namespace mutant_server
             Console.WriteLine("{0} client has {1} id, login request!",
                 packet.name, packet.id);
 
-            bool willRaise = ((AsyncUserToken)e.UserToken).socket.ReceiveAsync(e);
+            bool willRaise = token.socket.ReceiveAsync(e);
             if(!willRaise)
             {
                 ProcessReceive(e);
@@ -314,15 +314,12 @@ namespace mutant_server
         {
             AsyncUserToken token = (AsyncUserToken)e.UserToken;
             //클라이언트에서 온 메세지를 모든 클라이언트에 전송
-            ChattingPakcet packet = new ChattingPakcet(e.Buffer, e.Offset);
-            foreach (var p in players)
-            {
-                p.Value.asyncUserToken.operation = MutantGlobal.STOC_CHAT;
-                p.Value.asyncUserToken.writeEventArgs.SetBuffer(e.Offset, MutantGlobal.BUF_SIZE);
-                p.Key.SendAsync(p.Value.asyncUserToken.writeEventArgs);
-            }
+            byte[] tmp = e.Buffer;
+            tmp[e.Offset] = MutantGlobal.STOC_CHAT;
+            token.writeEventArgs.SetBuffer(e.Offset, e.BytesTransferred);
+            token.socket.SendAsync(token.writeEventArgs);
 
-            bool willRaise = ((AsyncUserToken)e.UserToken).socket.ReceiveAsync(e);
+            bool willRaise = token.socket.ReceiveAsync(e);
             if (!willRaise)
             {
                 ProcessReceive(e);

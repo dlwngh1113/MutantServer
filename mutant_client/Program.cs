@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Net.Sockets;
+using System.Threading;
 
 namespace mutant_client
 {
@@ -40,14 +41,12 @@ namespace mutant_client
         }
         private void Login_Request()
         {
-            ((AsyncUserToken)_writeEventArgs.UserToken).operation = MutantGlobal.CTOS_LOGIN;
             MutantPacket p = new MutantPacket(_writeEventArgs.Buffer, 0);
             p.name = _name;
             p.id = 0;
-            p.PacketToByteArray();
+            p.PacketToByteArray(MutantGlobal.CTOS_LOGIN);
 
             _socket.SendAsync(_writeEventArgs);
-            _socket.ReceiveAsync(_readEventArgs);
         }
         private void SendCompleted(object sender, SocketAsyncEventArgs e)
         {
@@ -66,7 +65,7 @@ namespace mutant_client
             AsyncUserToken token = (AsyncUserToken)e.UserToken;
             if (e.BytesTransferred > 0 && e.SocketError == SocketError.Success)
             {
-                switch(token.operation)
+                switch(token.readEventArgs.Buffer[e.Offset])
                 {
                     case MutantGlobal.STOC_LOGIN_OK:
                         //다음 scene 로드
@@ -112,12 +111,11 @@ namespace mutant_client
         {
             Console.Write("보낼 메세지를 입력해주세요:");
             string msg = Console.ReadLine();
-            ((AsyncUserToken)_writeEventArgs.UserToken).operation = MutantGlobal.CTOS_CHAT;
             ChattingPakcet packet = new ChattingPakcet(_writeEventArgs.Buffer, 0);
             packet.id = 0;
             packet.name = this._name;
             packet.message = msg;
-            packet.PacketToByteArray();
+            packet.PacketToByteArray(MutantGlobal.CTOS_CHAT);
 
             _socket.SendAsync(_writeEventArgs);
         }
