@@ -105,7 +105,6 @@ namespace mutant_server
         }
         public override void ByteArrayToPacket()
         {
-            ++offset;
             base.ByteArrayToPacket();
             this.position = ByteToVector3();
             this.rotation = ByteToVector3();
@@ -126,7 +125,6 @@ namespace mutant_server
         }
         public override void ByteArrayToPacket()
         {
-            ++offset;
             base.ByteArrayToPacket();
             this.message = ByteToString();
         }

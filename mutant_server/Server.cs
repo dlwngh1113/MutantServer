@@ -234,7 +234,6 @@ namespace mutant_server
         // This method is invoked when an asynchronous send operation completes.
         // The method issues another receive on the socket to read any additional
         // data sent from the client
-        //
         // <param name="e"></param>
         private void ProcessSend(SocketAsyncEventArgs e)
         {

@@ -29,6 +29,8 @@ namespace mutant_client
 
             AsyncUserToken token = new AsyncUserToken();
             token.socket = _socket;
+            token.writeEventArgs = _writeEventArgs;
+            token.readEventArgs = _readEventArgs;
 
             _readEventArgs.UserToken = token;
             _writeEventArgs.UserToken = token;
@@ -47,6 +49,12 @@ namespace mutant_client
             p.PacketToByteArray(MutantGlobal.CTOS_LOGIN);
 
             _socket.SendAsync(_writeEventArgs);
+
+            bool willRaise = _socket.ReceiveAsync(_readEventArgs);
+            if (!willRaise)
+            {
+                ProcessReceive(_readEventArgs);
+            }
         }
         private void SendCompleted(object sender, SocketAsyncEventArgs e)
         {
@@ -139,11 +147,7 @@ namespace mutant_client
             {
                 try
                 {
-                    int key = Console.Read();
-                    if (key == 'c')
-                    {
-                        p.SendChattingPacket();
-                    }
+                    p.SendChattingPacket();
                 }
                 catch (Exception ex)
                 {
