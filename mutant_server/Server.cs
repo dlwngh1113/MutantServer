@@ -12,8 +12,9 @@ namespace mutant_server
         private int m_receiveBufferSize;// buffer size to use for each socket I/O operation
         BufferManager m_bufferManager;  // represents a large reusable set of buffers for all socket operations
         const int opsToPreAlloc = 2;    // read, write (don't alloc buffer space for accepts)
-        Socket listenSocket;            // the socket used to listen for incoming connection requests
-                                        // pool of reusable SocketAsyncEventArgs objects for write, read and accept socket operations
+        Listener listener;
+
+        // pool of reusable SocketAsyncEventArgs objects for write, read and accept socket operations
         SocketAsyncEventArgsPool m_readPool;
         SocketAsyncEventArgsPool m_writePool;
         int m_totalBytesRead;           // counter of the total # bytes received by the server
@@ -97,48 +98,15 @@ namespace mutant_server
         // for connection requests on</param>
         public void Start(IPEndPoint localEndPoint)
         {
-            // create the socket which listens for incoming connections
-            listenSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            listenSocket.Bind(localEndPoint);
-            // start the server with a listen backlog of 100 connections
-            listenSocket.Listen(100);
-
-            // post accepts on the listening socket
-            StartAccept(null);
+            listener = new Listener(localEndPoint);
+            listener.Accept_Callback = new EventHandler<SocketAsyncEventArgs>(AcceptEventArg_Completed);
+            listener.myDelegate = new Listener.AcceptDelegate(ProcessAccept);
+            listener.StartAccept(null);
 
             //Console.WriteLine("{0} connected sockets with one outstanding receive posted to each....press any key", m_outstandingReadCount);
             Console.WriteLine("Press any key to terminate the server process....");
             Console.ReadKey();
         }
-
-        // Begins an operation to accept a connection request from the client
-        //
-        // <param name="acceptEventArg">The context object to use when issuing
-        // the accept operation on the server's listening socket</param>
-        public void StartAccept(SocketAsyncEventArgs acceptEventArg)
-        {
-            if (acceptEventArg == null)
-            {
-                acceptEventArg = new SocketAsyncEventArgs();
-                acceptEventArg.Completed += new EventHandler<SocketAsyncEventArgs>(AcceptEventArg_Completed);
-                acceptEventArg.UserToken = new AsyncUserToken(listenSocket);
-            }
-            else
-            {
-                // socket must be cleared since the context object is being reused
-                acceptEventArg.AcceptSocket = null;
-            }
-
-            bool willRaiseEvent = listenSocket.AcceptAsync(acceptEventArg);
-            if (!willRaiseEvent)
-            {
-                ProcessAccept(acceptEventArg);
-            }
-        }
-
-        // This method is the callback method associated with Socket.AcceptAsync
-        // operations and is invoked when an accept operation is complete
-        //
         void AcceptEventArg_Completed(object sender, SocketAsyncEventArgs e)
         {
             ProcessAccept(e);
@@ -154,8 +122,7 @@ namespace mutant_server
             SocketAsyncEventArgs send_event = m_writePool.Pop();
             BegindIO(e.AcceptSocket, recv_event, send_event);
 
-            // Accept the next connection request
-            StartAccept(e);
+            listener.StartAccept(e);
         }
 
         private void BegindIO(Socket socket, SocketAsyncEventArgs recv_event, SocketAsyncEventArgs send_event)
