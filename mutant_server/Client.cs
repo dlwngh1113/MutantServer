@@ -2,7 +2,7 @@
 
 namespace mutant_server
 {
-    class Client
+    public class Client
     {
         public AsyncUserToken asyncUserToken;
         public int userID;

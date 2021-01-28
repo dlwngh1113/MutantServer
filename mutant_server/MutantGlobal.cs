@@ -24,30 +24,5 @@ namespace mutant_server
         public const byte STOC_LEAVE = 3;
         public const byte STOC_CHAT = 4;
         public const byte STOC_LOGIN_FAIL = 5;
-        //static public byte[] ObjectToByteArray(object obj)
-        //{
-        //    if (obj == null)
-        //        return null;
-
-        //    BinaryFormatter bf = new BinaryFormatter();
-        //    using (MemoryStream ms = new MemoryStream())
-        //    {
-        //        bf.Serialize(ms, obj);
-        //        return ms.ToArray();
-        //    }
-        //}
-        //static public object ByteArrayToObject(byte[] byteArr)
-        //{
-        //    if (byteArr == null)
-        //        return null;
-
-        //    MemoryStream ms = new MemoryStream();
-        //    BinaryFormatter bf = new BinaryFormatter();
-        //    ms.Write(byteArr, 0, byteArr.Length);
-        //    ms.Seek(0, SeekOrigin.Begin);
-        //    object obj = (object)bf.Deserialize(ms);
-
-        //    return obj;
-        //}
     }
 }
