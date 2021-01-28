@@ -50,6 +50,16 @@ namespace StressClient
         }
         private void ProcessConnect(SocketAsyncEventArgs e)
         {
+            Interlocked.Increment(ref m_numConnectedSockets);
+            SocketAsyncEventArgs recv_event = new SocketAsyncEventArgs();
+            SocketAsyncEventArgs send_event = new SocketAsyncEventArgs();
+            BeginIO(e.AcceptSocket, recv_event, send_event);
+
+            Run();
+        }
+        private void BeginIO(Socket s, SocketAsyncEventArgs recv_event, SocketAsyncEventArgs send_event)
+        {
+            Client player = new Client(m_numConnectedSockets);
 
         }
     }

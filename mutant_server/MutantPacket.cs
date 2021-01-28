@@ -7,8 +7,9 @@ namespace mutant_server
     {
         public string name = null;
         public int id;
+        public int time;
         protected byte[] ary;
-        protected int offset;
+        protected int offset = 0;
         public MutantPacket(byte[] ary, int p)
         {
             this.ary = ary;
@@ -74,17 +75,20 @@ namespace mutant_server
 
             return tmp;
         }
+
         public virtual void PacketToByteArray(byte type)
         {
             ary[offset++] = type;
             ConvertToByte(this.name);
             ConvertToByte(this.id);
+            ConvertToByte(this.time);
         }
         public virtual void ByteArrayToPacket()
         {
             ++offset;
             this.name = ByteToString();
             this.id = ByteToInt();
+            this.time = ByteToInt();
         }
     }
     public class PlayerStatusPacket : MutantPacket

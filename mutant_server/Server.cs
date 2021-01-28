@@ -120,12 +120,12 @@ namespace mutant_server
 
             SocketAsyncEventArgs recv_event = m_readPool.Pop();
             SocketAsyncEventArgs send_event = m_writePool.Pop();
-            BegindIO(e.AcceptSocket, recv_event, send_event);
+            BeginIO(e.AcceptSocket, recv_event, send_event);
 
             listener.StartAccept(e);
         }
 
-        private void BegindIO(Socket socket, SocketAsyncEventArgs recv_event, SocketAsyncEventArgs send_event)
+        private void BeginIO(Socket socket, SocketAsyncEventArgs recv_event, SocketAsyncEventArgs send_event)
         {
             // Get the socket for the accepted client connection and put it into the
             //ReadEventArg object user token
