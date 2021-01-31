@@ -1,6 +1,7 @@
 ﻿using mutant_server;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Net.Sockets;
 using System.Threading;
 
@@ -81,7 +82,7 @@ namespace mutant_client
                     case MutantGlobal.STOC_LOGIN_FAIL:
                         //다른 조치를 취하도록 안내메시지 출력
                         break;
-                    case MutantGlobal.STOC_STATE_CHANGE:
+                    case MutantGlobal.STOC_STATUS_CHANGE:
                         //플레이어의 상태 position, rotation, scale 변경
                         break;
                     case MutantGlobal.STOC_ENTER:
@@ -139,10 +140,13 @@ namespace mutant_client
         {
             Console.Write("서버의 IP주소를 입력해주세요:");
             string serverIp = Console.ReadLine();
+            int start = DateTime.Now.Second * 1000 + DateTime.Now.Millisecond;
             Player p;
             Socket clientSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             clientSocket.Connect(serverIp, MutantGlobal.PORT);
             p = new Player(clientSocket);
+            var d = DateTime.Now.Second * 1000 + DateTime.Now.Millisecond - start;
+            Console.WriteLine("time :{0}", d);
             while (true)
             {
                 try

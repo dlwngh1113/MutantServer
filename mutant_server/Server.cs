@@ -171,8 +171,8 @@ namespace mutant_server
                     case MutantGlobal.CTOS_LOGIN:
                         ProcessLogin(e);
                         break;
-                    case MutantGlobal.CTOS_STATE_CHANGE:
-                        ProcessState(e);
+                    case MutantGlobal.CTOS_STATUS_CHANGE:
+                        ProcessStatus(e);
                         break;
                     case MutantGlobal.CTOS_ATTACK:
                         ProcessAttack(e);
@@ -244,7 +244,7 @@ namespace mutant_server
             Console.WriteLine("A client has been disconnected from the server. There are {0} clients connected to the server", m_numConnectedSockets);
         }
 
-        private void ProcessState(SocketAsyncEventArgs e)
+        private void ProcessStatus(SocketAsyncEventArgs e)
         {
             AsyncUserToken token = (AsyncUserToken)e.UserToken;
             

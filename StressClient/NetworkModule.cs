@@ -85,6 +85,7 @@ namespace StressClient
             MutantPacket p = new MutantPacket(send_event.Buffer, 0);
             p.name = player.name;
             p.id = player.id;
+            p.time = MutantGlobal.GetCurrentMilliseconds();
             p.PacketToByteArray(MutantGlobal.CTOS_LOGIN);
 
             socket.SendAsync(send_event);
@@ -118,7 +119,7 @@ namespace StressClient
                         break;
                     case MutantGlobal.STOC_LOGIN_OK:
                         break;
-                    case MutantGlobal.STOC_STATE_CHANGE:
+                    case MutantGlobal.STOC_STATUS_CHANGE:
                         break;
                     default:
                         throw new Exception("Unknown Packet from " + clients[token.socket].name);
