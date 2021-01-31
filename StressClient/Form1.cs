@@ -12,17 +12,19 @@ namespace StressClient
 {
     public partial class Form1 : Form
     {
-        Point pt;
-        const int size = 10;
+        NetworkModule networkModule;
         public Form1()
         {
             InitializeComponent();
-            pt.X = 10;
-            pt.Y = 10;
+            networkModule = new NetworkModule();
+            networkModule.Run();
         }
         private void Form1_Paint(object sender, PaintEventArgs e)
         {
-            e.Graphics.DrawEllipse(new Pen(Brushes.Black, 1), pt.X, pt.Y, size, size);
+            foreach(var c in networkModule.clients)
+            {
+                e.Graphics.DrawRectangle(new Pen(Brushes.Black), c.Value.position.X, c.Value.position.Z, 1f, 1f);
+            }
         }
         private void Form1_KeyEvent(object sender, KeyEventArgs e)
         {
@@ -34,8 +36,6 @@ namespace StressClient
         }
         private void Form1_Timer1(object sender, EventArgs e)
         {
-            pt.X += 1;
-            pt.Y += 1;
             Invalidate();
         }
     }

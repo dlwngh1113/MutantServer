@@ -139,12 +139,9 @@ namespace mutant_client
         {
             Console.Write("서버의 IP주소를 입력해주세요:");
             string serverIp = Console.ReadLine();
-            var time = DateTime.Now.Second;
             Player p;
             Socket clientSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             clientSocket.Connect(serverIp, MutantGlobal.PORT);
-            var duration = DateTime.Now.Second - time;
-            Console.WriteLine("duration: {0} seconds", duration);
             p = new Player(clientSocket);
             while (true)
             {
