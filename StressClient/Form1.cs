@@ -21,9 +21,12 @@ namespace StressClient
         }
         private void Form1_Paint(object sender, PaintEventArgs e)
         {
-            foreach(var c in networkModule.clients)
+            lock (networkModule.clients)
             {
-                e.Graphics.DrawRectangle(new Pen(Brushes.Black), c.Value.position.X, c.Value.position.Z, 1f, 1f);
+                foreach(var c in networkModule.clients)
+                {
+                    e.Graphics.DrawRectangle(new Pen(Brushes.Black), c.Value.position.X, c.Value.position.Z, 1f, 1f);
+                }
             }
         }
         private void Form1_KeyEvent(object sender, KeyEventArgs e)

@@ -10,11 +10,7 @@ namespace StressClient
     class NetworkModule
     {
         int m_numConnectedSockets;
-        public Dictionary<Socket, Client> clients
-        {
-            get => clients;
-            private set => clients = value;
-        }
+        public Dictionary<Socket, Client> clients;
         public NetworkModule()
         {
             m_numConnectedSockets = 0;
@@ -57,14 +53,16 @@ namespace StressClient
             AsyncUserToken token = new AsyncUserToken();
 
             SocketAsyncEventArgs recv_event = new SocketAsyncEventArgs();
+            recv_event.SetBuffer(new byte[MutantGlobal.BUF_SIZE], 0, MutantGlobal.BUF_SIZE);
             recv_event.Completed += new EventHandler<SocketAsyncEventArgs>(RecvCompleted);
             recv_event.UserToken = token;
 
             SocketAsyncEventArgs send_event = new SocketAsyncEventArgs();
+            send_event.SetBuffer(new byte[MutantGlobal.BUF_SIZE], 0, MutantGlobal.BUF_SIZE);
             send_event.Completed += new EventHandler<SocketAsyncEventArgs>(SendCompleted);
             send_event.UserToken = token;
 
-            BeginIO(e.AcceptSocket, recv_event, send_event);
+            BeginIO(e.ConnectSocket, recv_event, send_event);
             Interlocked.Increment(ref m_numConnectedSockets);
 
             Run();
@@ -84,9 +82,15 @@ namespace StressClient
                 clients.Add(socket, player);
             }
 
-            // As soon as the client is connected, post a receive to the connection
-            bool willRaiseEvent = socket.ReceiveAsync(recv_event);
-            if (!willRaiseEvent)
+            MutantPacket p = new MutantPacket(send_event.Buffer, 0);
+            p.name = player.name;
+            p.id = player.id;
+            p.PacketToByteArray(MutantGlobal.CTOS_LOGIN);
+
+            socket.SendAsync(send_event);
+
+            bool willRaise = socket.ReceiveAsync(recv_event);
+            if (!willRaise)
             {
                 ProcessReceive(recv_event);
             }
@@ -101,11 +105,28 @@ namespace StressClient
         {
             if(e.SocketError == SocketError.Success && e.BytesTransferred > 0)
             {
-
+                AsyncUserToken token = e.UserToken as AsyncUserToken;
+                switch(token.readEventArgs.Buffer[0])
+                {
+                    case MutantGlobal.STOC_CHAT:
+                        break;
+                    case MutantGlobal.STOC_ENTER:
+                        break;
+                    case MutantGlobal.STOC_LEAVE:
+                        break;
+                    case MutantGlobal.STOC_LOGIN_FAIL:
+                        break;
+                    case MutantGlobal.STOC_LOGIN_OK:
+                        break;
+                    case MutantGlobal.STOC_STATE_CHANGE:
+                        break;
+                    default:
+                        throw new Exception("Unknown Packet from " + clients[token.socket].name);
+                }
             }
             else
             {
-                CloseClientSocket(e);   
+                CloseClientSocket(e);
             }
         }
 
@@ -120,6 +141,8 @@ namespace StressClient
             {
                 // done echoing data back to the client
                 AsyncUserToken token = (AsyncUserToken)e.UserToken;
+
+                clients[token.socket].RandomBehaviour();
             }
             else
             {

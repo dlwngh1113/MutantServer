@@ -155,9 +155,7 @@ namespace mutant_server
         {
             ProcessReceive(e);
         }
-        // This method is invoked when an asynchronous receive operation completes.
-        // If the remote host closed the connection, then the socket is closed.
-        // If data was received then the data is echoed back to the client.
+
         private void ProcessReceive(SocketAsyncEventArgs e)
         {
             // check if the remote host closed the connection
@@ -194,14 +192,12 @@ namespace mutant_server
                 CloseClientSocket(e);
             }
         }
+
         private void SendCompleted(object sender, SocketAsyncEventArgs e)
         {
             ProcessSend(e);
         }
-        // This method is invoked when an asynchronous send operation completes.
-        // The method issues another receive on the socket to read any additional
-        // data sent from the client
-        // <param name="e"></param>
+
         private void ProcessSend(SocketAsyncEventArgs e)
         {
             if (e.SocketError == SocketError.Success)
@@ -220,6 +216,7 @@ namespace mutant_server
                 CloseClientSocket(e);
             }
         }
+
         private void CloseClientSocket(SocketAsyncEventArgs e)
         {
             AsyncUserToken token = e.UserToken as AsyncUserToken;
@@ -246,11 +243,13 @@ namespace mutant_server
 
             Console.WriteLine("A client has been disconnected from the server. There are {0} clients connected to the server", m_numConnectedSockets);
         }
+
         private void ProcessState(SocketAsyncEventArgs e)
         {
             AsyncUserToken token = (AsyncUserToken)e.UserToken;
             
         }
+
         private void ProcessLogin(SocketAsyncEventArgs e)
         {
             AsyncUserToken token = (AsyncUserToken)e.UserToken;
@@ -271,12 +270,14 @@ namespace mutant_server
                 ProcessReceive(e);
             }
         }
+
         private void ProcessAttack(SocketAsyncEventArgs e)
         {
             AsyncUserToken token = (AsyncUserToken)e.UserToken;
             //누가 어떤 플레이어를 공격했는가?
             //공격당한 플레이어를 죽게 하고 공격한 플레이어 타이머 리셋
         }
+
         private void ProcessChatting(SocketAsyncEventArgs e)
         {
             AsyncUserToken token = (AsyncUserToken)e.UserToken;
@@ -292,6 +293,7 @@ namespace mutant_server
                 ProcessReceive(e);
             }
         }
+
         private void ProcessLogout(SocketAsyncEventArgs e)
         {
             AsyncUserToken token = (AsyncUserToken)e.UserToken;

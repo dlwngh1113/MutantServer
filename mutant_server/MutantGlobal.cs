@@ -1,14 +1,11 @@
-﻿using System;
-using System.Numerics;
-
-namespace mutant_server
+﻿namespace mutant_server
 {
     public class MutantGlobal
     {
-        public static short BUF_SIZE = 1024;
-        public static short MAX_USERS = 10000;
-        public static short MAX_CHAT_LEN = 100;
-        public static short PORT = 9000;
+        public const short BUF_SIZE = 1024;
+        public const short MAX_USERS = 10000;
+        public const short MAX_CHAT_LEN = 100;
+        public const short PORT = 9000;
 
         public static int id = 0;
 
