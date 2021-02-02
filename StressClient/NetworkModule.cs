@@ -38,11 +38,14 @@ namespace StressClient
         }
         public void Run()
         {
-            Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            SocketAsyncEventArgs args = new SocketAsyncEventArgs();
-            args.RemoteEndPoint = new IPEndPoint(IPAddress.Loopback, MutantGlobal.PORT);
-            args.Completed += new EventHandler<SocketAsyncEventArgs>(ConnectArgs_Completed);
-            socket.ConnectAsync(args);
+            if (this.m_numConnectedSockets < 100)
+            {
+                Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                SocketAsyncEventArgs args = new SocketAsyncEventArgs();
+                args.RemoteEndPoint = new IPEndPoint(IPAddress.Loopback, MutantGlobal.PORT);
+                args.Completed += new EventHandler<SocketAsyncEventArgs>(ConnectArgs_Completed);
+                socket.ConnectAsync(args);
+            }
         }
         private void ConnectArgs_Completed(object sender, SocketAsyncEventArgs e)
         {
@@ -120,6 +123,7 @@ namespace StressClient
                     case MutantGlobal.STOC_LOGIN_OK:
                         break;
                     case MutantGlobal.STOC_STATUS_CHANGE:
+                        ProcessStatus(e);
                         break;
                     default:
                         throw new Exception("Unknown Packet from " + clients[token.socket].name);
@@ -129,6 +133,15 @@ namespace StressClient
             {
                 CloseClientSocket(e);
             }
+        }
+
+        private void ProcessStatus(SocketAsyncEventArgs e)
+        {
+            AsyncUserToken token = e.UserToken as AsyncUserToken;
+            PlayerStatusPacket packet = new PlayerStatusPacket(token.readEventArgs.Buffer, e.Offset);
+            packet.ByteArrayToPacket();
+            clients[token.socket].position = packet.position;
+            clients[token.socket].rotation = packet.rotation;
         }
 
         private void SendCompleted(object sender, SocketAsyncEventArgs e)

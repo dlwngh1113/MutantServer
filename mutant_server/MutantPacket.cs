@@ -95,7 +95,8 @@ namespace mutant_server
     {
         public Vector3 position;
         public Vector3 rotation;
-        public Vector3 scale;
+        public Vector3 posVel;
+        public Vector3 rotateVel;
         public PlayerStatusPacket(byte[] ary, int offset):base(ary, offset)
         {
             
@@ -105,14 +106,16 @@ namespace mutant_server
             base.PacketToByteArray(type);
             ConvertToByte(position);
             ConvertToByte(rotation);
-            ConvertToByte(scale);
+            ConvertToByte(posVel);
+            ConvertToByte(rotateVel);
         }
         public override void ByteArrayToPacket()
         {
             base.ByteArrayToPacket();
             this.position = ByteToVector3();
             this.rotation = ByteToVector3();
-            this.scale = ByteToVector3();
+            this.posVel = ByteToVector3();
+            this.rotateVel = ByteToVector3();
         }
     }
     public class ChattingPakcet : MutantPacket

@@ -19,7 +19,8 @@ namespace StressClient
             {
                 foreach(var c in networkModule.clients)
                 {
-                    e.Graphics.DrawRectangle(new Pen(Brushes.Black), c.Value.position.X, c.Value.position.Z, 1f, 1f);
+                    e.Graphics.DrawRectangle(new Pen(Brushes.Black), 
+                        c.Value.position.X, c.Value.position.Z, 1f, 1f);
                 }
             }
             e.Graphics.DrawString("Connect: " + networkModule.clients.Count, Font,

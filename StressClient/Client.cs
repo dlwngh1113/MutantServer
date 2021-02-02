@@ -9,6 +9,9 @@ namespace StressClient
         public AsyncUserToken asyncUserToken;
         public string name;
         public Vector3 position;
+        public Vector3 rotation;
+        public Vector3 posVel;
+        public Vector3 rotateVel;
         public int id;
         public Client(int id)
         {
@@ -45,23 +48,24 @@ namespace StressClient
             switch(random.Next(4))
             {
                 case 0:
-                    this.position.X += 1f;
+                    this.posVel.X += 1f;
                     break;
                 case 1:
-                    this.position.X -= 1f;
+                    this.posVel.X -= 1f;
                     break;
                 case 2:
-                    this.position.Z += 1f;
+                    this.posVel.Z += 1f;
                     break;
                 case 3:
-                    this.position.Z -= 1f;
+                    this.posVel.Z -= 1f;
                     break;
             }
 
-            MutantPacket packet = new MutantPacket(this.asyncUserToken.writeEventArgs.Buffer, 0);
+            PlayerStatusPacket packet = new PlayerStatusPacket(this.asyncUserToken.writeEventArgs.Buffer, 0);
             packet.id = this.id;
             packet.name = this.name;
             packet.time = MutantGlobal.GetCurrentMilliseconds();
+            packet.posVel = this.posVel;
             packet.PacketToByteArray(MutantGlobal.CTOS_STATUS_CHANGE);
             this.asyncUserToken.socket.SendAsync(this.asyncUserToken.writeEventArgs);
         }

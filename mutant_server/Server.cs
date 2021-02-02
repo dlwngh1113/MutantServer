@@ -246,7 +246,11 @@ namespace mutant_server
 
         private void ProcessStatus(SocketAsyncEventArgs e)
         {
-            AsyncUserToken token = (AsyncUserToken)e.UserToken;
+            AsyncUserToken token = e.UserToken as AsyncUserToken;
+
+            PlayerStatusPacket packet = new PlayerStatusPacket(e.Buffer, e.Offset);
+            packet.ByteArrayToPacket();
+
             
         }
 
