@@ -36,6 +36,15 @@ namespace StressClient
             // decrement the counter keeping track of the total number of clients connected to the server
             Interlocked.Decrement(ref m_numConnectedSockets);
         }
+
+        public void Clear()
+        {
+            foreach(var s in clients)
+            {
+                
+            }
+        }
+
         public void Run()
         {
             if (this.m_numConnectedSockets < 100)
@@ -110,7 +119,7 @@ namespace StressClient
             if(e.SocketError == SocketError.Success && e.BytesTransferred > 0)
             {
                 AsyncUserToken token = e.UserToken as AsyncUserToken;
-                switch(token.readEventArgs.Buffer[0])
+                switch(token.readEventArgs.Buffer[e.Offset])
                 {
                     case MutantGlobal.STOC_CHAT:
                         break;
@@ -138,10 +147,12 @@ namespace StressClient
         private void ProcessStatus(SocketAsyncEventArgs e)
         {
             AsyncUserToken token = e.UserToken as AsyncUserToken;
-            PlayerStatusPacket packet = new PlayerStatusPacket(token.readEventArgs.Buffer, e.Offset);
+            PlayerStatusPacket packet = new PlayerStatusPacket(e.Buffer, e.Offset);
             packet.ByteArrayToPacket();
             clients[token.socket].position = packet.position;
             clients[token.socket].rotation = packet.rotation;
+
+            clients[token.socket].RandomBehaviour();
         }
 
         private void SendCompleted(object sender, SocketAsyncEventArgs e)
@@ -155,8 +166,6 @@ namespace StressClient
             {
                 // done echoing data back to the client
                 AsyncUserToken token = (AsyncUserToken)e.UserToken;
-
-                clients[token.socket].RandomBehaviour();
             }
             else
             {

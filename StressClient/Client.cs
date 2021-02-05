@@ -17,26 +17,29 @@ namespace StressClient
         {
             this.id = id;
             name = "test" + id;
+            position.X = 0f;
+            position.Y = 0f;
+            position.Z = 0f;
         }
 
         public void RandomBehaviour()
         {
             Random random = new Random();
-            switch(random.Next(6))
+            switch(5)
             {
                 case 0:
-                    RandomMove();
-                    break;
+                    //break;
                 case 1:
-                    break;
+                    //break;
                 case 2:
-                    break;
+                    //break;
                 case 3:
-                    break;
+                    //break;
                 case 4:
-                    break;
+                    //break;
                 case 5:
-                    break;
+                    RandomMove();
+                break;
                 default:
                     throw new Exception("unknown behaviour in client");
             }
@@ -48,16 +51,16 @@ namespace StressClient
             switch(random.Next(4))
             {
                 case 0:
-                    this.posVel.X += 1f;
+                    this.posVel.X = 10f;
                     break;
                 case 1:
-                    this.posVel.X -= 1f;
+                    this.posVel.X = -10f;
                     break;
                 case 2:
-                    this.posVel.Z += 1f;
+                    this.posVel.Z = 10f;
                     break;
                 case 3:
-                    this.posVel.Z -= 1f;
+                    this.posVel.Z = -10f;
                     break;
             }
 

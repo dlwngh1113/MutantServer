@@ -163,8 +163,8 @@ namespace mutant_server
             if (e.BytesTransferred > 0 && e.SocketError == SocketError.Success)
             {
                 //increment the count of the total bytes receive by the server
-                Interlocked.Add(ref m_totalBytesRead, e.BytesTransferred);
-                Console.WriteLine("The server has read a total of {0} bytes", m_totalBytesRead);
+                //Interlocked.Add(ref m_totalBytesRead, e.BytesTransferred);
+                //Console.WriteLine("The server has read a total of {0} bytes", m_totalBytesRead);
 
                 switch (token.readEventArgs.Buffer[e.Offset])
                 {
@@ -248,10 +248,22 @@ namespace mutant_server
         {
             AsyncUserToken token = e.UserToken as AsyncUserToken;
 
-            PlayerStatusPacket packet = new PlayerStatusPacket(e.Buffer, e.Offset);
+            PlayerStatusPacket packet = new PlayerStatusPacket(token.writeEventArgs.Buffer, token.writeEventArgs.Offset);
             packet.ByteArrayToPacket();
 
-            
+            if(0 < packet.position.X + packet.posVel.X &&
+                packet.position.X + packet.posVel.X < 800)
+            {
+                packet.position.X += packet.posVel.X;
+            }
+            if(0 < packet.position.Z + packet.posVel.Z &&
+                packet.position.Z + packet.posVel.Z < 600)
+            {
+                packet.position.Z += packet.posVel.Z;
+            }
+
+            packet.PacketToByteArray(MutantGlobal.STOC_STATUS_CHANGE);
+            token.socket.SendAsync(token.writeEventArgs);
         }
 
         private void ProcessLogin(SocketAsyncEventArgs e)
