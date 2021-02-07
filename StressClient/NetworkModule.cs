@@ -47,7 +47,7 @@ namespace StressClient
 
         public void Run()
         {
-            if (this.m_numConnectedSockets < 100)
+            if (this.m_numConnectedSockets < 2)
             {
                 Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
                 SocketAsyncEventArgs args = new SocketAsyncEventArgs();
@@ -100,7 +100,11 @@ namespace StressClient
             p.time = MutantGlobal.GetCurrentMilliseconds();
             p.PacketToByteArray(MutantGlobal.CTOS_LOGIN);
 
-            socket.SendAsync(send_event);
+            bool willRaise = socket.SendAsync(send_event);
+            if(!willRaise)
+            {
+                ProcessSend(send_event);
+            }
         }
         
         private void RecvCompleted(object sender, SocketAsyncEventArgs e)

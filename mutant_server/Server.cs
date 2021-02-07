@@ -158,14 +158,9 @@ namespace mutant_server
 
         private void ProcessReceive(SocketAsyncEventArgs e)
         {
-            // check if the remote host closed the connection
             AsyncUserToken token = (AsyncUserToken)e.UserToken;
             if (e.BytesTransferred > 0 && e.SocketError == SocketError.Success)
             {
-                //increment the count of the total bytes receive by the server
-                //Interlocked.Add(ref m_totalBytesRead, e.BytesTransferred);
-                //Console.WriteLine("The server has read a total of {0} bytes", m_totalBytesRead);
-
                 switch (token.readEventArgs.Buffer[e.Offset])
                 {
                     case MutantGlobal.CTOS_LOGIN:
@@ -202,9 +197,8 @@ namespace mutant_server
         {
             if (e.SocketError == SocketError.Success)
             {
-                // done echoing data back to the client
                 AsyncUserToken token = (AsyncUserToken)e.UserToken;
-                // read the next block of data send from the client
+
                 bool willRaiseEvent = token.socket.ReceiveAsync(token.readEventArgs);
                 if (!willRaiseEvent)
                 {

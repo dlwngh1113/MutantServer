@@ -11,6 +11,7 @@ namespace StressClient
         {
             InitializeComponent();
             networkModule = new NetworkModule();
+            networkModule.Run();
         }
         private void Form1_Paint(object sender, PaintEventArgs e)
         {
@@ -35,7 +36,6 @@ namespace StressClient
         }
         private void Form1_Timer1(object sender, EventArgs e)
         {
-            networkModule.Run();
             Invalidate();
         }
     }
