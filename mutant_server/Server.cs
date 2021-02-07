@@ -205,10 +205,10 @@ namespace mutant_server
                 // done echoing data back to the client
                 AsyncUserToken token = (AsyncUserToken)e.UserToken;
                 // read the next block of data send from the client
-                bool willRaiseEvent = token.socket.ReceiveAsync(e);
+                bool willRaiseEvent = token.socket.ReceiveAsync(token.readEventArgs);
                 if (!willRaiseEvent)
                 {
-                    ProcessReceive(e);
+                    ProcessReceive(token.readEventArgs);
                 }
             }
             else
@@ -263,7 +263,11 @@ namespace mutant_server
             }
 
             packet.PacketToByteArray(MutantGlobal.STOC_STATUS_CHANGE);
-            token.socket.SendAsync(token.writeEventArgs);
+            bool willRaise = token.socket.SendAsync(token.writeEventArgs);
+            if(!willRaise)
+            {
+                ProcessSend(token.writeEventArgs);
+            }
         }
 
         private void ProcessLogin(SocketAsyncEventArgs e)
@@ -280,10 +284,16 @@ namespace mutant_server
             Console.WriteLine("{0} client has {1} id, login request!",
                 packet.name, packet.id);
 
-            bool willRaise = token.socket.ReceiveAsync(e);
-            if(!willRaise)
+            MutantPacket sendPacket = new MutantPacket(token.writeEventArgs.Buffer, token.writeEventArgs.Offset);
+            sendPacket.id = m_numConnectedSockets;
+            sendPacket.name = packet.name;
+            sendPacket.time = packet.time;
+            sendPacket.PacketToByteArray(MutantGlobal.STOC_LOGIN_OK);
+
+            bool willRaise = token.socket.SendAsync(token.writeEventArgs);
+            if (!willRaise)
             {
-                ProcessReceive(e);
+                ProcessSend(token.writeEventArgs);
             }
         }
 
@@ -292,6 +302,11 @@ namespace mutant_server
             AsyncUserToken token = (AsyncUserToken)e.UserToken;
             //누가 어떤 플레이어를 공격했는가?
             //공격당한 플레이어를 죽게 하고 공격한 플레이어 타이머 리셋
+            bool willRaise = token.socket.ReceiveAsync(e);
+            if(!willRaise)
+            {
+                ProcessReceive(e);
+            }
         }
 
         private void ProcessChatting(SocketAsyncEventArgs e)
@@ -300,13 +315,12 @@ namespace mutant_server
             //클라이언트에서 온 메세지를 모든 클라이언트에 전송
             byte[] tmp = e.Buffer;
             tmp[e.Offset] = MutantGlobal.STOC_CHAT;
-            token.writeEventArgs.SetBuffer(e.Offset, e.BytesTransferred);
-            token.socket.SendAsync(token.writeEventArgs);
+            token.writeEventArgs.SetBuffer(token.writeEventArgs.Offset, token.writeEventArgs.BytesTransferred);
 
-            bool willRaise = token.socket.ReceiveAsync(e);
+            bool willRaise = token.socket.SendAsync(token.writeEventArgs);
             if (!willRaise)
             {
-                ProcessReceive(e);
+                ProcessSend(token.writeEventArgs);
             }
         }
 

@@ -101,12 +101,6 @@ namespace StressClient
             p.PacketToByteArray(MutantGlobal.CTOS_LOGIN);
 
             socket.SendAsync(send_event);
-
-            bool willRaise = socket.ReceiveAsync(recv_event);
-            if (!willRaise)
-            {
-                ProcessReceive(recv_event);
-            }
         }
         
         private void RecvCompleted(object sender, SocketAsyncEventArgs e)
@@ -130,6 +124,7 @@ namespace StressClient
                     case MutantGlobal.STOC_LOGIN_FAIL:
                         break;
                     case MutantGlobal.STOC_LOGIN_OK:
+                        ProcessLoginOK(e);
                         break;
                     case MutantGlobal.STOC_STATUS_CHANGE:
                         ProcessStatus(e);
@@ -137,11 +132,19 @@ namespace StressClient
                     default:
                         throw new Exception("Unknown Packet from " + clients[token.socket].name);
                 }
+                clients[token.socket].RandomBehaviour();
             }
             else
             {
                 CloseClientSocket(e);
             }
+        }
+
+        private void ProcessLoginOK(SocketAsyncEventArgs e)
+        {
+            AsyncUserToken token = e.UserToken as AsyncUserToken;
+            MutantPacket packet = new MutantPacket(e.Buffer, e.Offset);
+            packet.ByteArrayToPacket();
         }
 
         private void ProcessStatus(SocketAsyncEventArgs e)
@@ -151,8 +154,6 @@ namespace StressClient
             packet.ByteArrayToPacket();
             clients[token.socket].position = packet.position;
             clients[token.socket].rotation = packet.rotation;
-
-            clients[token.socket].RandomBehaviour();
         }
 
         private void SendCompleted(object sender, SocketAsyncEventArgs e)
@@ -166,6 +167,12 @@ namespace StressClient
             {
                 // done echoing data back to the client
                 AsyncUserToken token = (AsyncUserToken)e.UserToken;
+
+                bool willRaise = token.socket.ReceiveAsync(token.readEventArgs);
+                if(!willRaise)
+                {
+                    ProcessReceive(token.readEventArgs);
+                }
             }
             else
             {
