@@ -47,14 +47,11 @@ namespace StressClient
 
         public void Run()
         {
-            if (this.m_numConnectedSockets < 2)
-            {
-                Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-                SocketAsyncEventArgs args = new SocketAsyncEventArgs();
-                args.RemoteEndPoint = new IPEndPoint(IPAddress.Loopback, MutantGlobal.PORT);
-                args.Completed += new EventHandler<SocketAsyncEventArgs>(ConnectArgs_Completed);
-                socket.ConnectAsync(args);
-            }
+            Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            SocketAsyncEventArgs args = new SocketAsyncEventArgs();
+            args.RemoteEndPoint = new IPEndPoint(IPAddress.Loopback, MutantGlobal.PORT);
+            args.Completed += new EventHandler<SocketAsyncEventArgs>(ConnectArgs_Completed);
+            socket.ConnectAsync(args);
         }
         private void ConnectArgs_Completed(object sender, SocketAsyncEventArgs e)
         {
@@ -77,7 +74,7 @@ namespace StressClient
             BeginIO(e.ConnectSocket, recv_event, send_event);
             Interlocked.Increment(ref m_numConnectedSockets);
 
-            Run();
+            //Run();
         }
         private void BeginIO(Socket socket, SocketAsyncEventArgs recv_event, SocketAsyncEventArgs send_event)
         {

@@ -17,9 +17,10 @@ namespace StressClient
         {
             this.id = id;
             name = "test" + id;
-            position.X = 0f;
-            position.Y = 0f;
-            position.Z = 0f;
+            this.position = new Vector3();
+            this.posVel = new Vector3();
+            this.rotation = new Vector3();
+            this.rotateVel = new Vector3();
         }
 
         public void RandomBehaviour()

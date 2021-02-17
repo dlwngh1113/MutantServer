@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Numerics;
+using System.Text;
 
 namespace mutant_server
 {
@@ -23,14 +24,21 @@ namespace mutant_server
         }
         protected void ConvertToByte(string s)
         {
-            int len = s.Length;
-            byte[] len_buffer = BitConverter.GetBytes(len);
-            len_buffer.CopyTo(ary, offset);
-            offset += len_buffer.Length;
+            byte[] tmp = Encoding.UTF8.GetBytes(s);
 
-            byte[] tmp = System.Text.Encoding.UTF8.GetBytes(s);
-            tmp.CopyTo(ary, offset);
-            offset += tmp.Length;
+            short len = (short)tmp.Length;
+            byte[] len_buffer = BitConverter.GetBytes(len);
+            len_buffer.CopyTo(this.ary, this.offset);
+            this.offset += sizeof(short);
+
+            tmp.CopyTo(this.ary, this.offset);
+            this.offset += tmp.Length;
+        }
+        protected void ConvertToByte(byte b)
+        {
+            byte[] tmp = BitConverter.GetBytes(b);
+            tmp.CopyTo(this.ary, this.offset);
+            this.offset += sizeof(byte);
         }
         protected void ConvertToByte(float f)
         {
@@ -46,23 +54,24 @@ namespace mutant_server
         }
         protected int ByteToInt()
         {
-            int tmp = BitConverter.ToInt32(ary, offset);
-            offset += sizeof(int);
-
+            int tmp = BitConverter.ToInt32(this.ary, this.offset);
+            this.offset += sizeof(int);
             return tmp;
         }
         protected string ByteToString()
         {
-            int len = ByteToInt();
-            string tmp = System.Text.Encoding.UTF8.GetString(ary, offset, len);
-            offset += len;
+            int len = BitConverter.ToInt16(this.ary, this.offset);
+            this.offset += sizeof(short);
+
+            string tmp = Encoding.UTF8.GetString(this.ary, this.offset, len);
+            this.offset += len;
 
             return tmp;
         }
         protected float ByteToFloat()
         {
-            float tmp = BitConverter.ToSingle(ary, offset);
-            offset += sizeof(float);
+            float tmp = BitConverter.ToSingle(this.ary, this.offset);
+            this.offset += sizeof(float);
 
             return tmp;
         }
@@ -75,10 +84,15 @@ namespace mutant_server
 
             return tmp;
         }
-
+        protected byte ByteToByte()
+        {
+            byte tmp = (byte)BitConverter.ToInt32(this.ary, this.offset);
+            this.offset += sizeof(byte);
+            return tmp;
+        }
         public virtual void PacketToByteArray(byte type)
         {
-            ary[offset++] = type;
+            this.ary[offset++] = type;
             ConvertToByte(this.name);
             ConvertToByte(this.id);
             ConvertToByte(this.time);
@@ -99,7 +113,10 @@ namespace mutant_server
         public Vector3 rotateVel;
         public PlayerStatusPacket(byte[] ary, int offset):base(ary, offset)
         {
-            
+            this.position = new Vector3();
+            this.posVel = new Vector3();
+            this.rotation = new Vector3();
+            this.rotateVel = new Vector3();
         }
         public override void PacketToByteArray(byte type)
         {
