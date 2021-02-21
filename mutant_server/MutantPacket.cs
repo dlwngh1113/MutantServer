@@ -19,8 +19,8 @@ namespace mutant_server
         protected void ConvertToByte(int i)
         {
             byte[] tmp = BitConverter.GetBytes(i);
-            tmp.CopyTo(ary, offset);
-            offset += tmp.Length;
+            tmp.CopyTo(this.ary, this.offset);
+            this.offset += tmp.Length;
         }
         protected void ConvertToByte(string s)
         {
@@ -32,25 +32,19 @@ namespace mutant_server
             this.offset += sizeof(short);
 
             tmp.CopyTo(this.ary, this.offset);
-            this.offset += tmp.Length;
+            this.offset += len;
         }
         protected void ConvertToByte(byte b)
         {
             byte[] tmp = BitConverter.GetBytes(b);
             tmp.CopyTo(this.ary, this.offset);
-            this.offset += sizeof(byte);
+            this.offset += tmp.Length;
         }
         protected void ConvertToByte(float f)
         {
             byte[] tmp = BitConverter.GetBytes(f);
-            tmp.CopyTo(ary, offset);
-            offset += tmp.Length;
-        }
-        protected void ConvertToByte(Vector3 vec)
-        {
-            ConvertToByte(vec.X);
-            ConvertToByte(vec.Y);
-            ConvertToByte(vec.Z);
+            tmp.CopyTo(this.ary, this.offset);
+            this.offset += tmp.Length;
         }
         protected int ByteToInt()
         {
@@ -60,7 +54,7 @@ namespace mutant_server
         }
         protected string ByteToString()
         {
-            int len = BitConverter.ToInt16(this.ary, this.offset);
+            short len = BitConverter.ToInt16(this.ary, this.offset);
             this.offset += sizeof(short);
 
             string tmp = Encoding.UTF8.GetString(this.ary, this.offset, len);
@@ -72,21 +66,11 @@ namespace mutant_server
         {
             float tmp = BitConverter.ToSingle(this.ary, this.offset);
             this.offset += sizeof(float);
-
-            return tmp;
-        }
-        protected Vector3 ByteToVector3()
-        {
-            Vector3 tmp;
-            tmp.X = ByteToFloat();
-            tmp.Y = ByteToFloat();
-            tmp.Z = ByteToFloat();
-
             return tmp;
         }
         protected byte ByteToByte()
         {
-            byte tmp = (byte)BitConverter.ToInt32(this.ary, this.offset);
+            byte tmp = (byte)BitConverter.ToInt16(this.ary, this.offset);
             this.offset += sizeof(byte);
             return tmp;
         }
@@ -104,35 +88,61 @@ namespace mutant_server
             this.id = ByteToInt();
             this.time = ByteToInt();
         }
+
+        public virtual void PrintAry()
+        {
+            for(int i=offset;i < offset + MutantGlobal.BUF_SIZE - 1; ++i)
+            {
+                Console.WriteLine(ary[i]);
+            }
+        }
     }
     public class PlayerStatusPacket : MutantPacket
     {
-        public Vector3 position;
-        public Vector3 rotation;
-        public Vector3 posVel;
-        public Vector3 rotateVel;
+        public float xPosition, yPosition, zPosition;
+        public float xRotation, yRotation, zRotation;
+        public float xVelocity, yVelocity, zVelocity;
+        public float roll, pitch, yaw;
         public PlayerStatusPacket(byte[] ary, int offset):base(ary, offset)
         {
-            this.position = new Vector3();
-            this.posVel = new Vector3();
-            this.rotation = new Vector3();
-            this.rotateVel = new Vector3();
         }
         public override void PacketToByteArray(byte type)
         {
             base.PacketToByteArray(type);
-            ConvertToByte(position);
-            ConvertToByte(rotation);
-            ConvertToByte(posVel);
-            ConvertToByte(rotateVel);
+            ConvertToByte(this.xPosition);
+            ConvertToByte(this.yPosition);
+            ConvertToByte(this.zPosition);
+            
+            ConvertToByte(this.xRotation);
+            ConvertToByte(this.yRotation);
+            ConvertToByte(this.zRotation);
+
+            ConvertToByte(this.xVelocity);
+            ConvertToByte(this.yVelocity);
+            ConvertToByte(this.zVelocity);
+
+            ConvertToByte(this.roll);
+            ConvertToByte(this.pitch);
+            ConvertToByte(this.yaw);
         }
         public override void ByteArrayToPacket()
         {
             base.ByteArrayToPacket();
-            this.position = ByteToVector3();
-            this.rotation = ByteToVector3();
-            this.posVel = ByteToVector3();
-            this.rotateVel = ByteToVector3();
+            this.xPosition = ByteToFloat();
+            this.yPosition = ByteToFloat();
+            this.zPosition = ByteToFloat();
+
+            this.xRotation = ByteToFloat();
+            this.yRotation = ByteToFloat();
+            this.zRotation = ByteToFloat();
+
+            this.xVelocity = ByteToFloat();
+            this.yVelocity = ByteToFloat();
+            this.zVelocity = ByteToFloat();
+
+            this.roll = ByteToFloat();
+            this.pitch = ByteToFloat();
+            this.yaw = ByteToFloat();
         }
     }
     public class ChattingPakcet : MutantPacket

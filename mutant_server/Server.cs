@@ -243,17 +243,18 @@ namespace mutant_server
             AsyncUserToken token = e.UserToken as AsyncUserToken;
 
             PlayerStatusPacket packet = new PlayerStatusPacket(token.writeEventArgs.Buffer, token.writeEventArgs.Offset);
+            packet.PrintAry();
             packet.ByteArrayToPacket();
 
-            if(0 < packet.position.X + packet.posVel.X &&
-                packet.position.X + packet.posVel.X < 800)
+            if(0 < packet.xPosition + packet.xVelocity &&
+                packet.xPosition + packet.xVelocity < 800)
             {
-                packet.position.X += packet.posVel.X;
+                packet.xPosition += packet.xVelocity;
             }
-            if(0 < packet.position.Z + packet.posVel.Z &&
-                packet.position.Z + packet.posVel.Z < 600)
+            if(0 < packet.zPosition + packet.zVelocity &&
+                packet.zPosition + packet.zVelocity < 600)
             {
-                packet.position.Z += packet.posVel.Z;
+                packet.zPosition += packet.zVelocity;
             }
 
             packet.PacketToByteArray(MutantGlobal.STOC_STATUS_CHANGE);

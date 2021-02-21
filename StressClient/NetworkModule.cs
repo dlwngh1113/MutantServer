@@ -153,8 +153,13 @@ namespace StressClient
             AsyncUserToken token = e.UserToken as AsyncUserToken;
             PlayerStatusPacket packet = new PlayerStatusPacket(e.Buffer, e.Offset);
             packet.ByteArrayToPacket();
-            clients[token.socket].position = packet.position;
-            clients[token.socket].rotation = packet.rotation;
+            clients[token.socket].xPosition = packet.xPosition;
+            clients[token.socket].yPosition = packet.yPosition;
+            clients[token.socket].zPosition = packet.zPosition;
+
+            clients[token.socket].xRotation = packet.xRotation;
+            clients[token.socket].yRotation = packet.yRotation;
+            clients[token.socket].zRotation = packet.zRotation;
         }
 
         private void SendCompleted(object sender, SocketAsyncEventArgs e)

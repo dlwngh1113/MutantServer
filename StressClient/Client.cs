@@ -8,19 +8,15 @@ namespace StressClient
     {
         public AsyncUserToken asyncUserToken;
         public string name;
-        public Vector3 position;
-        public Vector3 rotation;
-        public Vector3 posVel;
-        public Vector3 rotateVel;
+        public float xPosition = 0, yPosition = 0, zPosition = 0;
+        public float xRotation = 0, yRotation = 0, zRotation = 0;
+        public float xVelocity = 0, yVelocity = 0, zVelocity = 0;
+        public float roll = 0, pitch = 0, yaw = 0;
         public int id;
         public Client(int id)
         {
             this.id = id;
             name = "test" + id;
-            this.position = new Vector3();
-            this.posVel = new Vector3();
-            this.rotation = new Vector3();
-            this.rotateVel = new Vector3();
         }
 
         public void RandomBehaviour()
@@ -52,16 +48,16 @@ namespace StressClient
             switch(random.Next(4))
             {
                 case 0:
-                    this.posVel.X = 10f;
+                    this.xVelocity = 10f;
                     break;
                 case 1:
-                    this.posVel.X = -10f;
+                    this.xVelocity = -10f;
                     break;
                 case 2:
-                    this.posVel.Z = 10f;
+                    this.zVelocity = 10f;
                     break;
                 case 3:
-                    this.posVel.Z = -10f;
+                    this.zVelocity = -10f;
                     break;
             }
 
@@ -69,7 +65,11 @@ namespace StressClient
             packet.id = this.id;
             packet.name = this.name;
             packet.time = MutantGlobal.GetCurrentMilliseconds();
-            packet.posVel = this.posVel;
+
+            packet.xVelocity = this.xVelocity;
+            packet.yVelocity = this.yVelocity;
+            packet.zVelocity = this.zVelocity;
+            
             packet.PacketToByteArray(MutantGlobal.CTOS_STATUS_CHANGE);
             this.asyncUserToken.socket.SendAsync(this.asyncUserToken.writeEventArgs);
         }
