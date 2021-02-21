@@ -16,6 +16,12 @@ namespace mutant_server
             this.ary = ary;
             offset = p;
         }
+        public void Copy(MutantPacket packet)
+        {
+            this.name = packet.name;
+            this.id = packet.id;
+            this.time = packet.time;
+        }
         protected void ConvertToByte(int i)
         {
             byte[] tmp = BitConverter.GetBytes(i);

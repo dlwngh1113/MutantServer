@@ -280,10 +280,14 @@ namespace mutant_server
             Console.WriteLine("{0} client has {1} id, login request!",
                 packet.name, packet.id);
 
-            MutantPacket sendPacket = new MutantPacket(token.writeEventArgs.Buffer, token.writeEventArgs.Offset);
+            Random random = new Random();
+            PlayerStatusPacket sendPacket = new PlayerStatusPacket(token.writeEventArgs.Buffer, token.writeEventArgs.Offset);
             sendPacket.id = m_numConnectedSockets;
             sendPacket.name = packet.name;
             sendPacket.time = packet.time;
+            sendPacket.xPosition = random.Next(0, 800);
+            sendPacket.yPosition = 0;
+            sendPacket.zPosition = random.Next(0, 600);
             sendPacket.PacketToByteArray(MutantGlobal.STOC_LOGIN_OK);
 
             bool willRaise = token.socket.SendAsync(token.writeEventArgs);
