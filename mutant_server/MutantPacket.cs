@@ -34,12 +34,6 @@ namespace mutant_server
             tmp.CopyTo(this.ary, this.offset);
             this.offset += len;
         }
-        protected void ConvertToByte(byte b)
-        {
-            byte[] tmp = BitConverter.GetBytes(b);
-            tmp.CopyTo(this.ary, this.offset);
-            this.offset += tmp.Length;
-        }
         protected void ConvertToByte(float f)
         {
             byte[] tmp = BitConverter.GetBytes(f);
@@ -68,12 +62,6 @@ namespace mutant_server
             this.offset += sizeof(float);
             return tmp;
         }
-        protected byte ByteToByte()
-        {
-            byte tmp = (byte)BitConverter.ToInt16(this.ary, this.offset);
-            this.offset += sizeof(byte);
-            return tmp;
-        }
         public virtual void PacketToByteArray(byte type)
         {
             this.ary[offset++] = type;
@@ -88,23 +76,37 @@ namespace mutant_server
             this.id = ByteToInt();
             this.time = ByteToInt();
         }
-
-        public virtual void PrintAry()
-        {
-            for(int i=offset;i < offset + MutantGlobal.BUF_SIZE - 1; ++i)
-            {
-                Console.WriteLine(ary[i]);
-            }
-        }
     }
     public class PlayerStatusPacket : MutantPacket
     {
-        public float xPosition, yPosition, zPosition;
-        public float xRotation, yRotation, zRotation;
-        public float xVelocity, yVelocity, zVelocity;
-        public float roll, pitch, yaw;
+        public float xPosition = 0, yPosition = 0, zPosition = 0;
+        public float xRotation = 0, yRotation = 0, zRotation = 0;
+        public float xVelocity = 0, yVelocity = 0, zVelocity = 0;
+        public float roll = 0, pitch = 0, yaw = 0;
         public PlayerStatusPacket(byte[] ary, int offset):base(ary, offset)
         {
+        }
+        public void Copy(PlayerStatusPacket packet)
+        {
+            this.name = packet.name;
+            this.id = packet.id;
+            this.time = packet.time;
+
+            this.xPosition = packet.xPosition;
+            this.yPosition = packet.yPosition;
+            this.zPosition = packet.zPosition;
+
+            this.xRotation = packet.xRotation;
+            this.yRotation = packet.yRotation;
+            this.zRotation = packet.zRotation;
+
+            this.xVelocity = packet.xVelocity;
+            this.yVelocity = packet.yVelocity;
+            this.zVelocity = packet.zVelocity;
+
+            this.roll = packet.roll;
+            this.pitch = packet.pitch;
+            this.yaw = packet.yaw;
         }
         public override void PacketToByteArray(byte type)
         {
