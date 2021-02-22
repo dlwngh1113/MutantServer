@@ -1,7 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
-using System.Collections.Generic;
 using System.Threading;
 
 namespace mutant_server
@@ -17,7 +17,6 @@ namespace mutant_server
         // pool of reusable SocketAsyncEventArgs objects for write, read and accept socket operations
         SocketAsyncEventArgsPool m_readPool;
         SocketAsyncEventArgsPool m_writePool;
-        int m_totalBytesRead;           // counter of the total # bytes received by the server
         int m_numConnectedSockets;      // the total number of clients connected to the server
 
         Dictionary<Socket, Client> players;
@@ -30,7 +29,6 @@ namespace mutant_server
         // <param name="receiveBufferSize">buffer size to use for each socket I/O operation</param>
         public Server(int numConnections, int receiveBufferSize)
         {
-            m_totalBytesRead = 0;
             m_numConnectedSockets = 0;
             m_numConnections = numConnections;
             m_receiveBufferSize = receiveBufferSize;
@@ -245,16 +243,19 @@ namespace mutant_server
             PlayerStatusPacket packet = new PlayerStatusPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
             packet.ByteArrayToPacket();
 
-            if(0 < packet.xPosition + packet.xVelocity &&
-                packet.xPosition + packet.xVelocity < 800)
+            if(0 < packet.position.x + packet.posVelocity.x &&
+                packet.position.x + packet.posVelocity.x < 800)
             {
-                packet.xPosition += packet.xVelocity;
+                packet.position.x += packet.posVelocity.x;
             }
-            if(0 < packet.zPosition + packet.zVelocity &&
-                packet.zPosition + packet.zVelocity < 600)
+            if(0 < packet.position.z + packet.posVelocity.z &&
+                packet.position.z + packet.posVelocity.z < 600)
             {
-                packet.zPosition += packet.zVelocity;
+                packet.position.z += packet.posVelocity.z;
             }
+
+            players[token.socket].position = packet.position;
+            packet.posVelocity.reset();
 
             PlayerStatusPacket sendPacket = new PlayerStatusPacket(token.writeEventArgs.Buffer, token.writeEventArgs.Offset);
             sendPacket.Copy(packet);
@@ -285,9 +286,9 @@ namespace mutant_server
             sendPacket.id = m_numConnectedSockets;
             sendPacket.name = packet.name;
             sendPacket.time = packet.time;
-            sendPacket.xPosition = random.Next(0, 800);
-            sendPacket.yPosition = 0;
-            sendPacket.zPosition = random.Next(0, 600);
+            sendPacket.position.x = (float)(random.NextDouble() * 800);
+            sendPacket.position.y = 0;
+            sendPacket.position.z = (float)(random.NextDouble() * 600);
             sendPacket.PacketToByteArray(MutantGlobal.STOC_LOGIN_OK);
 
             bool willRaise = token.socket.SendAsync(token.writeEventArgs);

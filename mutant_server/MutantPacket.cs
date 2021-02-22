@@ -46,6 +46,13 @@ namespace mutant_server
             tmp.CopyTo(this.ary, this.offset);
             this.offset += tmp.Length;
         }
+
+        protected void ConvertToByte(MyVector3 vec)
+        {
+            ConvertToByte(vec.x);
+            ConvertToByte(vec.y);
+            ConvertToByte(vec.z);
+        }
         protected int ByteToInt()
         {
             int tmp = BitConverter.ToInt32(this.ary, this.offset);
@@ -68,6 +75,15 @@ namespace mutant_server
             this.offset += sizeof(float);
             return tmp;
         }
+        protected MyVector3 ByteToVector()
+        {
+            MyVector3 tmp;
+            tmp.x = ByteToFloat();
+            tmp.y = ByteToFloat();
+            tmp.z = ByteToFloat();
+
+            return tmp;
+        }
         public virtual void PacketToByteArray(byte type)
         {
             this.ary[offset++] = type;
@@ -85,10 +101,10 @@ namespace mutant_server
     }
     public class PlayerStatusPacket : MutantPacket
     {
-        public float xPosition = 0, yPosition = 0, zPosition = 0;
-        public float xRotation = 0, yRotation = 0, zRotation = 0;
-        public float xVelocity = 0, yVelocity = 0, zVelocity = 0;
-        public float roll = 0, pitch = 0, yaw = 0;
+        public MyVector3 position;
+        public MyVector3 rotation;
+        public MyVector3 posVelocity;
+        public MyVector3 rotVelocity;
         public PlayerStatusPacket(byte[] ary, int offset):base(ary, offset)
         {
         }
@@ -98,59 +114,28 @@ namespace mutant_server
             this.id = packet.id;
             this.time = packet.time;
 
-            this.xPosition = packet.xPosition;
-            this.yPosition = packet.yPosition;
-            this.zPosition = packet.zPosition;
-
-            this.xRotation = packet.xRotation;
-            this.yRotation = packet.yRotation;
-            this.zRotation = packet.zRotation;
-
-            this.xVelocity = packet.xVelocity;
-            this.yVelocity = packet.yVelocity;
-            this.zVelocity = packet.zVelocity;
-
-            this.roll = packet.roll;
-            this.pitch = packet.pitch;
-            this.yaw = packet.yaw;
+            this.position = packet.position;
+            this.rotation = packet.rotation;
+            this.posVelocity = packet.posVelocity;
+            this.rotVelocity = packet.rotVelocity;
         }
         public override void PacketToByteArray(byte type)
         {
             base.PacketToByteArray(type);
-            ConvertToByte(this.xPosition);
-            ConvertToByte(this.yPosition);
-            ConvertToByte(this.zPosition);
-            
-            ConvertToByte(this.xRotation);
-            ConvertToByte(this.yRotation);
-            ConvertToByte(this.zRotation);
 
-            ConvertToByte(this.xVelocity);
-            ConvertToByte(this.yVelocity);
-            ConvertToByte(this.zVelocity);
-
-            ConvertToByte(this.roll);
-            ConvertToByte(this.pitch);
-            ConvertToByte(this.yaw);
+            ConvertToByte(this.position);
+            ConvertToByte(this.rotation);
+            ConvertToByte(this.posVelocity);
+            ConvertToByte(this.rotVelocity);
         }
         public override void ByteArrayToPacket()
         {
             base.ByteArrayToPacket();
-            this.xPosition = ByteToFloat();
-            this.yPosition = ByteToFloat();
-            this.zPosition = ByteToFloat();
 
-            this.xRotation = ByteToFloat();
-            this.yRotation = ByteToFloat();
-            this.zRotation = ByteToFloat();
-
-            this.xVelocity = ByteToFloat();
-            this.yVelocity = ByteToFloat();
-            this.zVelocity = ByteToFloat();
-
-            this.roll = ByteToFloat();
-            this.pitch = ByteToFloat();
-            this.yaw = ByteToFloat();
+            this.position = ByteToVector();
+            this.rotation = ByteToVector();
+            this.posVelocity = ByteToVector();
+            this.rotVelocity = ByteToVector();
         }
     }
     public class ChattingPakcet : MutantPacket
