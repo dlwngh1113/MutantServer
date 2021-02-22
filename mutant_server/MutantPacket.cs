@@ -77,7 +77,7 @@ namespace mutant_server
         }
         protected MyVector3 ByteToVector()
         {
-            MyVector3 tmp;
+            MyVector3 tmp = new MyVector3();
             tmp.x = ByteToFloat();
             tmp.y = ByteToFloat();
             tmp.z = ByteToFloat();

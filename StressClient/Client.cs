@@ -49,16 +49,16 @@ namespace StressClient
             switch(random.Next(4))
             {
                 case 0:
-                    this.posVelocity.x = 10f;
+                    this.posVelocity.x = 1f;
                     break;
                 case 1:
-                    this.posVelocity.x = 10f;
+                    this.posVelocity.x = -1f;
                     break;
                 case 2:
-                    this.posVelocity.z = 10f;
+                    this.posVelocity.z = 1f;
                     break;
                 case 3:
-                    this.posVelocity.z = -10f;
+                    this.posVelocity.z = -1f;
                     break;
             }
 
