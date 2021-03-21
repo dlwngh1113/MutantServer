@@ -253,10 +253,13 @@ namespace mutant_server
             //{
                 packet.position.z += packet.posVelocity.z;
             //}
+            packet.rotation.x += packet.rotVelocity.x;
+            packet.rotation.y += packet.rotVelocity.y;  
 
             Console.WriteLine("player moved to position {0} {1} {2}", packet.position.x, packet.position.y, packet.position.z);
 
             players[token.socket].position = packet.position;
+            players[token.socket].rotation = packet.rotation;
             //packet.posVelocity.reset();
 
             PlayerStatusPacket sendPacket = new PlayerStatusPacket(token.writeEventArgs.Buffer, token.writeEventArgs.Offset);
@@ -291,6 +294,9 @@ namespace mutant_server
             sendPacket.position.x = 0;
             sendPacket.position.y = 0;
             sendPacket.position.z = 0;
+            sendPacket.rotation.x = 0;
+            sendPacket.rotation.y = 0;
+            sendPacket.rotation.z = 0;
             sendPacket.PacketToByteArray(MutantGlobal.STOC_LOGIN_OK);
 
             bool willRaise = token.socket.SendAsync(token.writeEventArgs);
