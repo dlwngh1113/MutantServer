@@ -243,19 +243,21 @@ namespace mutant_server
             PlayerStatusPacket packet = new PlayerStatusPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
             packet.ByteArrayToPacket();
 
-            if(0 < packet.position.x + packet.posVelocity.x &&
-                packet.position.x + packet.posVelocity.x < 800)
-            {
+            //if(0 < packet.position.x + packet.posVelocity.x &&
+            //    packet.position.x + packet.posVelocity.x < 800)
+            //{
                 packet.position.x += packet.posVelocity.x;
-            }
-            if(0 < packet.position.z + packet.posVelocity.z &&
-                packet.position.z + packet.posVelocity.z < 600)
-            {
+            //}
+            //if(0 < packet.position.z + packet.posVelocity.z &&
+            //    packet.position.z + packet.posVelocity.z < 600)
+            //{
                 packet.position.z += packet.posVelocity.z;
-            }
+            //}
+
+            Console.WriteLine("player moved to position {0} {1} {2}", packet.position.x, packet.position.y, packet.position.z);
 
             players[token.socket].position = packet.position;
-            packet.posVelocity.reset();
+            //packet.posVelocity.reset();
 
             PlayerStatusPacket sendPacket = new PlayerStatusPacket(token.writeEventArgs.Buffer, token.writeEventArgs.Offset);
             sendPacket.Copy(packet);
@@ -286,9 +288,9 @@ namespace mutant_server
             sendPacket.id = m_numConnectedSockets;
             sendPacket.name = packet.name;
             sendPacket.time = packet.time;
-            sendPacket.position.x = (float)(random.NextDouble() * 800);
+            sendPacket.position.x = 0;
             sendPacket.position.y = 0;
-            sendPacket.position.z = (float)(random.NextDouble() * 600);
+            sendPacket.position.z = 0;
             sendPacket.PacketToByteArray(MutantGlobal.STOC_LOGIN_OK);
 
             bool willRaise = token.socket.SendAsync(token.writeEventArgs);
