@@ -5,6 +5,7 @@ namespace mutant_server
     public class AsyncUserToken
     {
         public Socket socket = null;
+        public int userID;
         public SocketAsyncEventArgs readEventArgs = null;
         public SocketAsyncEventArgs writeEventArgs = null;
         public AsyncUserToken()

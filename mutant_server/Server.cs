@@ -19,7 +19,7 @@ namespace mutant_server
         SocketAsyncEventArgsPool m_writePool;
         int m_numConnectedSockets;      // the total number of clients connected to the server
 
-        Dictionary<Socket, Client> players;
+        Dictionary<int, Client> players;
 
         // Create an uninitialized server instance.
         // To start the server listening for connection requests
@@ -32,7 +32,7 @@ namespace mutant_server
             m_numConnectedSockets = 0;
             m_numConnections = numConnections;
             m_receiveBufferSize = receiveBufferSize;
-            players = new Dictionary<Socket, Client>();
+            players = new Dictionary<int, Client>();
             // allocate buffers such that the maximum number of sockets can have one outstanding read and
             //write posted to the socket simultaneously
             m_bufferManager = new BufferManager(receiveBufferSize * numConnections * opsToPreAlloc,
@@ -132,13 +132,14 @@ namespace mutant_server
 
             AsyncUserToken token = recv_event.UserToken as AsyncUserToken;
             token.socket = socket;
+            token.userID = player.userID;
             token.readEventArgs = recv_event;
             token.writeEventArgs = send_event;
             player.asyncUserToken = token;
 
             lock (players)
             {
-                players.Add(socket, player);
+                players.Add(player.userID, player);
             }
 
             // As soon as the client is connected, post a receive to the connection
@@ -176,6 +177,9 @@ namespace mutant_server
                     case MutantGlobal.CTOS_LOGOUT:
                         ProcessLogout(e);
                         break;
+                    case MutantGlobal.CTOS_ITEM_CLICKED:
+                        ProcessItemEvent(e);
+                        break;
                     default:
                         throw new Exception("operation from client is not valid\n");
                 }
@@ -190,7 +194,6 @@ namespace mutant_server
         {
             ProcessSend(e);
         }
-
         private void ProcessSend(SocketAsyncEventArgs e)
         {
             if (e.SocketError == SocketError.Success)
@@ -222,7 +225,7 @@ namespace mutant_server
             catch (Exception) { }
             lock(players)
             {
-                players.Remove(token.socket);
+                players.Remove(token.userID);
             }
             token.socket.Close();
 
@@ -258,8 +261,8 @@ namespace mutant_server
 
             Console.WriteLine("player moved to position {0} {1} {2}", packet.position.x, packet.position.y, packet.position.z);
 
-            players[token.socket].position = packet.position;
-            players[token.socket].rotation = packet.rotation;
+            players[token.userID].position = packet.position;
+            players[token.userID].rotation = packet.rotation;
             //packet.posVelocity.reset();
 
             PlayerStatusPacket sendPacket = new PlayerStatusPacket(token.writeEventArgs.Buffer, token.writeEventArgs.Offset);
@@ -270,6 +273,12 @@ namespace mutant_server
             {
                 ProcessSend(token.writeEventArgs);
             }
+        }
+
+        private void ProcessItemEvent(SocketAsyncEventArgs e)
+        {
+            PlayerMouseEventPacket packet = new PlayerMouseEventPacket(e.Buffer, e.Offset);
+
         }
 
         private void ProcessLogin(SocketAsyncEventArgs e)

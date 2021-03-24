@@ -1,4 +1,4 @@
-﻿using System.Net.Sockets;
+﻿using System.Collections.Generic;
 
 namespace mutant_server
 {
@@ -11,6 +11,7 @@ namespace mutant_server
         public MyVector3 rotation;
         public MyVector3 posVelocity;
         public MyVector3 rotVelocity;
+        public Dictionary<string, int> inventory;
         public Client(int id)
         {
             this.userID = id;

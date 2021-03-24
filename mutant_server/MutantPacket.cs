@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Numerics;
 using System.Text;
+using System.Runtime.InteropServices;
+using System.Collections.Generic;
 
 namespace mutant_server
 {
@@ -40,6 +42,10 @@ namespace mutant_server
             tmp.CopyTo(this.ary, this.offset);
             this.offset += len;
         }
+        protected void ConvertToByte(byte b)
+        {
+            this.ary[this.offset++] = b;
+        }
         protected void ConvertToByte(float f)
         {
             byte[] tmp = BitConverter.GetBytes(f);
@@ -52,6 +58,13 @@ namespace mutant_server
             ConvertToByte(vec.x);
             ConvertToByte(vec.y);
             ConvertToByte(vec.z);
+        }
+
+        protected void ConvertToByte(bool b)
+        {
+            byte[] tmp = BitConverter.GetBytes(b);
+            tmp.CopyTo(this.ary, this.offset);
+            this.offset += tmp.Length;
         }
         protected int ByteToInt()
         {
@@ -69,10 +82,23 @@ namespace mutant_server
 
             return tmp;
         }
+
+        protected bool ByteToBool()
+        {
+            bool tmp = BitConverter.ToBoolean(this.ary, this.offset);
+            this.offset += sizeof(bool);
+
+            return tmp;
+        }
         protected float ByteToFloat()
         {
             float tmp = BitConverter.ToSingle(this.ary, this.offset);
             this.offset += sizeof(float);
+            return tmp;
+        }
+        protected byte ByteToByte()
+        {
+            byte tmp = this.ary[this.offset++];
             return tmp;
         }
         protected MyVector3 ByteToVector()
@@ -99,13 +125,56 @@ namespace mutant_server
             this.time = ByteToInt();
         }
     }
+
+    //[StructLayout(LayoutKind.Sequential, Pack = 1)]
+    //public struct PlayerMouseEvent
+    //{
+    //    public string itemName;
+    //    public Dictionary<string, int> inventory;
+    //}
+    public class PlayerMouseEventPacket : MutantPacket
+    {
+        public string itemName;
+        public Dictionary<string, int> inventory;
+        public bool canGainItem;
+        public PlayerMouseEventPacket(byte[] ary, int offset) : base(ary, offset)
+        {
+        }
+        public override void ByteArrayToPacket()
+        {
+            base.ByteArrayToPacket();
+            itemName = ByteToString();
+            int cnt = ByteToInt();
+            for (int i = 0; i < cnt; ++i)
+            {
+                var tKey = ByteToString();
+                var tVal = ByteToInt();
+                inventory[tKey] = tVal;
+            }
+            canGainItem = ByteToBool();
+        }
+        public override void PacketToByteArray(byte type)
+        {
+            base.PacketToByteArray(type);
+            ConvertToByte(itemName);
+            ConvertToByte(inventory.Count);
+            foreach (var tuple in inventory)
+            {
+                ConvertToByte(tuple.Key);
+                ConvertToByte(tuple.Value);
+            }
+            ConvertToByte(canGainItem);
+        }
+    }
     public class PlayerStatusPacket : MutantPacket
     {
         public MyVector3 position;
         public MyVector3 rotation;
         public MyVector3 posVelocity;
         public MyVector3 rotVelocity;
-        public PlayerStatusPacket(byte[] ary, int offset):base(ary, offset)
+        public byte playerMotion;
+
+        public PlayerStatusPacket(byte[] ary, int offset) : base(ary, offset)
         {
         }
         public void Copy(PlayerStatusPacket packet)
@@ -118,6 +187,7 @@ namespace mutant_server
             this.rotation = packet.rotation;
             this.posVelocity = packet.posVelocity;
             this.rotVelocity = packet.rotVelocity;
+            this.playerMotion = packet.playerMotion;
         }
         public override void PacketToByteArray(byte type)
         {
@@ -127,6 +197,7 @@ namespace mutant_server
             ConvertToByte(this.rotation);
             ConvertToByte(this.posVelocity);
             ConvertToByte(this.rotVelocity);
+            ConvertToByte(this.playerMotion);
         }
         public override void ByteArrayToPacket()
         {
@@ -136,6 +207,7 @@ namespace mutant_server
             this.rotation = ByteToVector();
             this.posVelocity = ByteToVector();
             this.rotVelocity = ByteToVector();
+            this.playerMotion = ByteToByte();
         }
     }
     public class ChattingPakcet : MutantPacket
