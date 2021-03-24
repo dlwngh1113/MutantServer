@@ -246,24 +246,15 @@ namespace mutant_server
             PlayerStatusPacket packet = new PlayerStatusPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
             packet.ByteArrayToPacket();
 
-            //if(0 < packet.position.x + packet.posVelocity.x &&
-            //    packet.position.x + packet.posVelocity.x < 800)
-            //{
-                packet.position.x += packet.posVelocity.x;
-            //}
-            //if(0 < packet.position.z + packet.posVelocity.z &&
-            //    packet.position.z + packet.posVelocity.z < 600)
-            //{
-                packet.position.z += packet.posVelocity.z;
-            //}
+            packet.position.x += packet.posVelocity.x;
+            packet.position.z += packet.posVelocity.z;
             packet.rotation.x += packet.rotVelocity.x;
-            packet.rotation.y += packet.rotVelocity.y;  
+            packet.rotation.y += packet.rotVelocity.y;
 
             Console.WriteLine("player moved to position {0} {1} {2}", packet.position.x, packet.position.y, packet.position.z);
 
             players[token.userID].position = packet.position;
             players[token.userID].rotation = packet.rotation;
-            //packet.posVelocity.reset();
 
             PlayerStatusPacket sendPacket = new PlayerStatusPacket(token.writeEventArgs.Buffer, token.writeEventArgs.Offset);
             sendPacket.Copy(packet);
@@ -277,8 +268,35 @@ namespace mutant_server
 
         private void ProcessItemEvent(SocketAsyncEventArgs e)
         {
+            AsyncUserToken token = e.UserToken as AsyncUserToken;
             PlayerMouseEventPacket packet = new PlayerMouseEventPacket(e.Buffer, e.Offset);
+            var cnt = 0;
+            foreach (var tuple in players[packet.id].inventory)
+            {
+                cnt += tuple.Value;
+            }
+            PlayerMouseEventPacket sendPacket = new PlayerMouseEventPacket(token.writeEventArgs.Buffer, token.writeEventArgs.Offset);
+            if(cnt > 3)
+            {
+                sendPacket.id = packet.id;
+                sendPacket.itemName = packet.itemName;
+                sendPacket.canGainItem = false;
+                sendPacket.PacketToByteArray(MutantGlobal.STOC_ITEM_DENIED);
+            }
+            else
+            {
+                players[packet.id].inventory[packet.itemName]++;
+                sendPacket.id = packet.id;
+                sendPacket.itemName = packet.itemName;
+                sendPacket.canGainItem = true;
+                sendPacket.PacketToByteArray(MutantGlobal.STOC_ITEM_GAIN);
+            }
 
+            bool willRaiseEvent = token.socket.SendAsync(token.writeEventArgs);
+            if (!willRaiseEvent)
+            {
+                ProcessSend(token.writeEventArgs);
+            }
         }
 
         private void ProcessLogin(SocketAsyncEventArgs e)
@@ -295,7 +313,7 @@ namespace mutant_server
             Console.WriteLine("{0} client has {1} id, login request!",
                 packet.name, packet.id);
 
-            Random random = new Random();
+            //Random random = new Random();
             PlayerStatusPacket sendPacket = new PlayerStatusPacket(token.writeEventArgs.Buffer, token.writeEventArgs.Offset);
             sendPacket.id = m_numConnectedSockets;
             sendPacket.name = packet.name;
