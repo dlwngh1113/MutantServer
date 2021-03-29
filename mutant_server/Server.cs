@@ -258,7 +258,6 @@ namespace mutant_server
 
             PlayerStatusPacket sendPacket = new PlayerStatusPacket(token.writeEventArgs.Buffer, token.writeEventArgs.Offset);
             sendPacket.Copy(packet);
-            sendPacket.PacketToByteArray(MutantGlobal.STOC_STATUS_CHANGE);
             bool willRaise = token.socket.SendAsync(token.writeEventArgs);
             if(!willRaise)
             {
@@ -269,13 +268,13 @@ namespace mutant_server
         private void ProcessItemEvent(SocketAsyncEventArgs e)
         {
             AsyncUserToken token = e.UserToken as AsyncUserToken;
-            PlayerMouseEventPacket packet = new PlayerMouseEventPacket(e.Buffer, e.Offset);
+            ItemEventPacket packet = new ItemEventPacket(e.Buffer, e.Offset);
             var cnt = 0;
             foreach (var tuple in players[packet.id].inventory)
             {
                 cnt += tuple.Value;
             }
-            PlayerMouseEventPacket sendPacket = new PlayerMouseEventPacket(token.writeEventArgs.Buffer, token.writeEventArgs.Offset);
+            ItemEventPacket sendPacket = new ItemEventPacket(token.writeEventArgs.Buffer, token.writeEventArgs.Offset);
             if(cnt > 3)
             {
                 sendPacket.id = packet.id;
@@ -349,9 +348,9 @@ namespace mutant_server
         {
             AsyncUserToken token = (AsyncUserToken)e.UserToken;
             //클라이언트에서 온 메세지를 모든 클라이언트에 전송
-            byte[] tmp = e.Buffer;
-            tmp[e.Offset] = MutantGlobal.STOC_CHAT;
-            token.writeEventArgs.SetBuffer(token.writeEventArgs.Offset, token.writeEventArgs.BytesTransferred);
+            ChattingPakcet recvPacket = new ChattingPakcet(e.Buffer, e.Offset);
+            ChattingPakcet sendPacket = new ChattingPakcet(token.writeEventArgs.Buffer, token.writeEventArgs.Offset);
+            sendPacket.Copy(recvPacket);
 
             bool willRaise = token.socket.SendAsync(token.writeEventArgs);
             if (!willRaise)
@@ -364,6 +363,9 @@ namespace mutant_server
         {
             AsyncUserToken token = (AsyncUserToken)e.UserToken;
             //현재까지의 게임 정보를 DB에 업데이트 후 접속 종료
+
+            //지금 게임에 존재하는 유저들에게 해당 유저가 게임을 종료했음을 알림
+            //지금 게임을 같이 하고 있는 유저들을 어떻게 구분할 것인가?
             CloseClientSocket(e);
         }
     }

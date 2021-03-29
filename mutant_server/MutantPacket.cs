@@ -20,9 +20,7 @@ namespace mutant_server
         }
         public void Copy(MutantPacket packet)
         {
-            this.name = packet.name;
-            this.id = packet.id;
-            this.time = packet.time;
+            packet.ary.CopyTo(this.ary, 0);
         }
         protected void ConvertToByte(int i)
         {
@@ -132,13 +130,18 @@ namespace mutant_server
     //    public string itemName;
     //    public Dictionary<string, int> inventory;
     //}
-    public class PlayerMouseEventPacket : MutantPacket
+    public class ItemEventPacket : MutantPacket
     {
         public string itemName;
         public Dictionary<string, int> inventory;
         public bool canGainItem;
-        public PlayerMouseEventPacket(byte[] ary, int offset) : base(ary, offset)
+        public ItemEventPacket(byte[] ary, int offset) : base(ary, offset)
         {
+        }
+        public void Copy(ItemEventPacket packet, byte type = MutantGlobal.STOC_ITEM_GAIN)
+        {
+            packet.ary.CopyTo(this.ary, 0);
+            this.ary[0] = type;
         }
         public override void ByteArrayToPacket()
         {
@@ -177,17 +180,10 @@ namespace mutant_server
         public PlayerStatusPacket(byte[] ary, int offset) : base(ary, offset)
         {
         }
-        public void Copy(PlayerStatusPacket packet)
+        public void Copy(PlayerStatusPacket packet, byte type = MutantGlobal.STOC_STATUS_CHANGE)
         {
-            this.name = packet.name;
-            this.id = packet.id;
-            this.time = packet.time;
-
-            this.position = packet.position;
-            this.rotation = packet.rotation;
-            this.posVelocity = packet.posVelocity;
-            this.rotVelocity = packet.rotVelocity;
-            this.playerMotion = packet.playerMotion;
+            packet.ary.CopyTo(this.ary, 0);
+            this.ary[0] = type;
         }
         public override void PacketToByteArray(byte type)
         {
@@ -216,6 +212,11 @@ namespace mutant_server
         public ChattingPakcet(byte[] ary, int offset) : base(ary, offset)
         {
 
+        }
+        public void Copy(ChattingPakcet packet, byte type = MutantGlobal.STOC_CHAT)
+        {
+            packet.ary.CopyTo(this.ary, 0);
+            this.ary[0] = type;
         }
         public override void PacketToByteArray(byte type)
         {
