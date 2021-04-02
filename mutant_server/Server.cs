@@ -252,10 +252,12 @@ namespace mutant_server
             packet.rotation.y += packet.rotVelocity.y;
 
             Console.WriteLine("player moved to position {0} {1} {2}", packet.position.x, packet.position.y, packet.position.z);
+            Console.WriteLine("player velocity of position {0} {1} {2}", packet.posVelocity.x, packet.posVelocity.y, packet.posVelocity.z);
 
             players[token.userID].position = packet.position;
             players[token.userID].rotation = packet.rotation;
 
+            packet.PacketToByteArray(MutantGlobal.STOC_STATUS_CHANGE);
             PlayerStatusPacket sendPacket = new PlayerStatusPacket(token.writeEventArgs.Buffer, token.writeEventArgs.Offset);
             sendPacket.Copy(packet);
             bool willRaise = token.socket.SendAsync(token.writeEventArgs);
@@ -270,11 +272,13 @@ namespace mutant_server
             AsyncUserToken token = e.UserToken as AsyncUserToken;
             ItemEventPacket packet = new ItemEventPacket(e.Buffer, e.Offset);
             var cnt = 0;
+            //인벤토리에 존재하는 아이템의 개수 구하기
             foreach (var tuple in players[packet.id].inventory)
             {
                 cnt += tuple.Value;
             }
             ItemEventPacket sendPacket = new ItemEventPacket(token.writeEventArgs.Buffer, token.writeEventArgs.Offset);
+            //만약 아이템의 총 개수가 3개보다 많다면 획득하지 못함
             if(cnt > 3)
             {
                 sendPacket.id = packet.id;
@@ -282,6 +286,7 @@ namespace mutant_server
                 sendPacket.canGainItem = false;
                 sendPacket.PacketToByteArray(MutantGlobal.STOC_ITEM_DENIED);
             }
+            //그렇지 않은 경우는 아이템 획득 가능
             else
             {
                 players[packet.id].inventory[packet.itemName]++;
@@ -314,7 +319,7 @@ namespace mutant_server
 
             //Random random = new Random();
             PlayerStatusPacket sendPacket = new PlayerStatusPacket(token.writeEventArgs.Buffer, token.writeEventArgs.Offset);
-            sendPacket.id = m_numConnectedSockets;
+            sendPacket.id = packet.id;
             sendPacket.name = packet.name;
             sendPacket.time = packet.time;
             sendPacket.position.x = 0;
@@ -352,6 +357,7 @@ namespace mutant_server
             ChattingPakcet sendPacket = new ChattingPakcet(token.writeEventArgs.Buffer, token.writeEventArgs.Offset);
             sendPacket.Copy(recvPacket);
 
+            //같은 게임을 진행중인 모든 클라이언트에게 전송해야 한다.
             bool willRaise = token.socket.SendAsync(token.writeEventArgs);
             if (!willRaise)
             {
