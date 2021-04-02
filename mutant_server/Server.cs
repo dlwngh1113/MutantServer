@@ -252,7 +252,7 @@ namespace mutant_server
             packet.rotation.y += packet.rotVelocity.y;
 
             Console.WriteLine("player moved to position {0} {1} {2}", packet.position.x, packet.position.y, packet.position.z);
-            Console.WriteLine("player velocity of position {0} {1} {2}", packet.posVelocity.x, packet.posVelocity.y, packet.posVelocity.z);
+            Console.WriteLine("player rotated to rotation {0} {1} {2}", packet.rotation.x, packet.rotation.y, packet.rotation.z);
 
             players[token.userID].position = packet.position;
             players[token.userID].rotation = packet.rotation;
@@ -322,12 +322,12 @@ namespace mutant_server
             sendPacket.id = packet.id;
             sendPacket.name = packet.name;
             sendPacket.time = packet.time;
-            sendPacket.position.x = 0;
-            sendPacket.position.y = 0;
-            sendPacket.position.z = 0;
-            sendPacket.rotation.x = 0;
-            sendPacket.rotation.y = 0;
-            sendPacket.rotation.z = 0;
+            //sendPacket.position.x = 0;
+            //sendPacket.position.y = 0;
+            //sendPacket.position.z = 0;
+            //sendPacket.rotation.x = 0;
+            //sendPacket.rotation.y = 0;
+            //sendPacket.rotation.z = 0;
             sendPacket.PacketToByteArray(MutantGlobal.STOC_LOGIN_OK);
 
             bool willRaise = token.socket.SendAsync(token.writeEventArgs);
