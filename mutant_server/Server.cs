@@ -127,20 +127,13 @@ namespace mutant_server
         {
             // Get the socket for the accepted client connection and put it into the
             //ReadEventArg object user token
-            Client player = new Client(MutantGlobal.id);
             Interlocked.Increment(ref MutantGlobal.id);
 
             AsyncUserToken token = recv_event.UserToken as AsyncUserToken;
             token.socket = socket;
-            token.userID = player.userID;
+            token.userID = 0;
             token.readEventArgs = recv_event;
             token.writeEventArgs = send_event;
-            player.asyncUserToken = token;
-
-            lock (players)
-            {
-                players.Add(player.userID, player);
-            }
 
             // As soon as the client is connected, post a receive to the connection
             bool willRaiseEvent = socket.ReceiveAsync(recv_event);
@@ -246,20 +239,37 @@ namespace mutant_server
             PlayerStatusPacket packet = new PlayerStatusPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
             packet.ByteArrayToPacket();
 
-            packet.position.x += packet.posVelocity.x;
-            packet.position.z += packet.posVelocity.z;
+            if (packet.posVelocity.size > Double.Epsilon)
+            {
+                packet.position.x += packet.posVelocity.x;
+                packet.position.y += packet.posVelocity.y;
+                packet.position.z += packet.posVelocity.z;
+            }
             packet.rotation.x += packet.rotVelocity.x;
             packet.rotation.y += packet.rotVelocity.y;
+            packet.rotation.z += packet.rotVelocity.z;
 
-            Console.WriteLine("player moved to position {0} {1} {2}", packet.position.x, packet.position.y, packet.position.z);
-            Console.WriteLine("player rotated to rotation {0} {1} {2}", packet.rotation.x, packet.rotation.y, packet.rotation.z);
+            //players[token.userID].position = packet.position;
+            //players[token.userID].rotation = packet.rotation;
+            
 
-            players[token.userID].position = packet.position;
-            players[token.userID].rotation = packet.rotation;
-
-            packet.PacketToByteArray(MutantGlobal.STOC_STATUS_CHANGE);
             PlayerStatusPacket sendPacket = new PlayerStatusPacket(token.writeEventArgs.Buffer, token.writeEventArgs.Offset);
-            sendPacket.Copy(packet);
+            sendPacket.id = packet.id;
+            sendPacket.name = packet.name;
+            sendPacket.time = MutantGlobal.GetCurrentMilliseconds();
+            sendPacket.position.x = packet.position.x;
+            sendPacket.position.y = packet.position.y;
+            sendPacket.position.z = packet.position.z;
+
+            sendPacket.rotation.x = packet.rotation.x;
+            sendPacket.rotation.y = packet.rotation.y;
+            sendPacket.rotation.z = packet.rotation.z;
+
+            //Console.WriteLine("player moved to position {0} {1} {2}", sendPacket.position.x, sendPacket.position.y, sendPacket.position.z);
+            //Console.WriteLine("player rotated to rotation {0} {1} {2}", sendPacket.rotation.x, sendPacket.rotation.y, sendPacket.rotation.z);
+
+            sendPacket.PacketToByteArray(MutantGlobal.STOC_STATUS_CHANGE);
+
             bool willRaise = token.socket.SendAsync(token.writeEventArgs);
             if(!willRaise)
             {
@@ -271,17 +281,22 @@ namespace mutant_server
         {
             AsyncUserToken token = e.UserToken as AsyncUserToken;
             ItemEventPacket packet = new ItemEventPacket(e.Buffer, e.Offset);
+            packet.ByteArrayToPacket();
             var cnt = 0;
             //인벤토리에 존재하는 아이템의 개수 구하기
             foreach (var tuple in players[packet.id].inventory)
             {
                 cnt += tuple.Value;
             }
+
             ItemEventPacket sendPacket = new ItemEventPacket(token.writeEventArgs.Buffer, token.writeEventArgs.Offset);
+            sendPacket.inventory = packet.inventory;
+
             //만약 아이템의 총 개수가 3개보다 많다면 획득하지 못함
             if(cnt > 3)
             {
                 sendPacket.id = packet.id;
+                sendPacket.name = packet.name;
                 sendPacket.itemName = packet.itemName;
                 sendPacket.canGainItem = false;
                 sendPacket.PacketToByteArray(MutantGlobal.STOC_ITEM_DENIED);
@@ -289,12 +304,27 @@ namespace mutant_server
             //그렇지 않은 경우는 아이템 획득 가능
             else
             {
-                players[packet.id].inventory[packet.itemName]++;
+                //SendPacket.inventory Null Reference Exception
+                if(sendPacket.inventory.ContainsKey(packet.itemName))
+                {
+                    sendPacket.inventory[packet.itemName] += 1;
+                }
+                else
+                {
+                    sendPacket.inventory.Add(packet.itemName, 1);
+                }
                 sendPacket.id = packet.id;
+                sendPacket.name = packet.name;
                 sendPacket.itemName = packet.itemName;
                 sendPacket.canGainItem = true;
                 sendPacket.PacketToByteArray(MutantGlobal.STOC_ITEM_GAIN);
             }
+
+            foreach (var tuple in sendPacket.inventory)
+            {
+                Console.Write("key - {0}, value - {1}", tuple.Key, tuple.Value);
+            }
+            Console.WriteLine("");
 
             bool willRaiseEvent = token.socket.SendAsync(token.writeEventArgs);
             if (!willRaiseEvent)
@@ -316,6 +346,13 @@ namespace mutant_server
             packet.ByteArrayToPacket();
             Console.WriteLine("{0} client has {1} id, login request!",
                 packet.name, packet.id);
+
+            Client player = new Client(packet.id);
+            player.asyncUserToken = token;
+            lock (players)
+            {
+                players.Add(player.userID, player);
+            }
 
             //Random random = new Random();
             PlayerStatusPacket sendPacket = new PlayerStatusPacket(token.writeEventArgs.Buffer, token.writeEventArgs.Offset);

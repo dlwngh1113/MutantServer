@@ -20,7 +20,7 @@ namespace mutant_server
         }
         public void Copy(MutantPacket packet)
         {
-            packet.ary.CopyTo(this.ary, 0);
+            Array.Copy(packet.ary, packet.offset, ary, offset, MutantGlobal.BUF_SIZE);
         }
         protected void ConvertToByte(int i)
         {
@@ -140,19 +140,20 @@ namespace mutant_server
         }
         public void Copy(ItemEventPacket packet, byte type = MutantGlobal.STOC_ITEM_GAIN)
         {
-            packet.ary.CopyTo(this.ary, 0);
-            this.ary[0] = type;
+            ary[offset] = type;
+            Array.Copy(packet.ary, packet.offset, ary, offset, MutantGlobal.BUF_SIZE);
         }
         public override void ByteArrayToPacket()
         {
             base.ByteArrayToPacket();
             itemName = ByteToString();
             int cnt = ByteToInt();
+            inventory = new Dictionary<string, int>();
             for (int i = 0; i < cnt; ++i)
             {
                 var tKey = ByteToString();
                 var tVal = ByteToInt();
-                inventory[tKey] = tVal;
+                inventory.Add(tKey, tVal);
             }
             canGainItem = ByteToBool();
         }
@@ -182,8 +183,8 @@ namespace mutant_server
         }
         public void Copy(PlayerStatusPacket packet, byte type = MutantGlobal.STOC_STATUS_CHANGE)
         {
-            packet.ary.CopyTo(this.ary, 0);
-            this.ary[0] = type;
+            ary[offset] = type;
+            Array.Copy(packet.ary, packet.offset, ary, offset, MutantGlobal.BUF_SIZE);
         }
         public override void PacketToByteArray(byte type)
         {
@@ -215,8 +216,8 @@ namespace mutant_server
         }
         public void Copy(ChattingPakcet packet, byte type = MutantGlobal.STOC_CHAT)
         {
-            packet.ary.CopyTo(this.ary, 0);
-            this.ary[0] = type;
+            ary[offset] = type;
+            Array.Copy(packet.ary, packet.offset, ary, offset, MutantGlobal.BUF_SIZE);
         }
         public override void PacketToByteArray(byte type)
         {
