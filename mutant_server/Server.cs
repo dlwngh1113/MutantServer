@@ -127,7 +127,6 @@ namespace mutant_server
         {
             // Get the socket for the accepted client connection and put it into the
             //ReadEventArg object user token
-            Interlocked.Increment(ref MutantGlobal.id);
 
             AsyncUserToken token = recv_event.UserToken as AsyncUserToken;
             token.socket = socket;
@@ -239,12 +238,9 @@ namespace mutant_server
             PlayerStatusPacket packet = new PlayerStatusPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
             packet.ByteArrayToPacket();
 
-            if (packet.posVelocity.size > Double.Epsilon)
-            {
-                packet.position.x += packet.posVelocity.x;
-                packet.position.y += packet.posVelocity.y;
-                packet.position.z += packet.posVelocity.z;
-            }
+            packet.position.x += packet.posVelocity.x;
+            packet.position.y += packet.posVelocity.y;
+            packet.position.z += packet.posVelocity.z;
             packet.rotation.x += packet.rotVelocity.x;
             packet.rotation.y += packet.rotVelocity.y;
             packet.rotation.z += packet.rotVelocity.z;
@@ -347,7 +343,8 @@ namespace mutant_server
             Console.WriteLine("{0} client has {1} id, login request!",
                 packet.name, packet.id);
 
-            Client player = new Client(packet.id);
+            Interlocked.Increment(ref MutantGlobal.id);
+            Client player = new Client(MutantGlobal.id);
             player.asyncUserToken = token;
             lock (players)
             {
@@ -356,7 +353,7 @@ namespace mutant_server
 
             //Random random = new Random();
             PlayerStatusPacket sendPacket = new PlayerStatusPacket(token.writeEventArgs.Buffer, token.writeEventArgs.Offset);
-            sendPacket.id = packet.id;
+            sendPacket.id = MutantGlobal.id;
             sendPacket.name = packet.name;
             sendPacket.time = packet.time;
             //sendPacket.position.x = 0;
