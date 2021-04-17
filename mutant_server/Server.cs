@@ -192,10 +192,17 @@ namespace mutant_server
             {
                 AsyncUserToken token = (AsyncUserToken)e.UserToken;
 
-                bool willRaiseEvent = token.socket.ReceiveAsync(token.readEventArgs);
-                if (!willRaiseEvent)
+                try
                 {
-                    ProcessReceive(token.readEventArgs);
+                    bool willRaiseEvent = token.socket.ReceiveAsync(token.readEventArgs);
+                    if (!willRaiseEvent)
+                    {
+                        ProcessReceive(token.readEventArgs);
+                    }
+                }
+                catch(Exception ex)
+                {
+                    Console.WriteLine(ex.ToString());
                 }
             }
             else
@@ -343,16 +350,25 @@ namespace mutant_server
             Console.WriteLine("{0} client has {1} id, login request!",
                 packet.name, packet.id);
 
-            Interlocked.Increment(ref MutantGlobal.id);
-            Client player = new Client(MutantGlobal.id);
-            player.asyncUserToken = token;
-            lock (players)
+            PlayerStatusPacket sendPacket;
+            bool willRaise;
+            foreach (var p in players)
             {
-                players.Add(player.userID, player);
-            }
+                AsyncUserToken sendToken = p.Value.asyncUserToken as AsyncUserToken;
+                sendPacket = new PlayerStatusPacket(sendToken.writeEventArgs.Buffer, sendToken.writeEventArgs.Offset);
+                sendPacket.id = MutantGlobal.id;
+                sendPacket.name = packet.name;
+                sendPacket.time = packet.time;
+                sendPacket.PacketToByteArray(MutantGlobal.STOC_PLAYER_ENTER);
 
-            //Random random = new Random();
-            PlayerStatusPacket sendPacket = new PlayerStatusPacket(token.writeEventArgs.Buffer, token.writeEventArgs.Offset);
+                willRaise = sendToken.socket.SendAsync(sendToken.writeEventArgs);
+                if (!willRaise)
+                {
+                    ProcessSend(sendToken.writeEventArgs);
+                }
+            }
+            
+            sendPacket = new PlayerStatusPacket(token.writeEventArgs.Buffer, token.writeEventArgs.Offset);
             sendPacket.id = MutantGlobal.id;
             sendPacket.name = packet.name;
             sendPacket.time = packet.time;
@@ -364,10 +380,18 @@ namespace mutant_server
             //sendPacket.rotation.z = 0;
             sendPacket.PacketToByteArray(MutantGlobal.STOC_LOGIN_OK);
 
-            bool willRaise = token.socket.SendAsync(token.writeEventArgs);
+            willRaise = token.socket.SendAsync(token.writeEventArgs);
             if (!willRaise)
             {
                 ProcessSend(token.writeEventArgs);
+            }
+
+            Interlocked.Increment(ref MutantGlobal.id);
+            Client player = new Client(MutantGlobal.id);
+            player.asyncUserToken = token;
+            lock (players)
+            {
+                players.Add(player.userID, player);
             }
         }
 
