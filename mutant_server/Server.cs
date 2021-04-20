@@ -336,26 +336,14 @@ namespace mutant_server
             //login fail과 이미
             MutantPacket packet = new MutantPacket(e.Buffer, e.Offset);
             packet.ByteArrayToPacket();
-            Console.WriteLine("{0} client has {1} id, login request!",
-                packet.name, packet.id);
 
-            PlayerStatusPacket sendPacket;
-            bool willRaise;
-            foreach (var p in players)
+            Interlocked.Increment(ref MutantGlobal.id);
+            lock(players)
             {
-                AsyncUserToken sendToken = p.Value.asyncUserToken as AsyncUserToken;
-                sendPacket = new PlayerStatusPacket(sendToken.writeEventArgs.Buffer, sendToken.writeEventArgs.Offset);
-                sendPacket.id = MutantGlobal.id;
-                sendPacket.name = packet.name;
-                sendPacket.time = packet.time;
-                sendPacket.PacketToByteArray(MutantGlobal.STOC_PLAYER_ENTER);
-
-                willRaise = sendToken.socket.SendAsync(sendToken.writeEventArgs);
-                if (!willRaise)
-                {
-                    ProcessSend(sendToken.writeEventArgs);
-                }
+                players.Add(MutantGlobal.id, new Client(MutantGlobal.id));
             }
+            Console.WriteLine("{0} client has {1} id, login request!",
+                packet.name, MutantGlobal.id);
 
             PlayerStatusPacket sendPacket = new PlayerStatusPacket(token.writeEventArgs.Buffer, token.writeEventArgs.Offset);
             sendPacket.id = MutantGlobal.id;
@@ -366,7 +354,7 @@ namespace mutant_server
             sendPacket.position.z = 42.68918f;
             sendPacket.PacketToByteArray(MutantGlobal.STOC_LOGIN_OK);
 
-            willRaise = token.socket.SendAsync(token.writeEventArgs);
+            bool willRaise = token.socket.SendAsync(token.writeEventArgs);
             if (!willRaise)
             {
                 ProcessSend(token.writeEventArgs);
