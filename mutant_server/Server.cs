@@ -338,9 +338,11 @@ namespace mutant_server
             packet.ByteArrayToPacket();
 
             Interlocked.Increment(ref MutantGlobal.id);
+            Client c = new Client(MutantGlobal.id);
+            c.asyncUserToken = token;
             lock(players)
             {
-                players.Add(MutantGlobal.id, new Client(MutantGlobal.id));
+                players.Add(MutantGlobal.id, c);
             }
             Console.WriteLine("{0} client has {1} id, login request!",
                 packet.name, MutantGlobal.id);
@@ -352,24 +354,28 @@ namespace mutant_server
             sendPacket.position.x = 95.09579f;
             sendPacket.position.y = 4.16f;
             sendPacket.position.z = 42.68918f;
+
+            foreach (var tuple in players)
+            {
+                if (tuple.Key != packet.id)
+                {
+                    var tmpToken = tuple.Value.asyncUserToken;
+                    PlayerStatusPacket p = new PlayerStatusPacket(tmpToken.writeEventArgs.Buffer, tmpToken.writeEventArgs.Offset);
+                    p.Copy(sendPacket, MutantGlobal.STOC_PLAYER_ENTER);
+                    bool willRaiseEvent = tmpToken.socket.SendAsync(tmpToken.writeEventArgs);
+                    if (!willRaiseEvent)
+                    {
+                        ProcessSend(tmpToken.writeEventArgs);
+                    }
+                }
+            }
+
             sendPacket.PacketToByteArray(MutantGlobal.STOC_LOGIN_OK);
 
             bool willRaise = token.socket.SendAsync(token.writeEventArgs);
             if (!willRaise)
             {
                 ProcessSend(token.writeEventArgs);
-            }
-
-            foreach (var tuple in players)
-            {
-                var tmpToken = tuple.Value.asyncUserToken;
-                PlayerStatusPacket p = new PlayerStatusPacket(tmpToken.writeEventArgs.Buffer, tmpToken.writeEventArgs.Offset);
-                p.Copy(sendPacket, MutantGlobal.STOC_PLAYER_ENTER);
-                bool willRaiseEvent = tuple.Value.asyncUserToken.socket.SendAsync(tmpToken.writeEventArgs);
-                if(!willRaiseEvent)
-                {
-                    ProcessSend(tmpToken.writeEventArgs);
-                }
             }
         }
 
