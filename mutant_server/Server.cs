@@ -238,17 +238,6 @@ namespace mutant_server
             PlayerStatusPacket packet = new PlayerStatusPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
             packet.ByteArrayToPacket();
 
-            packet.position.x += packet.posVelocity.x;
-            packet.position.y += packet.posVelocity.y;
-            packet.position.z += packet.posVelocity.z;
-            packet.rotation.x += packet.rotVelocity.x;
-            packet.rotation.y += packet.rotVelocity.y;
-            packet.rotation.z += packet.rotVelocity.z;
-
-            //players[token.userID].position = packet.position;
-            //players[token.userID].rotation = packet.rotation;
-            
-
             PlayerStatusPacket sendPacket = new PlayerStatusPacket(token.writeEventArgs.Buffer, token.writeEventArgs.Offset);
             sendPacket.id = packet.id;
             sendPacket.name = packet.name;
@@ -351,23 +340,31 @@ namespace mutant_server
                 players.Add(player.userID, player);
             }
 
-            //Random random = new Random();
             PlayerStatusPacket sendPacket = new PlayerStatusPacket(token.writeEventArgs.Buffer, token.writeEventArgs.Offset);
             sendPacket.id = MutantGlobal.id;
             sendPacket.name = packet.name;
             sendPacket.time = packet.time;
-            //sendPacket.position.x = 0;
-            //sendPacket.position.y = 0;
-            //sendPacket.position.z = 0;
-            //sendPacket.rotation.x = 0;
-            //sendPacket.rotation.y = 0;
-            //sendPacket.rotation.z = 0;
+            sendPacket.position.x = 95.09579f;
+            sendPacket.position.y = 4.16f;
+            sendPacket.position.z = 42.68918f;
             sendPacket.PacketToByteArray(MutantGlobal.STOC_LOGIN_OK);
 
             bool willRaise = token.socket.SendAsync(token.writeEventArgs);
             if (!willRaise)
             {
                 ProcessSend(token.writeEventArgs);
+            }
+
+            foreach (var tuple in players)
+            {
+                var tmpToken = tuple.Value.asyncUserToken;
+                PlayerStatusPacket p = new PlayerStatusPacket(tmpToken.writeEventArgs.Buffer, tmpToken.writeEventArgs.Offset);
+                p.Copy(sendPacket, MutantGlobal.STOC_PLAYER_ENTER);
+                bool willRaiseEvent = tuple.Value.asyncUserToken.socket.SendAsync(tmpToken.writeEventArgs);
+                if(!willRaiseEvent)
+                {
+                    ProcessSend(tmpToken.writeEventArgs);
+                }
             }
         }
 

@@ -174,8 +174,6 @@ namespace mutant_server
     {
         public MyVector3 position;
         public MyVector3 rotation;
-        public MyVector3 posVelocity;
-        public MyVector3 rotVelocity;
         public byte playerMotion;
 
         public PlayerStatusPacket(byte[] ary, int offset) : base(ary, offset)
@@ -192,8 +190,6 @@ namespace mutant_server
 
             ConvertToByte(this.position);
             ConvertToByte(this.rotation);
-            ConvertToByte(this.posVelocity);
-            ConvertToByte(this.rotVelocity);
             ConvertToByte(this.playerMotion);
         }
         public override void ByteArrayToPacket()
@@ -202,8 +198,6 @@ namespace mutant_server
 
             this.position = ByteToVector();
             this.rotation = ByteToVector();
-            this.posVelocity = ByteToVector();
-            this.rotVelocity = ByteToVector();
             this.playerMotion = ByteToByte();
         }
     }
