@@ -218,7 +218,7 @@ namespace mutant_server
             // close the socket associated with the client
             try
             {
-                token.socket.Shutdown(SocketShutdown.Send);
+                token.socket.Shutdown(SocketShutdown.Both);
             }
             // throws if client process has already closed
             catch (Exception) { }
@@ -245,27 +245,30 @@ namespace mutant_server
             PlayerStatusPacket packet = new PlayerStatusPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
             packet.ByteArrayToPacket();
 
-            PlayerStatusPacket sendPacket = new PlayerStatusPacket(token.writeEventArgs.Buffer, token.writeEventArgs.Offset);
-            sendPacket.id = packet.id;
-            sendPacket.name = packet.name;
-            sendPacket.time = MutantGlobal.GetCurrentMilliseconds();
-            sendPacket.position.x = packet.position.x;
-            sendPacket.position.y = packet.position.y;
-            sendPacket.position.z = packet.position.z;
+            players[packet.id].position = packet.position;
+            players[packet.id].rotation = packet.rotation;
 
-            sendPacket.rotation.x = packet.rotation.x;
-            sendPacket.rotation.y = packet.rotation.y;
-            sendPacket.rotation.z = packet.rotation.z;
-
-            //Console.WriteLine("player moved to position {0} {1} {2}", sendPacket.position.x, sendPacket.position.y, sendPacket.position.z);
-            //Console.WriteLine("player rotated to rotation {0} {1} {2}", sendPacket.rotation.x, sendPacket.rotation.y, sendPacket.rotation.z);
-
-            sendPacket.PacketToByteArray(MutantGlobal.STOC_STATUS_CHANGE);
-
-            bool willRaise = token.socket.SendAsync(token.writeEventArgs);
-            if(!willRaise)
+            foreach(var tuple in players)
             {
-                ProcessSend(token.writeEventArgs);
+                var tmpToken = tuple.Value.asyncUserToken;
+                PlayerStatusPacket sendPacket = new PlayerStatusPacket(tmpToken.writeEventArgs.Buffer, tmpToken.writeEventArgs.Offset);
+                sendPacket.id = packet.id;
+                sendPacket.name = packet.name;
+                sendPacket.time = MutantGlobal.GetCurrentMilliseconds();
+                sendPacket.position = players[packet.id].position;
+                sendPacket.rotation = players[packet.id].rotation;
+
+                sendPacket.PacketToByteArray(MutantGlobal.STOC_STATUS_CHANGE);
+
+                try
+                {
+                    bool willRaise = token.socket.SendAsync(tmpToken.writeEventArgs);
+                    if (!willRaise)
+                    {
+                        ProcessSend(tmpToken.writeEventArgs);
+                    }
+                }
+                catch (Exception ex) { }
             }
         }
 
@@ -325,6 +328,25 @@ namespace mutant_server
             }
         }
 
+        private Client InitClient(AsyncUserToken token)
+        {
+            Interlocked.Increment(ref MutantGlobal.id);
+            token.userID = MutantGlobal.id;
+
+            Client client = new Client(MutantGlobal.id);
+            client.userName = token.name;
+            client.position = new MyVector3(95.09579f, 4.16f, 42.68918f);
+            client.rotation = new MyVector3();
+            client.asyncUserToken = token;
+
+            lock (players)
+            {
+                players.Add(MutantGlobal.id, client);
+            }
+
+            return client;
+        }
+
         private void ProcessLogin(SocketAsyncEventArgs e)
         {
             AsyncUserToken token = (AsyncUserToken)e.UserToken;
@@ -337,38 +359,15 @@ namespace mutant_server
             MutantPacket packet = new MutantPacket(e.Buffer, e.Offset);
             packet.ByteArrayToPacket();
 
-            Interlocked.Increment(ref MutantGlobal.id);
-            Client c = new Client(MutantGlobal.id);
-            c.asyncUserToken = token;
-            lock(players)
-            {
-                players.Add(MutantGlobal.id, c);
-            }
-            Console.WriteLine("{0} client has {1} id, login request!",
-                packet.name, MutantGlobal.id);
+            token.name = packet.name;
+            Client c = InitClient(token);
+            Console.WriteLine("{0} client has {1} id, login request!", packet.name, MutantGlobal.id);
 
             PlayerStatusPacket sendPacket = new PlayerStatusPacket(token.writeEventArgs.Buffer, token.writeEventArgs.Offset);
             sendPacket.id = MutantGlobal.id;
             sendPacket.name = packet.name;
             sendPacket.time = packet.time;
-            sendPacket.position.x = 95.09579f;
-            sendPacket.position.y = 4.16f;
-            sendPacket.position.z = 42.68918f;
-
-            foreach (var tuple in players)
-            {
-                if (tuple.Key != packet.id)
-                {
-                    var tmpToken = tuple.Value.asyncUserToken;
-                    PlayerStatusPacket p = new PlayerStatusPacket(tmpToken.writeEventArgs.Buffer, tmpToken.writeEventArgs.Offset);
-                    p.Copy(sendPacket, MutantGlobal.STOC_PLAYER_ENTER);
-                    bool willRaiseEvent = tmpToken.socket.SendAsync(tmpToken.writeEventArgs);
-                    if (!willRaiseEvent)
-                    {
-                        ProcessSend(tmpToken.writeEventArgs);
-                    }
-                }
-            }
+            sendPacket.position = c.position;
 
             sendPacket.PacketToByteArray(MutantGlobal.STOC_LOGIN_OK);
 
@@ -376,6 +375,52 @@ namespace mutant_server
             if (!willRaise)
             {
                 ProcessSend(token.writeEventArgs);
+            }
+
+            foreach (var tuple in players)
+            {
+                if (tuple.Key != sendPacket.id)
+                {
+                    var tmpToken = tuple.Value.asyncUserToken;
+
+                    //기존의 플레이어에게 새로운 플레이어 정보 전달
+                    PlayerStatusPacket curPacket = new PlayerStatusPacket(tmpToken.writeEventArgs.Buffer, tmpToken.writeEventArgs.Offset);
+                    curPacket.id = sendPacket.id;
+                    curPacket.name = sendPacket.name;
+                    curPacket.time = sendPacket.time;
+                    curPacket.position = players[sendPacket.id].position;
+
+                    curPacket.PacketToByteArray(MutantGlobal.STOC_PLAYER_ENTER);
+
+                    try
+                    {
+                        bool willRaiseEvent = tmpToken.socket.SendAsync(tmpToken.writeEventArgs);
+                        if (!willRaiseEvent)
+                        {
+                            ProcessSend(tmpToken.writeEventArgs);
+                        }
+                    }
+                    catch (Exception ex) { }
+
+                    //새로운 플레이어에게 기존의 플레이어 정보 전달
+                    PlayerStatusPacket otherPacket = new PlayerStatusPacket(token.writeEventArgs.Buffer, token.writeEventArgs.Offset);
+                    otherPacket.id = tuple.Key;
+                    otherPacket.name = tuple.Value.userName;
+                    otherPacket.position = tuple.Value.position;
+                    otherPacket.rotation = tuple.Value.rotation;
+
+                    otherPacket.PacketToByteArray(MutantGlobal.STOC_PLAYER_ENTER);
+
+                    try
+                    {
+                        bool willRaiseEvent = token.socket.SendAsync(token.writeEventArgs);
+                        if (!willRaiseEvent)
+                        {
+                            ProcessSend(token.writeEventArgs);
+                        }
+                    }
+                    catch (Exception ex) { }
+                }
             }
         }
 
