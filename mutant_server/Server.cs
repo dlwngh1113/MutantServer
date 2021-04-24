@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -19,7 +20,7 @@ namespace mutant_server
         SocketAsyncEventArgsPool m_writePool;
         int m_numConnectedSockets;      // the total number of clients connected to the server
 
-        Dictionary<int, Client> players;
+        ConcurrentDictionary<int, Client> players;
 
         // Create an uninitialized server instance.
         // To start the server listening for connection requests
@@ -32,7 +33,7 @@ namespace mutant_server
             m_numConnectedSockets = 0;
             m_numConnections = numConnections;
             m_receiveBufferSize = receiveBufferSize;
-            players = new Dictionary<int, Client>();
+            players = new ConcurrentDictionary<int, Client>();
             // allocate buffers such that the maximum number of sockets can have one outstanding read and
             //write posted to the socket simultaneously
             m_bufferManager = new BufferManager(receiveBufferSize * numConnections * opsToPreAlloc,
@@ -224,7 +225,8 @@ namespace mutant_server
             catch (Exception) { }
             lock(players)
             {
-                players.Remove(token.userID);
+                Client tmp;
+                players.TryRemove(token.userID, out tmp);
             }
             token.socket.Close();
 
@@ -244,6 +246,9 @@ namespace mutant_server
 
             PlayerStatusPacket packet = new PlayerStatusPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
             packet.ByteArrayToPacket();
+
+            if (!players.ContainsKey(packet.id))
+                return;
 
             players[packet.id].position = packet.position;
             players[packet.id].rotation = packet.rotation;
@@ -341,7 +346,7 @@ namespace mutant_server
 
             lock (players)
             {
-                players.Add(MutantGlobal.id, client);
+                players[client.userID] = client;
             }
 
             return client;
@@ -361,10 +366,10 @@ namespace mutant_server
 
             token.name = packet.name;
             Client c = InitClient(token);
-            Console.WriteLine("{0} client has {1} id, login request!", packet.name, MutantGlobal.id);
+            Console.WriteLine("{0} client has {1} id, login request!", c.userName, c.userID);
 
             PlayerStatusPacket sendPacket = new PlayerStatusPacket(token.writeEventArgs.Buffer, token.writeEventArgs.Offset);
-            sendPacket.id = MutantGlobal.id;
+            sendPacket.id = c.userID;
             sendPacket.name = packet.name;
             sendPacket.time = packet.time;
             sendPacket.position = c.position;
