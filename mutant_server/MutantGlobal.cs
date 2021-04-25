@@ -11,6 +11,9 @@ namespace mutant_server
 
         public static int id = 0;
 
+        /// <summary>
+        /// client to server operation
+        /// </summary>
         public const byte CTOS_LOGIN = 0;
         public const byte CTOS_STATUS_CHANGE = 1;
         public const byte CTOS_ATTACK = 2;
@@ -20,6 +23,9 @@ namespace mutant_server
         public const byte CTOS_LEAVE_GAME = 6;
         public const byte CTOS_JOIN_GAME = 7;
 
+        /// <summary>
+        /// server to client operation
+        /// </summary>
         public const byte STOC_LOGIN_OK = 0;
         public const byte STOC_STATUS_CHANGE = 1;
         public const byte STOC_PLAYER_ENTER = 2;
@@ -30,10 +36,17 @@ namespace mutant_server
         public const byte STOC_ITEM_DENIED = 7;
         public const byte STOC_SYSTEM_CHANGE = 8;
         public const byte STOC_ENTER_FAIL = 9;
+        public const byte STOC_KILLED = 10;
 
+        /// <summary>
+        /// player motions
+        /// </summary>
         public const byte PLAYER_IDLE = 0;
         public const byte PLAYER_WALKING = 1;
         public const byte PLAYER_RUNNING = 2;
+        public const byte PLAYER_ATTACK = 3;
+        public const byte PLAYER_HIT = 4;
+        public const byte PLAYER_TALK = 5;
 
         public const byte ITEM_LOG = 0;
         public const byte ITEM_STICK = 1;

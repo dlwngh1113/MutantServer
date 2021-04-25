@@ -258,6 +258,7 @@ namespace mutant_server
                     PlayerStatusPacket sendPacket = new PlayerStatusPacket(tmpToken.writeEventArgs.Buffer, tmpToken.writeEventArgs.Offset);
                     sendPacket.id = packet.id;
                     sendPacket.name = packet.name;
+                    sendPacket.playerMotion = packet.playerMotion;
                     sendPacket.time = MutantGlobal.GetCurrentMilliseconds();
                     sendPacket.position = players[packet.id].position;
                     sendPacket.rotation = players[packet.id].rotation;
@@ -480,11 +481,38 @@ namespace mutant_server
             AsyncUserToken token = (AsyncUserToken)e.UserToken;
             //누가 어떤 플레이어를 공격했는가?
             //공격당한 플레이어를 죽게 하고 공격한 플레이어 타이머 리셋
-            bool willRaise = token.socket.ReceiveAsync(e);
-            if(!willRaise)
+            MutantPacket packet = new MutantPacket(e.Buffer, e.Offset);
+            packet.ByteArrayToPacket();
+
+            foreach (var tuple in players)
             {
-                ProcessReceive(e);
+                var tmpToken = tuple.Value.asyncUserToken;
+
+                //기존의 플레이어에게 새로운 플레이어 정보 전달
+                PlayerStatusPacket sendPacket = new PlayerStatusPacket(tmpToken.writeEventArgs.Buffer, tmpToken.writeEventArgs.Offset);
+                sendPacket.id = packet.id;
+                sendPacket.name = packet.name;
+                sendPacket.time = MutantGlobal.GetCurrentMilliseconds();
+
+                sendPacket.position = players[packet.id].position;
+                sendPacket.rotation = players[packet.id].rotation;
+                sendPacket.playerMotion = MutantGlobal.PLAYER_HIT;
+                sendPacket.PacketToByteArray(MutantGlobal.STOC_KILLED);
+
+                try
+                {
+                    bool willRaiseEvent = tmpToken.socket.SendAsync(tmpToken.writeEventArgs);
+                    if (!willRaiseEvent)
+                    {
+                        ProcessSend(tmpToken.writeEventArgs);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.ToString());
+                }
             }
+
             try
             {
                 bool willRaiseEvent = token.socket.ReceiveAsync(token.readEventArgs);
