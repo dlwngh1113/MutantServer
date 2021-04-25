@@ -290,14 +290,14 @@ namespace mutant_server
             }
 
             ItemEventPacket sendPacket = new ItemEventPacket(token.writeEventArgs.Buffer, token.writeEventArgs.Offset);
-            sendPacket.inventory = packet.inventory;
 
             //만약 아이템의 총 개수가 3개보다 많다면 획득하지 못함
-            if(cnt > 3)
+            if (cnt > 2)
             {
                 sendPacket.id = packet.id;
                 sendPacket.name = packet.name;
                 sendPacket.itemName = packet.itemName;
+                sendPacket.inventory = packet.inventory;
                 sendPacket.canGainItem = false;
                 sendPacket.PacketToByteArray(MutantGlobal.STOC_ITEM_DENIED);
             }
@@ -305,17 +305,18 @@ namespace mutant_server
             else
             {
                 //SendPacket.inventory Null Reference Exception
-                if(sendPacket.inventory.ContainsKey(packet.itemName))
+                if (players[packet.id].inventory.ContainsKey(packet.itemName))
                 {
-                    sendPacket.inventory[packet.itemName] += 1;
+                    players[packet.id].inventory[packet.itemName] += 1;
                 }
                 else
                 {
-                    sendPacket.inventory.Add(packet.itemName, 1);
+                    players[packet.id].inventory.Add(packet.itemName, 1);
                 }
                 sendPacket.id = packet.id;
                 sendPacket.name = packet.name;
                 sendPacket.itemName = packet.itemName;
+                sendPacket.inventory = players[packet.id].inventory;
                 sendPacket.canGainItem = true;
                 sendPacket.PacketToByteArray(MutantGlobal.STOC_ITEM_GAIN);
             }
