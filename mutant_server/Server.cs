@@ -247,19 +247,6 @@ namespace mutant_server
             PlayerStatusPacket packet = new PlayerStatusPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
             packet.ByteArrayToPacket();
 
-            try
-            {
-                bool willRaiseEvent = token.socket.ReceiveAsync(token.readEventArgs);
-                if (!willRaiseEvent)
-                {
-                    ProcessReceive(token.readEventArgs);
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.ToString());
-            }
-
             players[packet.id].position = packet.position;
             players[packet.id].rotation = packet.rotation;
 
@@ -278,7 +265,7 @@ namespace mutant_server
                         sendPacket.position = players[packet.id].position;
                         sendPacket.rotation = players[packet.id].rotation;
 
-                        //Console.WriteLine("id = {0} x = {1} y = {2} z = {3}", packet.id, packet.position.x, packet.position.y, packet.position.z);
+                        Console.WriteLine("id = {0} x = {1} y = {2} z = {3}", packet.id, packet.position.x, packet.position.y, packet.position.z);
 
                         sendPacket.PacketToByteArray(MutantGlobal.STOC_STATUS_CHANGE);
 
@@ -293,6 +280,19 @@ namespace mutant_server
                         catch (Exception ex) { }
                     }
                 }
+            }
+
+            try
+            {
+                bool willRaiseEvent = token.socket.ReceiveAsync(token.readEventArgs);
+                if (!willRaiseEvent)
+                {
+                    ProcessReceive(token.readEventArgs);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
             }
         }
 
