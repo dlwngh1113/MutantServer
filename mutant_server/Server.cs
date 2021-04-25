@@ -193,18 +193,18 @@ namespace mutant_server
             {
                 AsyncUserToken token = (AsyncUserToken)e.UserToken;
 
-                try
-                {
-                    bool willRaiseEvent = token.socket.ReceiveAsync(token.readEventArgs);
-                    if (!willRaiseEvent)
-                    {
-                        ProcessReceive(token.readEventArgs);
-                    }
-                }
-                catch(Exception ex)
-                {
-                    Console.WriteLine(ex.ToString());
-                }
+                //try
+                //{
+                //    bool willRaiseEvent = token.socket.ReceiveAsync(token.readEventArgs);
+                //    if (!willRaiseEvent)
+                //    {
+                //        ProcessReceive(token.readEventArgs);
+                //    }
+                //}
+                //catch(Exception ex)
+                //{
+                //    Console.WriteLine(ex.ToString());
+                //}
             }
             else
             {
@@ -247,33 +247,47 @@ namespace mutant_server
             PlayerStatusPacket packet = new PlayerStatusPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
             packet.ByteArrayToPacket();
 
-            if (!players.ContainsKey(packet.id))
-                return;
-
             players[packet.id].position = packet.position;
             players[packet.id].rotation = packet.rotation;
 
-            foreach(var tuple in players)
+            foreach (var tuple in players)
             {
-                var tmpToken = tuple.Value.asyncUserToken;
-                PlayerStatusPacket sendPacket = new PlayerStatusPacket(tmpToken.writeEventArgs.Buffer, tmpToken.writeEventArgs.Offset);
-                sendPacket.id = packet.id;
-                sendPacket.name = packet.name;
-                sendPacket.time = MutantGlobal.GetCurrentMilliseconds();
-                sendPacket.position = players[packet.id].position;
-                sendPacket.rotation = players[packet.id].rotation;
-
-                sendPacket.PacketToByteArray(MutantGlobal.STOC_STATUS_CHANGE);
-
-                try
+                if (tuple.Key != packet.id)
                 {
-                    bool willRaise = token.socket.SendAsync(tmpToken.writeEventArgs);
-                    if (!willRaise)
+                    var tmpToken = tuple.Value.asyncUserToken;
+                    PlayerStatusPacket sendPacket = new PlayerStatusPacket(tmpToken.writeEventArgs.Buffer, tmpToken.writeEventArgs.Offset);
+                    sendPacket.id = packet.id;
+                    sendPacket.name = packet.name;
+                    sendPacket.time = MutantGlobal.GetCurrentMilliseconds();
+                    sendPacket.position = players[packet.id].position;
+                    sendPacket.rotation = players[packet.id].rotation;
+
+                    Console.WriteLine("id = {0} x = {1} y = {2} z = {3}", packet.id, packet.position.x, packet.position.y, packet.position.z);
+
+                    sendPacket.PacketToByteArray(MutantGlobal.STOC_STATUS_CHANGE);
+
+                    try
                     {
-                        ProcessSend(tmpToken.writeEventArgs);
+                        bool willRaise = tmpToken.socket.SendAsync(tmpToken.writeEventArgs);
+                        if (!willRaise)
+                        {
+                            ProcessSend(tmpToken.writeEventArgs);
+                        }
                     }
+                    catch (Exception ex) { }
                 }
-                catch (Exception ex) { }
+            }
+            try
+            {
+                bool willRaiseEvent = token.socket.ReceiveAsync(token.readEventArgs);
+                if (!willRaiseEvent)
+                {
+                    ProcessReceive(token.readEventArgs);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
             }
         }
 
@@ -331,6 +345,19 @@ namespace mutant_server
             if (!willRaiseEvent)
             {
                 ProcessSend(token.writeEventArgs);
+            }
+
+            try
+            {
+                willRaiseEvent = token.socket.ReceiveAsync(token.readEventArgs);
+                if (!willRaiseEvent)
+                {
+                    ProcessReceive(token.readEventArgs);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
             }
         }
 
@@ -406,7 +433,10 @@ namespace mutant_server
                             ProcessSend(tmpToken.writeEventArgs);
                         }
                     }
-                    catch (Exception ex) { }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.ToString());
+                    }
 
                     //새로운 플레이어에게 기존의 플레이어 정보 전달
                     PlayerStatusPacket otherPacket = new PlayerStatusPacket(token.writeEventArgs.Buffer, token.writeEventArgs.Offset);
@@ -425,8 +455,23 @@ namespace mutant_server
                             ProcessSend(token.writeEventArgs);
                         }
                     }
-                    catch (Exception ex) { }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.ToString());
+                    }
                 }
+            }
+            try
+            {
+                bool willRaiseEvent = token.socket.ReceiveAsync(token.readEventArgs);
+                if (!willRaiseEvent)
+                {
+                    ProcessReceive(token.readEventArgs);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
             }
         }
 
@@ -439,6 +484,18 @@ namespace mutant_server
             if(!willRaise)
             {
                 ProcessReceive(e);
+            }
+            try
+            {
+                bool willRaiseEvent = token.socket.ReceiveAsync(token.readEventArgs);
+                if (!willRaiseEvent)
+                {
+                    ProcessReceive(token.readEventArgs);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
             }
         }
 
@@ -456,6 +513,18 @@ namespace mutant_server
             {
                 ProcessSend(token.writeEventArgs);
             }
+            try
+            {
+                bool willRaiseEvent = token.socket.ReceiveAsync(token.readEventArgs);
+                if (!willRaiseEvent)
+                {
+                    ProcessReceive(token.readEventArgs);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+            }
         }
 
         private void ProcessLogout(SocketAsyncEventArgs e)
@@ -465,7 +534,18 @@ namespace mutant_server
 
             //지금 게임에 존재하는 유저들에게 해당 유저가 게임을 종료했음을 알림
             //지금 게임을 같이 하고 있는 유저들을 어떻게 구분할 것인가?
-            CloseClientSocket(e);
+            CloseClientSocket(e); try
+            {
+                bool willRaiseEvent = token.socket.ReceiveAsync(token.readEventArgs);
+                if (!willRaiseEvent)
+                {
+                    ProcessReceive(token.readEventArgs);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+            }
         }
     }
 }
