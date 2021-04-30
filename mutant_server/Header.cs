@@ -8,8 +8,8 @@ namespace mutant_server
 {
     class Header
     {
-        ushort bytes;
-        byte op;
+        public ushort bytes;
+        public byte op;
         Header() { }
         Header(ushort bytes, byte op)
         {

@@ -109,16 +109,24 @@ namespace mutant_server
 
             return tmp;
         }
+        protected ushort ByteToUshort()
+        {
+            ushort tmp = BitConverter.ToUInt16(this.ary, this.offset);
+            this.offset += sizeof(ushort);
+            return tmp;
+        }
         public virtual void PacketToByteArray(byte type)
         {
-            this.ary[offset++] = type;
+            ConvertToByte(this.header.bytes);
+            ConvertToByte(this.header.op);
             ConvertToByte(this.name);
             ConvertToByte(this.id);
             ConvertToByte(this.time);
         }
         public virtual void ByteArrayToPacket()
         {
-            ++offset;
+            this.header.bytes = ByteToUshort();
+            this.header.op = ByteToByte();
             this.name = ByteToString();
             this.id = ByteToInt();
             this.time = ByteToInt();

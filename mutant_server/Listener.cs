@@ -8,6 +8,7 @@ namespace mutant_server
     class Listener
     {
         Socket listenSocket;
+        SocketAsyncEventArgs acceptEventArg = null;
         public EventHandler<SocketAsyncEventArgs> Accept_Callback;
 
         public delegate void AcceptDelegate(SocketAsyncEventArgs e);
@@ -26,24 +27,33 @@ namespace mutant_server
         }
         public void StartAccept(SocketAsyncEventArgs acceptEventArg)
         {
-            if (acceptEventArg == null)
-            {
-                acceptEventArg = new SocketAsyncEventArgs();
-                acceptEventArg.Completed += Accept_Callback;
-                acceptEventArg.UserToken = new AsyncUserToken(listenSocket);
-            }
-            else
-            {
-                // socket must be cleared since the context object is being reused
-                acceptEventArg.AcceptSocket = null;
-            }
-
-            bool willRaiseEvent = listenSocket.AcceptAsync(acceptEventArg);
-            if (!willRaiseEvent)
-            {
-                myDelegate(acceptEventArg);
-            }
+            Thread thread = new Thread(KeepListen);
+            thread.Start();
         }
 
+        private void KeepListen()
+        {
+            while(true)
+            {
+                if (acceptEventArg == null)
+                {
+                    acceptEventArg = new SocketAsyncEventArgs();
+                    acceptEventArg.Completed += Accept_Callback;
+                    acceptEventArg.UserToken = new AsyncUserToken(listenSocket);
+                }
+                else
+                {
+                    // socket must be cleared since the context object is being reused
+                    acceptEventArg.AcceptSocket = null;
+                }
+
+                bool willRaiseEvent = listenSocket.AcceptAsync(acceptEventArg);
+                if (!willRaiseEvent)
+                {
+                    myDelegate(acceptEventArg);
+                }
+            }
+            throw new NotImplementedException();
+        }
     }
 }
