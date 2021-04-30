@@ -9,53 +9,40 @@ namespace mutant_server
 {
     class Server
     {
-        private int m_numConnections;   // the maximum number of connections the sample is designed to handle simultaneously
-        private int m_receiveBufferSize;// buffer size to use for each socket I/O operation
-        BufferManager m_bufferManager;  // represents a large reusable set of buffers for all socket operations
+        private int _numConnections;   // the maximum number of connections the sample is designed to handle simultaneously
+        private int _receiveBufferSize;// buffer size to use for each socket I/O operation
+        private BufferManager _bufferManager;  // represents a large reusable set of buffers for all socket operations
         const int opsToPreAlloc = 2;    // read, write (don't alloc buffer space for accepts)
-        Listener listener;
+        private Listener _listener;
 
         // pool of reusable SocketAsyncEventArgs objects for write, read and accept socket operations
-        SocketAsyncEventArgsPool m_readPool;
-        SocketAsyncEventArgsPool m_writePool;
-        int m_numConnectedSockets;      // the total number of clients connected to the server
+        private SocketAsyncEventArgsPool _readPool;
+        private SocketAsyncEventArgsPool _writePool;
+        private int _numConnectedSockets;      // the total number of clients connected to the server
 
-        ConcurrentDictionary<int, Client> players;
+        private ConcurrentDictionary<int, Client> _players;
 
-        // Create an uninitialized server instance.
-        // To start the server listening for connection requests
-        // call the Init method followed by Start method
-        //
-        // <param name="numConnections">the maximum number of connections the sample is designed to handle simultaneously</param>
-        // <param name="receiveBufferSize">buffer size to use for each socket I/O operation</param>
         public Server(int numConnections, int receiveBufferSize)
         {
-            m_numConnectedSockets = 0;
-            m_numConnections = numConnections;
-            m_receiveBufferSize = receiveBufferSize;
-            players = new ConcurrentDictionary<int, Client>();
-            // allocate buffers such that the maximum number of sockets can have one outstanding read and
-            //write posted to the socket simultaneously
-            m_bufferManager = new BufferManager(receiveBufferSize * numConnections * opsToPreAlloc,
+            _numConnectedSockets = 0;
+            _numConnections = numConnections;
+            _receiveBufferSize = receiveBufferSize;
+            _players = new ConcurrentDictionary<int, Client>();
+            _bufferManager = new BufferManager(receiveBufferSize * numConnections * opsToPreAlloc,
                 receiveBufferSize);
 
-            m_readPool = new SocketAsyncEventArgsPool(numConnections);
-            m_writePool = new SocketAsyncEventArgsPool(numConnections);
+            _readPool = new SocketAsyncEventArgsPool(numConnections);
+            _writePool = new SocketAsyncEventArgsPool(numConnections);
         }
 
-        // Initializes the server by preallocating reusable buffers and
-        // context objects.  These objects do not need to be preallocated
-        // or reused, but it is done this way to illustrate how the API can
-        // easily be used to create reusable objects to increase server performance.
-        //
         public void Init()
         {
             // Allocates one large byte buffer which all I/O operations use a piece of.  This gaurds
             // against memory fragmentation
-            m_bufferManager.InitBuffer();
+            _bufferManager.InitBuffer();
 
             // preallocate pool of SocketAsyncEventArgs objects
-            for (int i = 0; i < m_numConnections; i++)
+            for (int i = 0; i < _numConnections; i++)
             {
                 AsyncUserToken token = new AsyncUserToken();
                 //read pool
@@ -67,10 +54,10 @@ namespace mutant_server
                     readEventArg.UserToken = token;
 
                     // assign a byte buffer from the buffer pool to the SocketAsyncEventArg object
-                    m_bufferManager.SetBuffer(readEventArg);
+                    _bufferManager.SetBuffer(readEventArg);
 
                     // add SocketAsyncEventArg to the pool
-                    m_readPool.Push(readEventArg);
+                    _readPool.Push(readEventArg);
                 }
 
                 //write pool
@@ -82,27 +69,21 @@ namespace mutant_server
                     writeEventArg.UserToken = token;
 
                     // assign a byte buffer from the buffer pool to the SocketAsyncEventArg object
-                    m_bufferManager.SetBuffer(writeEventArg);
+                    _bufferManager.SetBuffer(writeEventArg);
 
                     // add SocketAsyncEventArg to the pool
-                    m_writePool.Push(writeEventArg);
+                    _writePool.Push(writeEventArg);
                 }
             }
         }
 
-        // Starts the server such that it is listening for
-        // incoming connection requests.
-        //
-        // <param name="localEndPoint">The endpoint which the server will listening
-        // for connection requests on</param>
         public void Start(IPEndPoint localEndPoint)
         {
-            listener = new Listener(localEndPoint);
-            listener.Accept_Callback = new EventHandler<SocketAsyncEventArgs>(AcceptEventArg_Completed);
-            listener.myDelegate = new Listener.AcceptDelegate(ProcessAccept);
-            listener.StartAccept(null);
+            _listener = new Listener(localEndPoint);
+            _listener.Accept_Callback = new EventHandler<SocketAsyncEventArgs>(AcceptEventArg_Completed);
+            _listener.myDelegate = new Listener.AcceptDelegate(ProcessAccept);
+            _listener.StartAccept();
 
-            //Console.WriteLine("{0} connected sockets with one outstanding receive posted to each....press any key", m_outstandingReadCount);
             Console.WriteLine("Press any key to terminate the server process....");
             Console.ReadKey();
         }
@@ -113,33 +94,27 @@ namespace mutant_server
 
         private void ProcessAccept(SocketAsyncEventArgs e)
         {
-            Interlocked.Increment(ref m_numConnectedSockets);
+            Interlocked.Increment(ref _numConnectedSockets);
             Console.WriteLine("Client connection accepted. There are {0} clients connected to the server",
-                m_numConnectedSockets);
+                _numConnectedSockets);
 
-            SocketAsyncEventArgs recv_event = m_readPool.Pop();
-            SocketAsyncEventArgs send_event = m_writePool.Pop();
+            SocketAsyncEventArgs recv_event = _readPool.Pop();
+            SocketAsyncEventArgs send_event = _writePool.Pop();
+
             BeginIO(e.AcceptSocket, recv_event, send_event);
-
-            listener.StartAccept(e);
         }
-
         private void BeginIO(Socket socket, SocketAsyncEventArgs recv_event, SocketAsyncEventArgs send_event)
         {
-            // Get the socket for the accepted client connection and put it into the
-            //ReadEventArg object user token
-
             AsyncUserToken token = recv_event.UserToken as AsyncUserToken;
             token.socket = socket;
             token.userID = 0;
             token.readEventArgs = recv_event;
             token.writeEventArgs = send_event;
-
-            // As soon as the client is connected, post a receive to the connection
-            bool willRaiseEvent = socket.ReceiveAsync(recv_event);
+            
+            bool willRaiseEvent = socket.ReceiveAsync(token.readEventArgs);
             if (!willRaiseEvent)
             {
-                ProcessReceive(recv_event);
+                ProcessReceive(token.readEventArgs);
             }
         }
 
@@ -153,29 +128,7 @@ namespace mutant_server
             AsyncUserToken token = (AsyncUserToken)e.UserToken;
             if (e.BytesTransferred > 0 && e.SocketError == SocketError.Success)
             {
-                switch (token.readEventArgs.Buffer[e.Offset])
-                {
-                    case Defines.CTOS_LOGIN:
-                        ProcessLogin(e);
-                        break;
-                    case Defines.CTOS_STATUS_CHANGE:
-                        ProcessStatus(e);
-                        break;
-                    case Defines.CTOS_ATTACK:
-                        ProcessAttack(e);
-                        break;
-                    case Defines.CTOS_CHAT:
-                        ProcessChatting(e);
-                        break;
-                    case Defines.CTOS_LOGOUT:
-                        ProcessLogout(e);
-                        break;
-                    case Defines.CTOS_ITEM_CLICKED:
-                        ProcessItemEvent(e);
-                        break;
-                    default:
-                        throw new Exception("operation from client is not valid\n");
-                }
+                token.ResolveMessage(e.Buffer, e.Offset, e.BytesTransferred);
             }
             else
             {
@@ -223,21 +176,21 @@ namespace mutant_server
             }
             // throws if client process has already closed
             catch (Exception) { }
-            lock(players)
+            lock(_players)
             {
                 Client tmp;
-                players.TryRemove(token.userID, out tmp);
+                _players.TryRemove(token.userID, out tmp);
             }
             token.socket.Close();
 
             // decrement the counter keeping track of the total number of clients connected to the server
-            Interlocked.Decrement(ref m_numConnectedSockets);
+            Interlocked.Decrement(ref _numConnectedSockets);
 
             // Free the SocketAsyncEventArg so they can be reused by another client
-            m_readPool.Push(token.readEventArgs);
-            m_writePool.Push(token.writeEventArgs);
+            _readPool.Push(token.readEventArgs);
+            _writePool.Push(token.writeEventArgs);
 
-            Console.WriteLine("A client has been disconnected from the server. There are {0} clients connected to the server", m_numConnectedSockets);
+            Console.WriteLine("A client has been disconnected from the server. There are {0} clients connected to the server", _numConnectedSockets);
         }
 
         private void ProcessStatus(SocketAsyncEventArgs e)
@@ -247,10 +200,10 @@ namespace mutant_server
             PlayerStatusPacket packet = new PlayerStatusPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
             packet.ByteArrayToPacket();
 
-            players[packet.id].position = packet.position;
-            players[packet.id].rotation = packet.rotation;
+            _players[packet.id].position = packet.position;
+            _players[packet.id].rotation = packet.rotation;
 
-            foreach (var tuple in players)
+            foreach (var tuple in _players)
             {
                 if (tuple.Key != packet.id)
                 {
@@ -262,8 +215,8 @@ namespace mutant_server
                         sendPacket.name = packet.name;
                         sendPacket.playerMotion = packet.playerMotion;
                         sendPacket.time = Defines.GetCurrentMilliseconds();
-                        sendPacket.position = players[packet.id].position;
-                        sendPacket.rotation = players[packet.id].rotation;
+                        sendPacket.position = _players[packet.id].position;
+                        sendPacket.rotation = _players[packet.id].rotation;
 
                         Console.WriteLine("id = {0} x = {1} y = {2} z = {3}", packet.id, packet.position.x, packet.position.y, packet.position.z);
 
@@ -303,7 +256,7 @@ namespace mutant_server
             packet.ByteArrayToPacket();
             var cnt = 0;
             //인벤토리에 존재하는 아이템의 개수 구하기
-            foreach (var tuple in players[packet.id].inventory)
+            foreach (var tuple in _players[packet.id].inventory)
             {
                 cnt += tuple.Value;
             }
@@ -324,18 +277,18 @@ namespace mutant_server
             else
             {
                 //SendPacket.inventory Null Reference Exception
-                if (players[packet.id].inventory.ContainsKey(packet.itemName))
+                if (_players[packet.id].inventory.ContainsKey(packet.itemName))
                 {
-                    players[packet.id].inventory[packet.itemName] += 1;
+                    _players[packet.id].inventory[packet.itemName] += 1;
                 }
                 else
                 {
-                    players[packet.id].inventory.Add(packet.itemName, 1);
+                    _players[packet.id].inventory.Add(packet.itemName, 1);
                 }
                 sendPacket.id = packet.id;
                 sendPacket.name = packet.name;
                 sendPacket.itemName = packet.itemName;
-                sendPacket.inventory = players[packet.id].inventory;
+                sendPacket.inventory = _players[packet.id].inventory;
                 sendPacket.canGainItem = true;
                 sendPacket.PacketToByteArray(Defines.STOC_ITEM_GAIN);
             }
@@ -368,20 +321,19 @@ namespace mutant_server
 
         private Client InitClient(AsyncUserToken token)
         {
-            if (m_numConnectedSockets != (Defines.id + 1))
+            if (_numConnectedSockets != (Defines.id + 1))
                 return null;
             Interlocked.Increment(ref Defines.id);
             token.userID = Defines.id;
 
             Client client = new Client(Defines.id);
-            client.userName = token.name;
             client.position = new MyVector3(95.09579f, 4.16f, 42.68918f);
             client.rotation = new MyVector3();
             client.asyncUserToken = token;
 
-            lock (players)
+            lock (_players)
             {
-                players[client.userID] = client;
+                _players[client.userID] = client;
             }
 
             return client;
@@ -399,7 +351,6 @@ namespace mutant_server
             MutantPacket packet = new MutantPacket(e.Buffer, e.Offset);
             packet.ByteArrayToPacket();
 
-            token.name = packet.name;
             Client c = InitClient(token);
             if(c == null)
                 return;
@@ -419,7 +370,7 @@ namespace mutant_server
                 ProcessSend(token.writeEventArgs);
             }
 
-            foreach (var tuple in players)
+            foreach (var tuple in _players)
             {
                 if (tuple.Key != sendPacket.id)
                 {
@@ -432,7 +383,7 @@ namespace mutant_server
                         curPacket.id = sendPacket.id;
                         curPacket.name = sendPacket.name;
                         curPacket.time = sendPacket.time;
-                        curPacket.position = players[sendPacket.id].position;
+                        curPacket.position = _players[sendPacket.id].position;
 
                         curPacket.PacketToByteArray(Defines.STOC_PLAYER_ENTER);
 
@@ -498,7 +449,7 @@ namespace mutant_server
             MutantPacket packet = new MutantPacket(e.Buffer, e.Offset);
             packet.ByteArrayToPacket();
 
-            foreach (var tuple in players)
+            foreach (var tuple in _players)
             {
                 var tmpToken = tuple.Value.asyncUserToken;
 
@@ -510,8 +461,8 @@ namespace mutant_server
                     sendPacket.name = packet.name;
                     sendPacket.time = Defines.GetCurrentMilliseconds();
 
-                    sendPacket.position = players[packet.id].position;
-                    sendPacket.rotation = players[packet.id].rotation;
+                    sendPacket.position = _players[packet.id].position;
+                    sendPacket.rotation = _players[packet.id].rotation;
                     sendPacket.playerMotion = Defines.PLAYER_HIT;
                     sendPacket.PacketToByteArray(Defines.STOC_KILLED);
 

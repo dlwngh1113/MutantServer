@@ -8,7 +8,7 @@ namespace mutant_server
 {
     public class MutantPacket
     {
-        Header header;
+        public Header header;
         public string name = null;
         public int id;
         public int time;

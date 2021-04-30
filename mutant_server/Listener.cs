@@ -25,7 +25,7 @@ namespace mutant_server
             // start the server with a listen backlog of 100 connections
             listenSocket.Listen(100);
         }
-        public void StartAccept(SocketAsyncEventArgs acceptEventArg)
+        public void StartAccept()
         {
             Thread thread = new Thread(KeepListen);
             thread.Start();

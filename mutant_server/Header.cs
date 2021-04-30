@@ -10,6 +10,10 @@ namespace mutant_server
     {
         public ushort bytes;
         public byte op;
+        static public short size
+        {
+            get => 3;
+        }
         Header() { }
         Header(ushort bytes, byte op)
         {
