@@ -155,22 +155,22 @@ namespace mutant_server
             {
                 switch (token.readEventArgs.Buffer[e.Offset])
                 {
-                    case MutantGlobal.CTOS_LOGIN:
+                    case Defines.CTOS_LOGIN:
                         ProcessLogin(e);
                         break;
-                    case MutantGlobal.CTOS_STATUS_CHANGE:
+                    case Defines.CTOS_STATUS_CHANGE:
                         ProcessStatus(e);
                         break;
-                    case MutantGlobal.CTOS_ATTACK:
+                    case Defines.CTOS_ATTACK:
                         ProcessAttack(e);
                         break;
-                    case MutantGlobal.CTOS_CHAT:
+                    case Defines.CTOS_CHAT:
                         ProcessChatting(e);
                         break;
-                    case MutantGlobal.CTOS_LOGOUT:
+                    case Defines.CTOS_LOGOUT:
                         ProcessLogout(e);
                         break;
-                    case MutantGlobal.CTOS_ITEM_CLICKED:
+                    case Defines.CTOS_ITEM_CLICKED:
                         ProcessItemEvent(e);
                         break;
                     default:
@@ -261,13 +261,13 @@ namespace mutant_server
                         sendPacket.id = packet.id;
                         sendPacket.name = packet.name;
                         sendPacket.playerMotion = packet.playerMotion;
-                        sendPacket.time = MutantGlobal.GetCurrentMilliseconds();
+                        sendPacket.time = Defines.GetCurrentMilliseconds();
                         sendPacket.position = players[packet.id].position;
                         sendPacket.rotation = players[packet.id].rotation;
 
                         Console.WriteLine("id = {0} x = {1} y = {2} z = {3}", packet.id, packet.position.x, packet.position.y, packet.position.z);
 
-                        sendPacket.PacketToByteArray(MutantGlobal.STOC_STATUS_CHANGE);
+                        sendPacket.PacketToByteArray(Defines.STOC_STATUS_CHANGE);
 
                         try
                         {
@@ -318,7 +318,7 @@ namespace mutant_server
                 sendPacket.itemName = packet.itemName;
                 sendPacket.inventory = packet.inventory;
                 sendPacket.canGainItem = false;
-                sendPacket.PacketToByteArray(MutantGlobal.STOC_ITEM_DENIED);
+                sendPacket.PacketToByteArray(Defines.STOC_ITEM_DENIED);
             }
             //그렇지 않은 경우는 아이템 획득 가능
             else
@@ -337,7 +337,7 @@ namespace mutant_server
                 sendPacket.itemName = packet.itemName;
                 sendPacket.inventory = players[packet.id].inventory;
                 sendPacket.canGainItem = true;
-                sendPacket.PacketToByteArray(MutantGlobal.STOC_ITEM_GAIN);
+                sendPacket.PacketToByteArray(Defines.STOC_ITEM_GAIN);
             }
 
             foreach (var tuple in sendPacket.inventory)
@@ -368,12 +368,12 @@ namespace mutant_server
 
         private Client InitClient(AsyncUserToken token)
         {
-            if (m_numConnectedSockets != (MutantGlobal.id + 1))
+            if (m_numConnectedSockets != (Defines.id + 1))
                 return null;
-            Interlocked.Increment(ref MutantGlobal.id);
-            token.userID = MutantGlobal.id;
+            Interlocked.Increment(ref Defines.id);
+            token.userID = Defines.id;
 
-            Client client = new Client(MutantGlobal.id);
+            Client client = new Client(Defines.id);
             client.userName = token.name;
             client.position = new MyVector3(95.09579f, 4.16f, 42.68918f);
             client.rotation = new MyVector3();
@@ -411,7 +411,7 @@ namespace mutant_server
             sendPacket.time = packet.time;
             sendPacket.position = c.position;
 
-            sendPacket.PacketToByteArray(MutantGlobal.STOC_LOGIN_OK);
+            sendPacket.PacketToByteArray(Defines.STOC_LOGIN_OK);
 
             bool willRaise = token.socket.SendAsync(token.writeEventArgs);
             if (!willRaise)
@@ -434,7 +434,7 @@ namespace mutant_server
                         curPacket.time = sendPacket.time;
                         curPacket.position = players[sendPacket.id].position;
 
-                        curPacket.PacketToByteArray(MutantGlobal.STOC_PLAYER_ENTER);
+                        curPacket.PacketToByteArray(Defines.STOC_PLAYER_ENTER);
 
                         try
                         {
@@ -459,7 +459,7 @@ namespace mutant_server
                         otherPacket.position = tuple.Value.position;
                         otherPacket.rotation = tuple.Value.rotation;
 
-                        otherPacket.PacketToByteArray(MutantGlobal.STOC_PLAYER_ENTER);
+                        otherPacket.PacketToByteArray(Defines.STOC_PLAYER_ENTER);
 
                         try
                         {
@@ -508,12 +508,12 @@ namespace mutant_server
                     PlayerStatusPacket sendPacket = new PlayerStatusPacket(tmpToken.writeEventArgs.Buffer, tmpToken.writeEventArgs.Offset);
                     sendPacket.id = packet.id;
                     sendPacket.name = packet.name;
-                    sendPacket.time = MutantGlobal.GetCurrentMilliseconds();
+                    sendPacket.time = Defines.GetCurrentMilliseconds();
 
                     sendPacket.position = players[packet.id].position;
                     sendPacket.rotation = players[packet.id].rotation;
-                    sendPacket.playerMotion = MutantGlobal.PLAYER_HIT;
-                    sendPacket.PacketToByteArray(MutantGlobal.STOC_KILLED);
+                    sendPacket.playerMotion = Defines.PLAYER_HIT;
+                    sendPacket.PacketToByteArray(Defines.STOC_KILLED);
 
                     try
                     {

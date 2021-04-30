@@ -72,7 +72,8 @@
     <Compile Include="BufferManager.cs" />
     <Compile Include="Client.cs" />
     <Compile Include="Listener.cs" />
-    <Compile Include="MutantGlobal.cs" />
+    <Compile Include="Defines.cs" />
+    <Compile Include="Header.cs" />
     <Compile Include="MutantPacket.cs" />
     <Compile Include="MyVector3.cs" />
     <Compile Include="Program.cs" />

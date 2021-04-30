@@ -2,7 +2,7 @@
 
 namespace mutant_server
 {
-    public class MutantGlobal
+    public class Defines
     {
         public const short BUF_SIZE = 1024;
         public const short MAX_USERS = 10000;
