@@ -80,7 +80,7 @@ namespace mutant_server
             _listener = new Listener(localEndPoint);
             _listener.Accept_Callback = new EventHandler<SocketAsyncEventArgs>(AcceptEventArg_Completed);
             _listener.myDelegate = new Listener.AcceptDelegate(ProcessAccept);
-            _listener.StartAccept();
+            _listener.StartAccept(null);
 
             Console.WriteLine("Press any key to terminate the server process....");
             Console.ReadKey();
@@ -100,6 +100,8 @@ namespace mutant_server
             SocketAsyncEventArgs send_event = _writePool.Pop();
 
             BeginIO(e.AcceptSocket, recv_event, send_event);
+
+            _listener.StartAccept(e);
         }
         private void BeginIO(Socket socket, SocketAsyncEventArgs recv_event, SocketAsyncEventArgs send_event)
         {
