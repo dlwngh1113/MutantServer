@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace mutant_server
 {
-    class Header
+    public class Header
     {
         public ushort bytes;
         public byte op;

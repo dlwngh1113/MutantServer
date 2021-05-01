@@ -39,7 +39,7 @@ namespace mutant_server
                 {
                     acceptEventArg = new SocketAsyncEventArgs();
                     acceptEventArg.Completed += Accept_Callback;
-                    acceptEventArg.UserToken = new AsyncUserToken(listenSocket);
+                    acceptEventArg.UserToken = new AsyncUserToken();
                 }
                 else
                 {

@@ -8,7 +8,7 @@ namespace mutant_server
         int leftBytes;
         int targetPos;
         int msgSize;
-        byte op;
+        public byte op;
         byte[] packetAry;
         public MessageResolver()
         {
@@ -19,7 +19,7 @@ namespace mutant_server
             op = 0;
             packetAry = new byte[Defines.BUF_SIZE];
         }
-        public MutantPacket ResolveMessage(byte[] ary, int offset, int bytesTransferred)
+        public byte[] ResolveMessage(byte[] ary, int offset, int bytesTransferred)
         {
             this.leftBytes = bytesTransferred;
 
@@ -47,37 +47,11 @@ namespace mutant_server
                 finished = ReadDataBuffer(ary, ref srcOffset, offset, bytesTransferred);
                 if (finished)
                 {
-                    MutantPacket packet = new MutantPacket(this.packetAry, 0);
-                    packet.ByteArrayToPacket();
-
                     CleanVariables();
-                    return packet;
+                    return this.packetAry;
                 }
             }
-
-            switch (packet.header.op)
-            {
-                case Defines.CTOS_LOGIN:
-                    ProcessLogin(e);
-                    break;
-                case Defines.CTOS_STATUS_CHANGE:
-                    ProcessStatus(e);
-                    break;
-                case Defines.CTOS_ATTACK:
-                    ProcessAttack(e);
-                    break;
-                case Defines.CTOS_CHAT:
-                    ProcessChatting(e);
-                    break;
-                case Defines.CTOS_LOGOUT:
-                    ProcessLogout(e);
-                    break;
-                case Defines.CTOS_ITEM_CLICKED:
-                    ProcessItemEvent(e);
-                    break;
-                default:
-                    throw new Exception("operation from client is not valid\n");
-            }
+            return null;
         }
         private void CleanVariables()
         {

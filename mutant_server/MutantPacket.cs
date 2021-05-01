@@ -133,12 +133,6 @@ namespace mutant_server
         }
     }
 
-    //[StructLayout(LayoutKind.Sequential, Pack = 1)]
-    //public struct PlayerMouseEvent
-    //{
-    //    public string itemName;
-    //    public Dictionary<string, int> inventory;
-    //}
     public class ItemEventPacket : MutantPacket
     {
         public string itemName;
