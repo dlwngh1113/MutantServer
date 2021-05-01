@@ -6,23 +6,53 @@ namespace mutant_server
     {
         int offset;
         int leftBytes;
-        int toRecvBytes;
+        int targetPos;
+        int msgSize;
+        byte op;
         byte[] packetAry;
         public MessageResolver()
         {
             offset = 0;
             leftBytes = 0;
-            toRecvBytes = 0;
+            targetPos = 0;
+            msgSize = 0;
+            op = 0;
             packetAry = new byte[Defines.BUF_SIZE];
         }
-        public void ResolveMessage(byte[] ary, int offset, int bytesTransferred)
+        public MutantPacket ResolveMessage(byte[] ary, int offset, int bytesTransferred)
         {
-            toRecvBytes = bytesTransferred;
-            leftBytes = bytesTransferred; 
+            this.leftBytes = bytesTransferred;
 
-            if(this.offset < Header.size)
+            int srcOffset = offset;
+
+            while(this.leftBytes > 0)
             {
-                ReadDataBuffer(ary, offset, Header.size);
+                bool finished = false;
+                if (this.offset < Header.size)
+                {
+                    this.targetPos = Header.size;
+
+                    finished = ReadDataBuffer(ary, ref srcOffset, offset, bytesTransferred);
+
+                    if(!finished)
+                    {
+                        return null;
+                    }
+
+                    this.msgSize = GetHeaderAttributes();
+
+                    this.targetPos = Header.size + this.msgSize;
+                }
+
+                finished = ReadDataBuffer(ary, ref srcOffset, offset, bytesTransferred);
+                if (finished)
+                {
+                    MutantPacket packet = new MutantPacket(this.packetAry, 0);
+                    packet.ByteArrayToPacket();
+
+                    CleanVariables();
+                    return packet;
+                }
             }
 
             switch (packet.header.op)
@@ -49,16 +79,42 @@ namespace mutant_server
                     throw new Exception("operation from client is not valid\n");
             }
         }
-        private void ReadDataBuffer(byte[] ary, int offset, int targetBytes)
+        private void CleanVariables()
         {
-            while (true)
+            Array.Clear(this.packetAry, 0, this.offset);
+            offset = 0;
+        }
+        private ushort GetHeaderAttributes()
+        {
+            this.op = this.packetAry[2];
+            return BitConverter.ToUInt16(this.packetAry, 0);
+        }
+        private bool ReadDataBuffer(byte[] ary, ref int srcOffset, int offset, int bytesTransferred)
+        {
+            if(this.offset >= offset + bytesTransferred)
             {
-                if (this.offset < targetBytes)
-                {
-                    Array.Copy(ary, offset, this.packetAry, this.offset, targetBytes);
-                    this.leftBytes -= targetBytes;
-                }
+                return false;
             }
+
+            int recvSize = this.targetPos - this.offset;
+
+            if(this.leftBytes < recvSize)
+            {
+                recvSize = this.leftBytes;
+            }
+
+            Array.Copy(ary, srcOffset, this.packetAry, this.offset, recvSize);
+
+            srcOffset += recvSize;
+            this.offset += recvSize;
+            leftBytes -= recvSize;
+
+            if(this.offset < this.targetPos)
+            {
+                return false;
+            }
+
+            return true;
         }
     }
 }
