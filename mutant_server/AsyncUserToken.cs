@@ -33,7 +33,7 @@ namespace mutant_server
         }
         private void RecvEventSelect(byte[] data)
         {
-            switch (this._messageResolver.op)
+            switch (this.readEventArgs.Buffer[this.readEventArgs.Offset])
             {
                 case Defines.CTOS_LOGIN:
                     ProcessLogin(data);
