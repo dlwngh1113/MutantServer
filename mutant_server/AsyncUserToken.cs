@@ -11,7 +11,7 @@ namespace mutant_server
         public delegate void RecvCallback(SocketAsyncEventArgs e);
 
         private MessageResolver _messageResolver = new MessageResolver();
-        private Queue<SocketAsyncEventArgs> sendQueue = new Queue<SocketAsyncEventArgs>();
+        private Queue<MutantPacket> sendQueue = new Queue<MutantPacket>();
 
         public Socket socket = null;
         public int userID;
@@ -29,8 +29,7 @@ namespace mutant_server
         }
         public void ResolveMessage(byte[] ary, int offset, int bytesTransferred)
         {
-            byte[] data = this._messageResolver.ResolveMessage(ary, offset, bytesTransferred);
-            RecvEventSelect(data);
+            RecvEventSelect(ary);
         }
         private void RecvEventSelect(byte[] data)
         {
@@ -59,18 +58,18 @@ namespace mutant_server
             }
         }
 
-        private void SendData(SocketAsyncEventArgs e)
+        private void SendData(MutantPacket packet)
         {
             lock(this.sendQueue)
             {
                 if(this.sendQueue.Count <= 0)
                 {
-                    this.sendQueue.Enqueue(e);
+                    this.sendQueue.Enqueue(packet);
                     StartSend();
                     return;
                 }
 
-                this.sendQueue.Enqueue(e);
+                this.sendQueue.Enqueue(packet);
             }
         }
 
@@ -78,12 +77,14 @@ namespace mutant_server
         {
             lock(this.sendQueue)
             {
-                var e = this.sendQueue.Peek();
+                var packet = this.sendQueue.Peek();
 
-                bool willRaise = this.socket.SendAsync(e);
+                Array.Copy(packet.ary, packet.startPos, this.writeEventArgs.Buffer, this.writeEventArgs.Offset, Defines.BUF_SIZE);
+
+                bool willRaise = this.socket.SendAsync(this.writeEventArgs);
                 if(!willRaise)
                 {
-                    sendCallback(e);
+                    sendCallback(this.writeEventArgs);
                 }
             }
         }
@@ -126,7 +127,7 @@ namespace mutant_server
             //새롭게 DB에 유저 정보를 입력하고 login ok 전송
             //else
             //login fail과 이미
-            MutantPacket packet = new MutantPacket(data, 0);
+            MutantPacket packet = new MutantPacket(readEventArgs.Buffer, readEventArgs.Offset);
             packet.ByteArrayToPacket();
 
             Client c = InitClient();
@@ -140,7 +141,7 @@ namespace mutant_server
 
             sendPacket.PacketToByteArray(Defines.STOC_LOGIN_OK);
 
-            SendData(this.writeEventArgs);
+            SendData(sendPacket);
 
             foreach (var tuple in Server._players)
             {
@@ -157,7 +158,7 @@ namespace mutant_server
 
                     curPacket.PacketToByteArray(Defines.STOC_PLAYER_ENTER);
 
-                    tmpToken.SendData(tmpToken.writeEventArgs);
+                    tmpToken.SendData(curPacket);
 
                     //새로운 플레이어에게 기존의 플레이어 정보 전달
                     PlayerStatusPacket otherPacket = new PlayerStatusPacket(this.writeEventArgs.Buffer, this.writeEventArgs.Offset);
@@ -168,14 +169,14 @@ namespace mutant_server
 
                     otherPacket.PacketToByteArray(Defines.STOC_PLAYER_ENTER);
 
-                    SendData(this.writeEventArgs);
+                    SendData(otherPacket);
                 }
             }
         }
 
         private void ProcessStatus(byte[] data)
         {
-            PlayerStatusPacket packet = new PlayerStatusPacket(data, 0);
+            PlayerStatusPacket packet = new PlayerStatusPacket(readEventArgs.Buffer, readEventArgs.Offset);
             packet.ByteArrayToPacket();
 
             Server._players[packet.id].position = packet.position;
@@ -198,7 +199,7 @@ namespace mutant_server
 
                     sendPacket.PacketToByteArray(Defines.STOC_STATUS_CHANGE);
 
-                    tmpToken.SendData(tmpToken.writeEventArgs);
+                    tmpToken.SendData(sendPacket);
                 }
             }
         }
@@ -252,7 +253,7 @@ namespace mutant_server
             }
             Console.WriteLine("");
 
-            SendData(this.writeEventArgs);
+            SendData(sendPacket);
         }
 
         private void ProcessAttack(byte[] data)
@@ -277,7 +278,7 @@ namespace mutant_server
                 sendPacket.playerMotion = Defines.PLAYER_HIT;
                 sendPacket.PacketToByteArray(Defines.STOC_KILLED);
 
-                tmpToken.SendData(tmpToken.writeEventArgs);
+                tmpToken.SendData(sendPacket);
             }
         }
 

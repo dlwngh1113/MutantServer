@@ -79,7 +79,7 @@ namespace mutant_server
         {
             _listener = new Listener(localEndPoint);
             _listener.Accept_Callback = new EventHandler<SocketAsyncEventArgs>(AcceptEventArg_Completed);
-            _listener.myDelegate = new Listener.AcceptDelegate(ProcessAccept);
+            _listener.myDelegate = ProcessAccept;
             _listener.StartAccept(null);
 
             Console.WriteLine("Press any key to terminate the server process....");
@@ -113,7 +113,7 @@ namespace mutant_server
             token.recvCallback = ProcessReceive;
             token.sendCallback = ProcessSend;
             
-            bool willRaiseEvent = socket.ReceiveAsync(token.readEventArgs);
+            bool willRaiseEvent = token.socket.ReceiveAsync(token.readEventArgs);
             if (!willRaiseEvent)
             {
                 ProcessReceive(token.readEventArgs);
@@ -131,6 +131,16 @@ namespace mutant_server
             if (e.BytesTransferred > 0 && e.SocketError == SocketError.Success)
             {
                 token.ResolveMessage(e.Buffer, e.Offset, e.BytesTransferred);
+
+                try
+                {
+                    bool willRaise = token.socket.ReceiveAsync(token.readEventArgs);
+                    if (!willRaise)
+                    {
+                        ProcessReceive(token.readEventArgs);
+                    }
+                }
+                catch (Exception ex) { }
             }
             else
             {
@@ -175,12 +185,6 @@ namespace mutant_server
                 AsyncUserToken token = (AsyncUserToken)e.UserToken;
 
                 token.SendEnd();
-
-                bool willRaise = token.socket.ReceiveAsync(token.readEventArgs);
-                if(!willRaise)
-                {
-                    ProcessReceive(token.readEventArgs);
-                }
             }
             else
             {

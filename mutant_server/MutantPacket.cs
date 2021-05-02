@@ -1,8 +1,7 @@
 ﻿using System;
-using System.Numerics;
-using System.Text;
-using System.Runtime.InteropServices;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using System.Text;
 
 namespace mutant_server
 {
@@ -12,12 +11,18 @@ namespace mutant_server
         public string name = null;
         public int id;
         public int time;
-        protected byte[] ary;
-        protected int offset = 0;
+        public byte[] ary;
+        public int offset = 0;
+        public int startPos = 0;
+        public ushort size
+        {
+            get => (ushort)(ary.Length - Header.size);
+        }
         public MutantPacket(byte[] ary, int p)
         {
             this.ary = ary;
-            offset = p;
+            startPos = offset = p;
+            header = new Header();
         }
         public void Copy(MutantPacket packet)
         {
@@ -117,16 +122,18 @@ namespace mutant_server
         }
         public virtual void PacketToByteArray(byte type)
         {
-            ConvertToByte(this.header.bytes);
-            ConvertToByte(this.header.op);
+            //ConvertToByte(this.header.bytes);
+            //ConvertToByte(this.header.op);
+            ary[offset++] = type;
             ConvertToByte(this.name);
             ConvertToByte(this.id);
             ConvertToByte(this.time);
         }
         public virtual void ByteArrayToPacket()
         {
-            this.header.bytes = ByteToUshort();
-            this.header.op = ByteToByte();
+            //this.header.bytes = ByteToUshort();
+            //this.header.op = ByteToByte();
+            this.offset++;
             this.name = ByteToString();
             this.id = ByteToInt();
             this.time = ByteToInt();
@@ -138,6 +145,10 @@ namespace mutant_server
         public string itemName;
         public Dictionary<string, int> inventory;
         public bool canGainItem;
+        public ushort size
+        {
+            get => (ushort)(ary.Length - Header.size);
+        }
         public ItemEventPacket(byte[] ary, int offset) : base(ary, offset)
         {
         }
@@ -178,6 +189,10 @@ namespace mutant_server
         public MyVector3 position;
         public MyVector3 rotation;
         public byte playerMotion;
+        public ushort size
+        {
+            get => (ushort)(ary.Length - Header.size);
+        }
 
         public PlayerStatusPacket(byte[] ary, int offset) : base(ary, offset)
         {
@@ -207,6 +222,10 @@ namespace mutant_server
     public class ChattingPakcet : MutantPacket
     {
         public string message;
+        public ushort size
+        {
+            get => (ushort)(ary.Length - Header.size);
+        }
         public ChattingPakcet(byte[] ary, int offset) : base(ary, offset)
         {
 

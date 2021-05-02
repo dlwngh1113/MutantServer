@@ -14,11 +14,6 @@ namespace mutant_server
         {
             get => 3;
         }
-        Header() { }
-        Header(ushort bytes, byte op)
-        {
-            this.bytes = bytes;
-            this.op = op;
-        }
+        public Header() { }
     }
 }
