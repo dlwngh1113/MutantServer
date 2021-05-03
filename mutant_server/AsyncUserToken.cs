@@ -206,7 +206,7 @@ namespace mutant_server
 
         private void ProcessItemEvent(byte[] data)
         {
-            ItemEventPacket packet = new ItemEventPacket(data, 0);
+            ItemEventPacket packet = new ItemEventPacket(readEventArgs.Buffer, readEventArgs.Offset);
             packet.ByteArrayToPacket();
             var cnt = 0;
             //인벤토리에 존재하는 아이템의 개수 구하기
@@ -260,7 +260,7 @@ namespace mutant_server
         {
             //누가 어떤 플레이어를 공격했는가?
             //공격당한 플레이어를 죽게 하고 공격한 플레이어 타이머 리셋
-            MutantPacket packet = new MutantPacket(data, 0);
+            MutantPacket packet = new MutantPacket(readEventArgs.Buffer, readEventArgs.Offset);
             packet.ByteArrayToPacket();
 
             foreach (var tuple in Server._players)
@@ -285,7 +285,24 @@ namespace mutant_server
         private void ProcessChatting(byte[] data)
         {
             //클라이언트에서 온 메세지를 모든 클라이언트에 전송
-            ChattingPakcet recvPacket = new ChattingPakcet(data, 0);
+            ChattingPakcet packet = new ChattingPakcet(readEventArgs.Buffer, readEventArgs.Offset);
+            packet.ByteArrayToPacket();
+
+            foreach (var tuple in Server._players)
+            {
+                var tmpToken = tuple.Value.asyncUserToken;
+
+                //기존의 플레이어에게 새로운 플레이어 정보 전달
+                ChattingPakcet sendPacket = new ChattingPakcet(tmpToken.writeEventArgs.Buffer, tmpToken.writeEventArgs.Offset);
+                sendPacket.id = packet.id;
+                sendPacket.name = packet.name;
+                sendPacket.time = Defines.GetCurrentMilliseconds();
+
+                sendPacket.message = packet.message;
+                sendPacket.PacketToByteArray(Defines.STOC_CHAT);
+
+                tmpToken.SendData(sendPacket);
+            }
         }
 
         private void ProcessLogout(byte[] data)
