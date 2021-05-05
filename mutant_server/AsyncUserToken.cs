@@ -29,7 +29,12 @@ namespace mutant_server
         }
         public void ResolveMessage(byte[] ary, int offset, int bytesTransferred)
         {
-            RecvEventSelect(ary);
+            //RecvEventSelect(ary);
+            byte[] data = _messageResolver.ResolveMessage(ary, offset, bytesTransferred);
+            if (data != null)
+            {
+                RecvEventSelect(data);
+            }
         }
         private void RecvEventSelect(byte[] data)
         {
@@ -118,6 +123,19 @@ namespace mutant_server
 
             return client;
         }
+        private bool CheckUser(MutantPacket packet)
+        {
+            //if (packet.id < Defines.id)
+            //{
+            //    return false;
+            //}
+            if (packet.name != "admin")
+            {
+                return false;
+            }
+
+            return true;
+        }
 
         private void ProcessLogin(byte[] data)
         {
@@ -130,6 +148,12 @@ namespace mutant_server
             MutantPacket packet = new MutantPacket(readEventArgs.Buffer, readEventArgs.Offset);
             packet.ByteArrayToPacket();
 
+            bool isValidUser = CheckUser(packet);
+            if(!isValidUser)
+            {
+                return;
+            }
+
             Client c = InitClient();
             Console.WriteLine("{0} client has {1} id, login request!", c.userName, c.userID);
 
@@ -138,6 +162,7 @@ namespace mutant_server
             sendPacket.name = packet.name;
             sendPacket.time = packet.time;
             sendPacket.position = c.position;
+            sendPacket.rotation = c.rotation;
 
             sendPacket.PacketToByteArray(Defines.STOC_LOGIN_OK);
 
@@ -155,6 +180,7 @@ namespace mutant_server
                     curPacket.name = sendPacket.name;
                     curPacket.time = sendPacket.time;
                     curPacket.position = Server._players[sendPacket.id].position;
+                    curPacket.rotation = Server._players[sendPacket.id].rotation;
 
                     curPacket.PacketToByteArray(Defines.STOC_PLAYER_ENTER);
 
@@ -195,7 +221,7 @@ namespace mutant_server
                     sendPacket.position = Server._players[packet.id].position;
                     sendPacket.rotation = Server._players[packet.id].rotation;
 
-                    Console.WriteLine("id = {0} x = {1} y = {2} z = {3}", packet.id, packet.position.x, packet.position.y, packet.position.z);
+                    //Console.WriteLine("id = {0} x = {1} y = {2} z = {3}", packet.id, packet.position.x, packet.position.y, packet.position.z);
 
                     sendPacket.PacketToByteArray(Defines.STOC_STATUS_CHANGE);
 

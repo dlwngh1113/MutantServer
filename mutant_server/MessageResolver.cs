@@ -21,6 +21,7 @@ namespace mutant_server
         }
         public byte[] ResolveMessage(byte[] ary, int offset, int bytesTransferred)
         {
+            CleanVariables();
             this.leftBytes = bytesTransferred;
 
             int srcOffset = offset;
@@ -28,26 +29,25 @@ namespace mutant_server
             while(this.leftBytes > 0)
             {
                 bool finished = false;
-                if (this.offset < Header.size)
-                {
-                    this.targetPos = Header.size;
+                //if (this.offset < Header.size)
+                //{
+                //    this.targetPos = Header.size;
 
-                    finished = ReadDataBuffer(ary, ref srcOffset, offset, bytesTransferred);
+                //    finished = ReadDataBuffer(ary, ref srcOffset, offset, bytesTransferred);
 
-                    if(!finished)
-                    {
-                        return null;
-                    }
+                //    if(!finished)
+                //    {
+                //        return null;
+                //    }
 
-                    this.msgSize = GetHeaderAttributes();
+                //    this.msgSize = GetHeaderAttributes();
 
-                    this.targetPos = Header.size + this.msgSize;
-                }
+                //    this.targetPos = Header.size + this.msgSize;
+                //}
 
                 finished = ReadDataBuffer(ary, ref srcOffset, offset, bytesTransferred);
                 if (finished)
                 {
-                    CleanVariables();
                     return this.packetAry;
                 }
             }
