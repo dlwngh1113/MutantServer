@@ -117,15 +117,17 @@ namespace mutant_server
             client.position = new MyVector3(95.09579f, 4.16f, 42.68918f);
             client.rotation = new MyVector3();
             client.asyncUserToken = this;
+            client.job = Server.jobArray[Server.jobOffset];
+            Server.jobOffset = (byte)((Server.jobOffset + 1) % Server.jobArray.Length);
 
-            lock (Server._players)
+            lock (Server.players)
             {
-                Server._players[client.userID] = client;
+                Server.players[client.userID] = client;
             }
 
             return client;
         }
-        private bool CheckUser(MutantPacket packet)
+        private bool IsValidUser(MutantPacket packet)
         {
             //if (packet.id < Defines.id)
             //{
@@ -150,8 +152,7 @@ namespace mutant_server
             MutantPacket packet = new MutantPacket(readEventArgs.Buffer, readEventArgs.Offset);
             packet.ByteArrayToPacket();
 
-            bool isValidUser = CheckUser(packet);
-            if(!isValidUser)
+            if(!IsValidUser(packet))
             {
                 return;
             }
@@ -170,7 +171,7 @@ namespace mutant_server
 
             SendData(sendPacket);
 
-            foreach (var tuple in Server._players)
+            foreach (var tuple in Server.players)
             {
                 if (tuple.Key != sendPacket.id)
                 {
@@ -181,8 +182,8 @@ namespace mutant_server
                     curPacket.id = sendPacket.id;
                     curPacket.name = sendPacket.name;
                     curPacket.time = sendPacket.time;
-                    curPacket.position = Server._players[sendPacket.id].position;
-                    curPacket.rotation = Server._players[sendPacket.id].rotation;
+                    curPacket.position = Server.players[sendPacket.id].position;
+                    curPacket.rotation = Server.players[sendPacket.id].rotation;
 
                     curPacket.PacketToByteArray(Defines.STOC_PLAYER_ENTER);
 
@@ -207,14 +208,14 @@ namespace mutant_server
             PlayerStatusPacket packet = new PlayerStatusPacket(readEventArgs.Buffer, readEventArgs.Offset);
             packet.ByteArrayToPacket();
 
-            if(!(Server._players.ContainsKey(packet.id)))
+            if(!(Server.players.ContainsKey(packet.id)))
             {
                 return;
             }
-            Server._players[packet.id].position = packet.position;
-            Server._players[packet.id].rotation = packet.rotation;
+            Server.players[packet.id].position = packet.position;
+            Server.players[packet.id].rotation = packet.rotation;
 
-            foreach (var tuple in Server._players)
+            foreach (var tuple in Server.players)
             {
                 if (tuple.Key != packet.id)
                 {
@@ -224,8 +225,8 @@ namespace mutant_server
                     sendPacket.name = packet.name;
                     sendPacket.playerMotion = packet.playerMotion;
                     sendPacket.time = Defines.GetCurrentMilliseconds();
-                    sendPacket.position = Server._players[packet.id].position;
-                    sendPacket.rotation = Server._players[packet.id].rotation;
+                    sendPacket.position = Server.players[packet.id].position;
+                    sendPacket.rotation = Server.players[packet.id].rotation;
 
                     //Console.WriteLine("id = {0} x = {1} y = {2} z = {3}", packet.id, packet.position.x, packet.position.y, packet.position.z);
 
@@ -242,7 +243,7 @@ namespace mutant_server
             packet.ByteArrayToPacket();
             var cnt = 0;
             //인벤토리에 존재하는 아이템의 개수 구하기
-            foreach (var tuple in Server._players[packet.id].inventory)
+            foreach (var tuple in Server.players[packet.id].inventory)
             {
                 cnt += tuple.Value;
             }
@@ -263,18 +264,18 @@ namespace mutant_server
             else
             {
                 //SendPacket.inventory Null Reference Exception
-                if (Server._players[packet.id].inventory.ContainsKey(packet.itemName))
+                if (Server.players[packet.id].inventory.ContainsKey(packet.itemName))
                 {
-                    Server._players[packet.id].inventory[packet.itemName] += 1;
+                    Server.players[packet.id].inventory[packet.itemName] += 1;
                 }
                 else
                 {
-                    Server._players[packet.id].inventory.Add(packet.itemName, 1);
+                    Server.players[packet.id].inventory.Add(packet.itemName, 1);
                 }
                 sendPacket.id = packet.id;
                 sendPacket.name = packet.name;
                 sendPacket.itemName = packet.itemName;
-                sendPacket.inventory = Server._players[packet.id].inventory;
+                sendPacket.inventory = Server.players[packet.id].inventory;
                 sendPacket.canGainItem = true;
                 sendPacket.PacketToByteArray(Defines.STOC_ITEM_GAIN);
             }
@@ -295,7 +296,7 @@ namespace mutant_server
             MutantPacket packet = new MutantPacket(readEventArgs.Buffer, readEventArgs.Offset);
             packet.ByteArrayToPacket();
 
-            foreach (var tuple in Server._players)
+            foreach (var tuple in Server.players)
             {
                 var tmpToken = tuple.Value.asyncUserToken;
 
@@ -305,8 +306,8 @@ namespace mutant_server
                 sendPacket.name = packet.name;
                 sendPacket.time = Defines.GetCurrentMilliseconds();
 
-                sendPacket.position = Server._players[packet.id].position;
-                sendPacket.rotation = Server._players[packet.id].rotation;
+                sendPacket.position = Server.players[packet.id].position;
+                sendPacket.rotation = Server.players[packet.id].rotation;
                 sendPacket.playerMotion = Defines.PLAYER_HIT;
                 sendPacket.PacketToByteArray(Defines.STOC_KILLED);
 
@@ -320,7 +321,7 @@ namespace mutant_server
             ChattingPakcet packet = new ChattingPakcet(readEventArgs.Buffer, readEventArgs.Offset);
             packet.ByteArrayToPacket();
 
-            foreach (var tuple in Server._players)
+            foreach (var tuple in Server.players)
             {
                 var tmpToken = tuple.Value.asyncUserToken;
 
@@ -346,7 +347,7 @@ namespace mutant_server
             MutantPacket packet = new MutantPacket(this.readEventArgs.Buffer, this.readEventArgs.Offset);
             packet.ByteArrayToPacket();
 
-            foreach(var tuple in Server._players)
+            foreach(var tuple in Server.players)
             {
                 if (tuple.Key != packet.id)
                 {

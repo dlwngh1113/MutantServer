@@ -189,6 +189,7 @@ namespace mutant_server
         public MyVector3 position;
         public MyVector3 rotation;
         public byte playerMotion;
+        public byte playerJob;
         public ushort size
         {
             get => (ushort)(ary.Length - Header.size);
@@ -209,6 +210,7 @@ namespace mutant_server
             ConvertToByte(this.position);
             ConvertToByte(this.rotation);
             ConvertToByte(this.playerMotion);
+            ConvertToByte(this.playerJob);
         }
         public override void ByteArrayToPacket()
         {
@@ -217,6 +219,7 @@ namespace mutant_server
             this.position = ByteToVector();
             this.rotation = ByteToVector();
             this.playerMotion = ByteToByte();
+            this.playerJob = ByteToByte();
         }
     }
     public class ChattingPakcet : MutantPacket

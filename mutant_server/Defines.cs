@@ -48,6 +48,9 @@ namespace mutant_server
         public const byte PLAYER_HIT = 4;
         public const byte PLAYER_TALK = 5;
 
+        /// <summary>
+        /// items
+        /// </summary>
         public const byte ITEM_LOG = 0;
         public const byte ITEM_STICK = 1;
         public const byte ITEM_ROCK = 2;
@@ -58,9 +61,34 @@ namespace mutant_server
         public const byte ITEM_PADDLE = 7;
         public const byte ITEM_BOAT = 8;
 
+        public const byte JOB_TRACKER = 0;
+        public const byte JOB_PSYCHY = 1;
+        public const byte JOB_NOCTURN = 2;
+        public const byte JOB_RESEARCHER = 3;
+        public const byte JOB_TANKER = 4;
+
         public static int GetCurrentMilliseconds()
         {
             return (DateTime.Now.Second * 1000 + DateTime.Now.Millisecond);
+        }
+
+        public static void Swap<T> (ref T a, ref T b)
+        {
+            var tmp = a;
+            a = b;
+            b = tmp;
+        }
+
+        public static byte[] GenerateRandomJobs()
+        {
+            byte[] ary = { JOB_TRACKER, JOB_PSYCHY, JOB_NOCTURN, JOB_RESEARCHER, JOB_TANKER };
+            Random random = new Random();
+            for(int i=0;i<ary.Length;++i)
+            {
+                Swap<byte>(ref ary[random.Next(0, ary.Length)], ref ary[random.Next(0, ary.Length)]);
+            }
+
+            return ary;
         }
     }
 }

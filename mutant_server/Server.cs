@@ -11,7 +11,7 @@ namespace mutant_server
         private int _numConnections;   // the maximum number of connections the sample is designed to handle simultaneously
         private int _receiveBufferSize;// buffer size to use for each socket I/O operation
         private BufferManager _bufferManager;  // represents a large reusable set of buffers for all socket operations
-        const int opsToPreAlloc = 2;    // read, write (don't alloc buffer space for accepts)
+        private const int opsToPreAlloc = 2;    // read, write (don't alloc buffer space for accepts)
         private Listener _listener;
 
         // pool of reusable SocketAsyncEventArgs objects for write, read and accept socket operations
@@ -19,15 +19,17 @@ namespace mutant_server
         private SocketAsyncEventArgsPool _writePool;
         private int _numConnectedSockets;      // the total number of clients connected to the server
 
-        static public Dictionary<int, Client> _players = new Dictionary<int, Client>();
+        static public Dictionary<int, Client> players = new Dictionary<int, Client>();
+        static public byte[] jobArray = Defines.GenerateRandomJobs();
+        static public byte jobOffset = 0;
 
         public Server(int numConnections, int receiveBufferSize)
         {
             _numConnectedSockets = 0;
             _numConnections = numConnections;
             _receiveBufferSize = receiveBufferSize;
-            _bufferManager = new BufferManager(receiveBufferSize * numConnections * opsToPreAlloc,
-                receiveBufferSize);
+            _bufferManager = new BufferManager(_receiveBufferSize * numConnections * opsToPreAlloc,
+                _receiveBufferSize);
 
             _readPool = new SocketAsyncEventArgsPool(numConnections);
             _writePool = new SocketAsyncEventArgsPool(numConnections);
@@ -159,9 +161,9 @@ namespace mutant_server
             }
             // throws if client process has already closed
             catch (Exception) { }
-            lock (_players)
+            lock (players)
             {
-                _players.Remove(token.userID);
+                players.Remove(token.userID);
             }
             token.socket.Close();
 
