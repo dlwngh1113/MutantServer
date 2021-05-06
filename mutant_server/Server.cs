@@ -112,6 +112,7 @@ namespace mutant_server
             token.writeEventArgs = send_event;
             token.recvCallback = ProcessReceive;
             token.sendCallback = ProcessSend;
+            token.closeMethod = CloseClientSocket;
             
             bool willRaiseEvent = token.socket.ReceiveAsync(token.readEventArgs);
             if (!willRaiseEvent)

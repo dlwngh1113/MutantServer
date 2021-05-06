@@ -9,6 +9,7 @@ namespace mutant_server
     {
         public delegate void SendCallback(SocketAsyncEventArgs e);
         public delegate void RecvCallback(SocketAsyncEventArgs e);
+        public delegate void CloseMethod(SocketAsyncEventArgs e);
 
         private MessageResolver _messageResolver = new MessageResolver();
         private Queue<MutantPacket> sendQueue = new Queue<MutantPacket>();
@@ -19,6 +20,7 @@ namespace mutant_server
         public SocketAsyncEventArgs writeEventArgs = null;
         public RecvCallback recvCallback;
         public RecvCallback sendCallback;
+        public CloseMethod closeMethod;
         public AsyncUserToken()
         {
 
@@ -187,7 +189,7 @@ namespace mutant_server
                     tmpToken.SendData(curPacket);
 
                     //새로운 플레이어에게 기존의 플레이어 정보 전달
-                    PlayerStatusPacket otherPacket = new PlayerStatusPacket(this.writeEventArgs.Buffer, this.writeEventArgs.Offset);
+                    PlayerStatusPacket otherPacket = new PlayerStatusPacket(new byte[Defines.BUF_SIZE], 0);
                     otherPacket.id = tuple.Key;
                     otherPacket.name = tuple.Value.userName;
                     otherPacket.position = tuple.Value.position;
@@ -205,6 +207,10 @@ namespace mutant_server
             PlayerStatusPacket packet = new PlayerStatusPacket(readEventArgs.Buffer, readEventArgs.Offset);
             packet.ByteArrayToPacket();
 
+            if(!(Server._players.ContainsKey(packet.id)))
+            {
+                return;
+            }
             Server._players[packet.id].position = packet.position;
             Server._players[packet.id].rotation = packet.rotation;
 
@@ -337,19 +343,26 @@ namespace mutant_server
 
             //지금 게임에 존재하는 유저들에게 해당 유저가 게임을 종료했음을 알림
             //지금 게임을 같이 하고 있는 유저들을 어떻게 구분할 것인가?
-            //CloseClientSocket(e);
-            //try
-            //{
-            //    bool willRaiseEvent = token.socket.ReceiveAsync(token.readEventArgs);
-            //    if (!willRaiseEvent)
-            //    {
-            //        ProcessReceive(token.readEventArgs);
-            //    }
-            //}
-            //catch (Exception ex)
-            //{
-            //    Console.WriteLine(ex.ToString());
-            //}
+            MutantPacket packet = new MutantPacket(this.readEventArgs.Buffer, this.readEventArgs.Offset);
+            packet.ByteArrayToPacket();
+
+            foreach(var tuple in Server._players)
+            {
+                if (tuple.Key != packet.id)
+                {
+                    var token = tuple.Value.asyncUserToken;
+                    MutantPacket sendPacket = new MutantPacket(token.writeEventArgs.Buffer, token.writeEventArgs.Offset);
+                    sendPacket.name = packet.name;
+                    sendPacket.id = packet.id;
+                    sendPacket.time = packet.time;
+
+                    sendPacket.PacketToByteArray(Defines.STOC_PLAYER_LEAVE);
+
+                    token.SendData(sendPacket);
+                }
+            }
+
+            closeMethod(this.readEventArgs);
         }
     }
 }
