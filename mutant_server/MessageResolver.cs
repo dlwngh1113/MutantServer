@@ -17,7 +17,6 @@ namespace mutant_server
             targetPos = 0;
             msgSize = 0;
             op = 0;
-            packetAry = new byte[Defines.BUF_SIZE];
         }
         public byte[] ResolveMessage(byte[] ary, int offset, int bytesTransferred)
         {
@@ -55,7 +54,7 @@ namespace mutant_server
         }
         private void CleanVariables()
         {
-            Array.Clear(this.packetAry, 0, this.offset);
+            packetAry = new byte[Defines.BUF_SIZE];
             offset = 0;
         }
         private ushort GetHeaderAttributes()

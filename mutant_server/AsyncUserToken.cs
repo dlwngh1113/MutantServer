@@ -166,6 +166,7 @@ namespace mutant_server
             sendPacket.time = packet.time;
             sendPacket.position = c.position;
             sendPacket.rotation = c.rotation;
+            sendPacket.playerJob = c.job;
 
             sendPacket.PacketToByteArray(Defines.STOC_LOGIN_OK);
 
