@@ -60,6 +60,9 @@ namespace mutant_server
                 case Defines.CTOS_ITEM_CLICKED:
                     ProcessItemEvent(data);
                     break;
+                case Defines.CTOS_ITEM_CRAFT_REQUEST:
+                    ProcessItemCraft(data);
+                    break;
                 default:
                     throw new Exception("operation from client is not valid\n");
             }
@@ -179,7 +182,7 @@ namespace mutant_server
                     var tmpToken = tuple.Value.asyncUserToken;
 
                     //기존의 플레이어에게 새로운 플레이어 정보 전달
-                    PlayerStatusPacket curPacket = new PlayerStatusPacket(tmpToken.writeEventArgs.Buffer, tmpToken.writeEventArgs.Offset);
+                    PlayerStatusPacket curPacket = new PlayerStatusPacket(new byte[Defines.BUF_SIZE], 0);
                     curPacket.id = sendPacket.id;
                     curPacket.name = sendPacket.name;
                     curPacket.time = sendPacket.time;
@@ -221,7 +224,7 @@ namespace mutant_server
                 if (tuple.Key != packet.id)
                 {
                     var tmpToken = tuple.Value.asyncUserToken;
-                    PlayerStatusPacket sendPacket = new PlayerStatusPacket(tmpToken.writeEventArgs.Buffer, tmpToken.writeEventArgs.Offset);
+                    PlayerStatusPacket sendPacket = new PlayerStatusPacket(new byte[Defines.BUF_SIZE], 0);
                     sendPacket.id = packet.id;
                     sendPacket.name = packet.name;
                     sendPacket.playerMotion = packet.playerMotion;
@@ -257,7 +260,7 @@ namespace mutant_server
                 sendPacket.id = packet.id;
                 sendPacket.name = packet.name;
                 sendPacket.itemName = packet.itemName;
-                sendPacket.inventory = packet.inventory;
+                sendPacket.inventory = Server.players[packet.id].inventory;
                 sendPacket.canGainItem = false;
                 sendPacket.PacketToByteArray(Defines.STOC_ITEM_DENIED);
             }
@@ -281,7 +284,7 @@ namespace mutant_server
                 sendPacket.PacketToByteArray(Defines.STOC_ITEM_GAIN);
             }
 
-            foreach (var tuple in sendPacket.inventory)
+            foreach (var tuple in Server.players[packet.id].inventory)
             {
                 Console.Write("key - {0}, value - {1}", tuple.Key, tuple.Value);
             }
@@ -290,6 +293,71 @@ namespace mutant_server
             SendData(sendPacket);
         }
 
+        private void ProcessItemCraft(byte[] data)
+        {
+            ItemEventPacket packet = new ItemEventPacket(readEventArgs.Buffer, readEventArgs.Offset);
+            packet.ByteArrayToPacket();
+
+            ItemEventPacket sendPacket = new ItemEventPacket(this.writeEventArgs.Buffer, this.writeEventArgs.Offset);
+            sendPacket.id = packet.id;
+            sendPacket.name = packet.name;
+            sendPacket.time = packet.time;
+
+            if (!Server.players.ContainsKey(packet.id))
+            {
+                return;
+            }
+
+            Console.WriteLine("packet.itemName - {0}", packet.itemName);
+            switch(packet.itemName)
+            {
+                case "Axe":
+                    Server.players[packet.id].inventory["Stick"] -= 1;
+                    Server.players[packet.id].inventory["Rock"] -= 1;
+                    if (!Server.players[packet.id].inventory.ContainsKey("Axe"))
+                    {
+                        Server.players[packet.id].inventory.Add("Axe", 1);
+                    }
+                    break;
+                case "Plane":
+                    Server.players[packet.id].inventory["Log"] -= 2;
+                    break;
+                case "Sail":
+                    Server.players[packet.id].inventory["Log"] -= 1;
+                    Server.players[packet.id].inventory["Rope"] -= 1;
+                    break;
+                case "Paddle":
+                    Server.players[packet.id].inventory["Log"] -= 1;
+                    break;
+                case "Boat":
+                    Server.players[packet.id].inventory["Log"] -= 1;
+                    break;
+            }
+
+            sendPacket.inventory = Server.players[packet.id].inventory;
+            sendPacket.itemName = packet.itemName;
+            sendPacket.canGainItem = true;
+
+            sendPacket.PacketToByteArray(Defines.STOC_ITEM_CRAFTED);
+
+            SendData(sendPacket);
+
+            foreach (var tuple in Server.players[packet.id].inventory)
+            {
+                Console.Write("key - {0}, value - {1}", tuple.Key, tuple.Value);
+            }
+            Console.WriteLine("");
+
+            foreach (var tuple in Server.players)
+            {
+                var token = tuple.Value.asyncUserToken;
+
+                ItemEventPacket otherPacket = new ItemEventPacket(new byte[Defines.BUF_SIZE], 0);
+                otherPacket.Copy(otherPacket, Defines.STOC_ITEM_CRAFTED);
+
+                token.SendData(otherPacket);
+            }
+        }
         private void ProcessAttack(byte[] data)
         {
             //누가 어떤 플레이어를 공격했는가?
@@ -297,12 +365,17 @@ namespace mutant_server
             MutantPacket packet = new MutantPacket(readEventArgs.Buffer, readEventArgs.Offset);
             packet.ByteArrayToPacket();
 
+            if(!Server.players.ContainsKey(packet.id))
+            {
+                return;
+            }
+
             foreach (var tuple in Server.players)
             {
                 var tmpToken = tuple.Value.asyncUserToken;
 
                 //기존의 플레이어에게 새로운 플레이어 정보 전달
-                PlayerStatusPacket sendPacket = new PlayerStatusPacket(tmpToken.writeEventArgs.Buffer, tmpToken.writeEventArgs.Offset);
+                PlayerStatusPacket sendPacket = new PlayerStatusPacket(new byte[Defines.BUF_SIZE], 0);
                 sendPacket.id = packet.id;
                 sendPacket.name = packet.name;
                 sendPacket.time = Defines.GetCurrentMilliseconds();
@@ -327,7 +400,7 @@ namespace mutant_server
                 var tmpToken = tuple.Value.asyncUserToken;
 
                 //기존의 플레이어에게 새로운 플레이어 정보 전달
-                ChattingPakcet sendPacket = new ChattingPakcet(tmpToken.writeEventArgs.Buffer, tmpToken.writeEventArgs.Offset);
+                ChattingPakcet sendPacket = new ChattingPakcet(new byte[Defines.BUF_SIZE], 0);
                 sendPacket.id = packet.id;
                 sendPacket.name = packet.name;
                 sendPacket.time = Defines.GetCurrentMilliseconds();
@@ -353,7 +426,7 @@ namespace mutant_server
                 if (tuple.Key != packet.id)
                 {
                     var token = tuple.Value.asyncUserToken;
-                    MutantPacket sendPacket = new MutantPacket(token.writeEventArgs.Buffer, token.writeEventArgs.Offset);
+                    MutantPacket sendPacket = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
                     sendPacket.name = packet.name;
                     sendPacket.id = packet.id;
                     sendPacket.time = packet.time;

@@ -154,8 +154,8 @@ namespace mutant_server
         }
         public void Copy(ItemEventPacket packet, byte type = Defines.STOC_ITEM_GAIN)
         {
-            ary[offset] = type;
             Array.Copy(packet.ary, packet.offset, ary, offset, Defines.BUF_SIZE);
+            ary[offset] = type;
         }
         public override void ByteArrayToPacket()
         {
@@ -200,8 +200,8 @@ namespace mutant_server
         }
         public void Copy(PlayerStatusPacket packet, byte type = Defines.STOC_STATUS_CHANGE)
         {
-            ary[offset] = type;
             Array.Copy(packet.ary, packet.offset, ary, offset, Defines.BUF_SIZE);
+            ary[offset] = type;
         }
         public override void PacketToByteArray(byte type)
         {
@@ -235,8 +235,8 @@ namespace mutant_server
         }
         public void Copy(ChattingPakcet packet, byte type = Defines.STOC_CHAT)
         {
-            ary[offset] = type;
             Array.Copy(packet.ary, packet.offset, ary, offset, Defines.BUF_SIZE);
+            ary[offset] = type;
         }
         public override void PacketToByteArray(byte type)
         {
