@@ -8,6 +8,7 @@ namespace mutant_server
         public const short MAX_USERS = 10000;
         public const short MAX_CHAT_LEN = 100;
         public const short PORT = 9000;
+        public const float FrameRate = (float)(1.0 / 60.0);
 
         public static int id = 0;
 
@@ -66,11 +67,6 @@ namespace mutant_server
         public const byte JOB_NOCTURN = 2;
         public const byte JOB_RESEARCHER = 3;
         public const byte JOB_TANKER = 4;
-
-        public static int GetCurrentMilliseconds()
-        {
-            return (DateTime.Now.Second * 1000 + DateTime.Now.Millisecond);
-        }
 
         public static void Swap<T> (ref T a, ref T b)
         {

@@ -224,7 +224,7 @@ namespace mutant_server
                     sendPacket.id = packet.id;
                     sendPacket.name = packet.name;
                     sendPacket.playerMotion = packet.playerMotion;
-                    sendPacket.time = Defines.GetCurrentMilliseconds();
+                    sendPacket.time = 0;
                     sendPacket.position = Server.players[packet.id].position;
                     sendPacket.rotation = Server.players[packet.id].rotation;
 
@@ -304,7 +304,7 @@ namespace mutant_server
                 PlayerStatusPacket sendPacket = new PlayerStatusPacket(tmpToken.writeEventArgs.Buffer, tmpToken.writeEventArgs.Offset);
                 sendPacket.id = packet.id;
                 sendPacket.name = packet.name;
-                sendPacket.time = Defines.GetCurrentMilliseconds();
+                sendPacket.time = 0;
 
                 sendPacket.position = Server.players[packet.id].position;
                 sendPacket.rotation = Server.players[packet.id].rotation;
@@ -329,7 +329,7 @@ namespace mutant_server
                 ChattingPakcet sendPacket = new ChattingPakcet(tmpToken.writeEventArgs.Buffer, tmpToken.writeEventArgs.Offset);
                 sendPacket.id = packet.id;
                 sendPacket.name = packet.name;
-                sendPacket.time = Defines.GetCurrentMilliseconds();
+                sendPacket.time = 0;
 
                 sendPacket.message = packet.message;
                 sendPacket.PacketToByteArray(Defines.STOC_CHAT);

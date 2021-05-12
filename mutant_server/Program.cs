@@ -2,6 +2,7 @@
 
 namespace mutant_server
 {
+    public delegate void UpdateMethod(float elapsedTime);
     class Program
     {
         static public void Main(string[] args)
