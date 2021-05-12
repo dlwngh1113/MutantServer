@@ -293,12 +293,24 @@ namespace mutant_server
             SendData(sendPacket);
         }
 
+        private void AddItemInGlobal(string itemName)
+        {
+            if (Server.globalItem.ContainsKey(itemName))
+            {
+                Server.globalItem[itemName]++;
+            }
+            else
+            {
+                Server.globalItem.Add(itemName, 1);
+            }
+        }
+
         private void ProcessItemCraft(byte[] data)
         {
-            ItemEventPacket packet = new ItemEventPacket(readEventArgs.Buffer, readEventArgs.Offset);
+            ItemCraftPacket packet = new ItemCraftPacket(readEventArgs.Buffer, readEventArgs.Offset);
             packet.ByteArrayToPacket();
 
-            ItemEventPacket sendPacket = new ItemEventPacket(this.writeEventArgs.Buffer, this.writeEventArgs.Offset);
+            ItemCraftPacket sendPacket = new ItemCraftPacket(this.writeEventArgs.Buffer, this.writeEventArgs.Offset);
             sendPacket.id = packet.id;
             sendPacket.name = packet.name;
             sendPacket.time = packet.time;
@@ -329,14 +341,12 @@ namespace mutant_server
                 case "Paddle":
                     Server.players[packet.id].inventory["Log"] -= 1;
                     break;
-                case "Boat":
-                    Server.players[packet.id].inventory["Log"] -= 1;
-                    break;
             }
+            AddItemInGlobal(packet.itemName);
 
             sendPacket.inventory = Server.players[packet.id].inventory;
             sendPacket.itemName = packet.itemName;
-            sendPacket.canGainItem = true;
+            sendPacket.globalItem = Server.globalItem;
 
             sendPacket.PacketToByteArray(Defines.STOC_ITEM_CRAFTED);
 
@@ -348,14 +358,30 @@ namespace mutant_server
             }
             Console.WriteLine("");
 
+            foreach (var tuple in Server.globalItem)
+            {
+                Console.Write("key - {0}, value - {1}", tuple.Key, tuple.Value);
+            }
+            Console.WriteLine("");
+
             foreach (var tuple in Server.players)
             {
-                var token = tuple.Value.asyncUserToken;
+                if (tuple.Key != packet.id)
+                {
+                    var token = tuple.Value.asyncUserToken;
 
-                ItemEventPacket otherPacket = new ItemEventPacket(new byte[Defines.BUF_SIZE], 0);
-                otherPacket.Copy(otherPacket, Defines.STOC_ITEM_CRAFTED);
+                    ItemCraftPacket otherPacket = new ItemCraftPacket(new byte[Defines.BUF_SIZE], 0);
+                    otherPacket.id = sendPacket.id;
+                    otherPacket.name = sendPacket.name;
+                    otherPacket.time = sendPacket.time;
 
-                token.SendData(otherPacket);
+                    otherPacket.itemName = sendPacket.itemName;
+                    otherPacket.inventory = sendPacket.inventory;
+                    otherPacket.globalItem = sendPacket.globalItem;
+                    otherPacket.PacketToByteArray(Defines.STOC_ITEM_CRAFTED);
+
+                    token.SendData(otherPacket);
+                }
             }
         }
         private void ProcessAttack(byte[] data)
