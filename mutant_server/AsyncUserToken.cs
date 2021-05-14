@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Threading;
+using System.Linq;
 
 namespace mutant_server
 {
@@ -464,6 +465,17 @@ namespace mutant_server
                 sendPacket.PacketToByteArray(Defines.STOC_VOTE_START);
 
                 token.SendData(sendPacket);
+            }
+
+            for (int i = 0;i<Server.players.Count;++i)
+            {
+                var tuple = Server.players.ElementAt(i);
+                tuple.Value.position = tuple.Value.InitPos;
+                for(int j = i;j<Server.players.Count;++j)
+                {
+                    var token = Server.players.ElementAt(i).Value.asyncUserToken;
+
+                }
             }
         }
         public void ProcessVote(byte[] data)
