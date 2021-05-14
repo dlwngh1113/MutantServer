@@ -114,17 +114,19 @@ namespace mutant_server
                 }
             }
         }
-        private Client InitClient()
+        private Client InitClient(MutantPacket packet)
         {
             Interlocked.Increment(ref Defines.id);
             this.userID = Defines.id;
 
             Client client = new Client(Defines.id);
+            client.userName = packet.name;
             client.position = new MyVector3(95.09579f, 4.16f, 42.68918f);
             client.rotation = new MyVector3();
             client.asyncUserToken = this;
-            client.job = Server.jobArray[Server.jobOffset];
-            Server.jobOffset = (byte)((Server.jobOffset + 1) % Server.jobArray.Length);
+            client.job = Server.jobArray[Server.globalOffset];
+            client.InitPos = Server.initPosAry[Server.globalOffset];
+            Server.globalOffset = (byte)((Server.globalOffset + 1) % Server.jobArray.Length);
 
             lock (Server.players)
             {
@@ -163,7 +165,7 @@ namespace mutant_server
                 return;
             }
 
-            Client c = InitClient();
+            Client c = InitClient(packet);
             Console.WriteLine("{0} client has {1} id, login request!", c.userName, c.userID);
 
             PlayerStatusPacket sendPacket = new PlayerStatusPacket(this.writeEventArgs.Buffer, this.writeEventArgs.Offset);

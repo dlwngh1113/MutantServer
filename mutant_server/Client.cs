@@ -7,6 +7,7 @@ namespace mutant_server
         public AsyncUserToken asyncUserToken;
         public int userID;
         public string userName = "admin";
+        public MyVector3 InitPos;
         public MyVector3 position;
         public MyVector3 rotation;
         public Dictionary<string, int> inventory;
