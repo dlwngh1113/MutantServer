@@ -23,7 +23,8 @@ namespace mutant_server
         public const byte CTOS_LEAVE_GAME = 6;
         public const byte CTOS_JOIN_GAME = 7;
         public const byte CTOS_ITEM_CRAFT_REQUEST = 8;
-        public const byte CTOS_VOTE_SELECTED = 9;
+        public const byte CTOS_VOTE_REQUEST = 9;
+        public const byte CTOS_VOTE_SELECTED = 10;
 
         /// <summary>
         /// server to client operation
@@ -40,7 +41,8 @@ namespace mutant_server
         public const byte STOC_ENTER_FAIL = 9;
         public const byte STOC_KILLED = 10;
         public const byte STOC_ITEM_CRAFTED = 11;
-        public const byte STOC_VOTED = 12;
+        public const byte STOC_VOTE_START = 12;
+        public const byte STOC_VOTED = 13;
 
         /// <summary>
         /// player motions
