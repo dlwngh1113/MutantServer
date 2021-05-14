@@ -63,6 +63,9 @@ namespace mutant_server
                 case Defines.CTOS_ITEM_CRAFT_REQUEST:
                     ProcessItemCraft(data);
                     break;
+                case Defines.CTOS_VOTE_SELECTED:
+                    ProcessVote(data);
+                    break;
                 default:
                     throw new Exception("operation from client is not valid\n");
             }
@@ -435,6 +438,27 @@ namespace mutant_server
                 sendPacket.PacketToByteArray(Defines.STOC_CHAT);
 
                 tmpToken.SendData(sendPacket);
+            }
+        }
+
+        public void ProcessVote(byte[] data)
+        {
+            VotePacket packet = new VotePacket(readEventArgs.Buffer, readEventArgs.Offset);
+            packet.ByteArrayToPacket();
+
+            foreach (var tuple in Server.players)
+            {
+                var token = tuple.Value.asyncUserToken;
+                VotePacket sendPacket = new VotePacket(new byte[Defines.BUF_SIZE], 0);
+                sendPacket.name = packet.name;
+                sendPacket.id = packet.id;
+                sendPacket.time = packet.time;
+
+                sendPacket.votedPersonID = packet.votedPersonID;
+
+                sendPacket.PacketToByteArray(Defines.STOC_VOTED);
+
+                token.SendData(sendPacket);
             }
         }
 
