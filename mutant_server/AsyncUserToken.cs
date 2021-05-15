@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Threading;
+using System.Linq;
 
 namespace mutant_server
 {
@@ -63,6 +64,12 @@ namespace mutant_server
                 case Defines.CTOS_ITEM_CRAFT_REQUEST:
                     ProcessItemCraft(data);
                     break;
+                case Defines.CTOS_VOTE_SELECTED:
+                    ProcessVote(data);
+                    break;
+                case Defines.CTOS_VOTE_REQUEST:
+                    ProcessStartVote(data);
+                    break;
                 default:
                     throw new Exception("operation from client is not valid\n");
             }
@@ -111,17 +118,19 @@ namespace mutant_server
                 }
             }
         }
-        private Client InitClient()
+        private Client InitClient(MutantPacket packet)
         {
             Interlocked.Increment(ref Defines.id);
             this.userID = Defines.id;
 
             Client client = new Client(Defines.id);
+            client.userName = packet.name;
             client.position = new MyVector3(95.09579f, 4.16f, 42.68918f);
             client.rotation = new MyVector3();
             client.asyncUserToken = this;
-            client.job = Server.jobArray[Server.jobOffset];
-            Server.jobOffset = (byte)((Server.jobOffset + 1) % Server.jobArray.Length);
+            client.job = Server.jobArray[Server.globalOffset];
+            client.InitPos = Server.initPosAry[Server.globalOffset];
+            Server.globalOffset = (byte)((Server.globalOffset + 1) % Server.jobArray.Length);
 
             lock (Server.players)
             {
@@ -160,7 +169,7 @@ namespace mutant_server
                 return;
             }
 
-            Client c = InitClient();
+            Client c = InitClient(packet);
             Console.WriteLine("{0} client has {1} id, login request!", c.userName, c.userID);
 
             PlayerStatusPacket sendPacket = new PlayerStatusPacket(new byte[Defines.BUF_SIZE], 0);
@@ -440,6 +449,58 @@ namespace mutant_server
 
                     tmpToken.SendData(sendPacket);
                 }
+            }
+        }
+
+        public void ProcessStartVote(byte[] data)
+        {
+            MutantPacket packet = new MutantPacket(readEventArgs.Buffer, readEventArgs.Offset);
+            packet.ByteArrayToPacket();
+
+            foreach (var tuple in Server.players)
+            {
+                var token = tuple.Value.asyncUserToken;
+                PlayerStatusPacket sendPacket = new PlayerStatusPacket(new byte[Defines.BUF_SIZE], 0);
+                sendPacket.id = tuple.Value.userID;
+                sendPacket.name = tuple.Value.userName;
+                sendPacket.position = tuple.Value.InitPos;
+                sendPacket.rotation = tuple.Value.rotation;
+                sendPacket.playerMotion = Defines.PLAYER_IDLE;
+
+                sendPacket.PacketToByteArray(Defines.STOC_VOTE_START);
+
+                token.SendData(sendPacket);
+            }
+
+            for (int i = 0;i<Server.players.Count;++i)
+            {
+                var tuple = Server.players.ElementAt(i);
+                tuple.Value.position = tuple.Value.InitPos;
+                for(int j = i;j<Server.players.Count;++j)
+                {
+                    var token = Server.players.ElementAt(i).Value.asyncUserToken;
+
+                }
+            }
+        }
+        public void ProcessVote(byte[] data)
+        {
+            VotePacket packet = new VotePacket(readEventArgs.Buffer, readEventArgs.Offset);
+            packet.ByteArrayToPacket();
+
+            foreach (var tuple in Server.players)
+            {
+                var token = tuple.Value.asyncUserToken;
+                VotePacket sendPacket = new VotePacket(new byte[Defines.BUF_SIZE], 0);
+                sendPacket.name = packet.name;
+                sendPacket.id = packet.id;
+                sendPacket.time = packet.time;
+
+                sendPacket.votedPersonID = packet.votedPersonID;
+
+                sendPacket.PacketToByteArray(Defines.STOC_VOTED);
+
+                token.SendData(sendPacket);
             }
         }
 

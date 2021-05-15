@@ -305,4 +305,28 @@ namespace mutant_server
             this.message = ByteToString();
         }
     }
+
+    public class VotePacket:MutantPacket
+    {
+        public int votedPersonID;
+        public VotePacket(byte[] ary, int offset) : base(ary, offset)
+        {
+
+        }
+        public void Copy(VotePacket packet, byte type = Defines.STOC_CHAT)
+        {
+            Array.Copy(packet.ary, packet.offset, ary, offset, Defines.BUF_SIZE);
+            ary[offset] = type;
+        }
+        public override void PacketToByteArray(byte type)
+        {
+            base.PacketToByteArray(type);
+            ConvertToByte(this.votedPersonID);
+        }
+        public override void ByteArrayToPacket()
+        {
+            base.ByteArrayToPacket();
+            this.votedPersonID = ByteToInt();
+        }
+    }
 }
