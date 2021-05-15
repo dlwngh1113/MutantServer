@@ -163,7 +163,7 @@ namespace mutant_server
             Client c = InitClient();
             Console.WriteLine("{0} client has {1} id, login request!", c.userName, c.userID);
 
-            PlayerStatusPacket sendPacket = new PlayerStatusPacket(this.writeEventArgs.Buffer, this.writeEventArgs.Offset);
+            PlayerStatusPacket sendPacket = new PlayerStatusPacket(new byte[Defines.BUF_SIZE], 0);
             sendPacket.id = c.userID;
             sendPacket.name = packet.name;
             sendPacket.time = packet.time;
@@ -218,6 +218,8 @@ namespace mutant_server
             }
             Server.players[packet.id].position = packet.position;
             Server.players[packet.id].rotation = packet.rotation;
+            Server.players[packet.id].rotation.x = 0;
+            Server.players[packet.id].rotation.z = 0;
 
             foreach (var tuple in Server.players)
             {
@@ -423,18 +425,21 @@ namespace mutant_server
 
             foreach (var tuple in Server.players)
             {
-                var tmpToken = tuple.Value.asyncUserToken;
+                if (packet.id != tuple.Key)
+                {
+                    var tmpToken = tuple.Value.asyncUserToken;
 
-                //기존의 플레이어에게 새로운 플레이어 정보 전달
-                ChattingPakcet sendPacket = new ChattingPakcet(new byte[Defines.BUF_SIZE], 0);
-                sendPacket.id = packet.id;
-                sendPacket.name = packet.name;
-                sendPacket.time = Defines.GetCurrentMilliseconds();
+                    //기존의 플레이어에게 새로운 플레이어 정보 전달
+                    ChattingPakcet sendPacket = new ChattingPakcet(new byte[Defines.BUF_SIZE], 0);
+                    sendPacket.id = packet.id;
+                    sendPacket.name = packet.name;
+                    sendPacket.time = Defines.GetCurrentMilliseconds();
 
-                sendPacket.message = packet.message;
-                sendPacket.PacketToByteArray(Defines.STOC_CHAT);
+                    sendPacket.message = packet.message;
+                    sendPacket.PacketToByteArray(Defines.STOC_CHAT);
 
-                tmpToken.SendData(sendPacket);
+                    tmpToken.SendData(sendPacket);
+                }
             }
         }
 
