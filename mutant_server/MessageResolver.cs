@@ -19,14 +19,15 @@ namespace mutant_server
             op = 0;
             packetAry = new byte[Defines.BUF_SIZE];
         }
-        public byte[] ResolveMessage(byte[] ary, int offset, int bytesTransferred)
+        public byte[] ResolveMessage(byte[] ary, int aryOffset, int bytesTransferred)
         {
             CleanVariables();
             this.leftBytes = bytesTransferred;
 
-            int srcOffset = offset;
+            int srcOffset = aryOffset;
+            targetPos = bytesTransferred;
 
-            while(this.leftBytes > 0)
+            while (this.leftBytes > 0)
             {
                 bool finished = false;
                 //if (this.offset < Header.size)
@@ -45,7 +46,7 @@ namespace mutant_server
                 //    this.targetPos = Header.size + this.msgSize;
                 //}
 
-                finished = ReadDataBuffer(ary, ref srcOffset, offset, bytesTransferred);
+                finished = ReadDataBuffer(ary, ref srcOffset, aryOffset, bytesTransferred);
                 if (finished)
                 {
                     return this.packetAry;
@@ -65,14 +66,14 @@ namespace mutant_server
         }
         private bool ReadDataBuffer(byte[] ary, ref int srcOffset, int offset, int bytesTransferred)
         {
-            if(this.offset >= offset + bytesTransferred)
+            if (this.offset >= offset + bytesTransferred)
             {
                 return false;
             }
 
-            int recvSize = this.targetPos - this.offset;
+            int recvSize = targetPos - this.offset;
 
-            if(this.leftBytes < recvSize)
+            if (this.leftBytes < recvSize)
             {
                 recvSize = this.leftBytes;
             }
@@ -83,7 +84,7 @@ namespace mutant_server
             this.offset += recvSize;
             leftBytes -= recvSize;
 
-            if(this.offset < this.targetPos)
+            if (this.offset < this.targetPos)
             {
                 return false;
             }

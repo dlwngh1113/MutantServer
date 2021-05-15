@@ -32,7 +32,6 @@ namespace mutant_server
         }
         public void ResolveMessage(byte[] ary, int offset, int bytesTransferred)
         {
-            //RecvEventSelect(ary);
             byte[] data = _messageResolver.ResolveMessage(ary, offset, bytesTransferred);
             if (data != null)
             {
@@ -101,11 +100,15 @@ namespace mutant_server
 
                 Array.Copy(packet.ary, packet.startPos, this.writeEventArgs.Buffer, this.writeEventArgs.Offset, Defines.BUF_SIZE);
 
-                bool willRaise = this.socket.SendAsync(this.writeEventArgs);
-                if(!willRaise)
+                try
                 {
-                    sendCallback(this.writeEventArgs);
+                    bool willRaise = this.socket.SendAsync(this.writeEventArgs);
+                    if (!willRaise)
+                    {
+                        sendCallback(this.writeEventArgs);
+                    }
                 }
+                catch (Exception ex) { }
             }
         }
 
@@ -123,6 +126,10 @@ namespace mutant_server
         }
         private Client InitClient(MutantPacket packet)
         {
+            if(!IsValidUser(packet))
+            {
+                return null;
+            }
             Interlocked.Increment(ref Defines.id);
             this.userID = Defines.id;
 
@@ -133,7 +140,7 @@ namespace mutant_server
             client.asyncUserToken = this;
             client.job = Server.jobArray[Server.globalOffset];
             client.InitPos = Server.initPosAry[Server.globalOffset];
-            Interlocked.CompareExchange(ref Server.globalOffset, Server.globalOffset, (Server.globalOffset + 1) % Server.jobArray.Length);
+            Interlocked.CompareExchange(ref Server.globalOffset, (Server.globalOffset + 1) % Server.jobArray.Length, (Server.globalOffset + 1) % Server.jobArray.Length);
 
             lock (Server.players)
             {
@@ -144,9 +151,16 @@ namespace mutant_server
         }
         private bool IsValidUser(MutantPacket packet)
         {
-            if (packet.id == 0)
+            foreach(var tuple in Server.players)
             {
-                return false;
+                if(packet.name == tuple.Value.userName)
+                {
+                    return false;
+                }
+                else if(packet.id == tuple.Key)
+                {
+                    return false;
+                }
             }
 
             return true;
@@ -164,6 +178,10 @@ namespace mutant_server
             packet.ByteArrayToPacket();
 
             Client c = InitClient(packet);
+            if(c == null)
+            {
+                return;
+            }
             Console.WriteLine("{0} client has {1} id, login request!", c.userName, c.userID);
 
             MutantPacket sendPacket = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
@@ -185,10 +203,6 @@ namespace mutant_server
             sendPacket.id = packet.id;
             sendPacket.name = packet.name;
             sendPacket.time = packet.time;
-            if(!Server.players.ContainsKey(packet.id))
-            {
-                return;
-            }
             sendPacket.position = Server.players[packet.id].position;
             sendPacket.rotation = Server.players[packet.id].rotation;
             sendPacket.playerJob = Server.players[packet.id].job;
