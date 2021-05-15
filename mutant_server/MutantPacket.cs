@@ -308,7 +308,8 @@ namespace mutant_server
 
     public class VotePacket:MutantPacket
     {
-        public int votedPersonID;
+        public string votedPersonID;
+        public Dictionary<string, int> votePairs;
         public VotePacket(byte[] ary, int offset) : base(ary, offset)
         {
 
@@ -321,12 +322,26 @@ namespace mutant_server
         public override void PacketToByteArray(byte type)
         {
             base.PacketToByteArray(type);
-            ConvertToByte(this.votedPersonID);
+            ConvertToByte(votedPersonID);
+            ConvertToByte(votePairs.Count);
+            foreach (var tuple in votePairs)
+            {
+                ConvertToByte(tuple.Key);
+                ConvertToByte(tuple.Value);
+            }
         }
         public override void ByteArrayToPacket()
         {
             base.ByteArrayToPacket();
-            this.votedPersonID = ByteToInt();
+            votedPersonID = ByteToString();
+            int cnt = ByteToInt();
+            votePairs = new Dictionary<string, int>();
+            for (int i = 0; i < cnt; ++i)
+            {
+                var tKey = ByteToString();
+                var tVal = ByteToInt();
+                votePairs.Add(tKey, tVal);
+            }
         }
     }
 }

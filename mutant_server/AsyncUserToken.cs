@@ -57,6 +57,7 @@ namespace mutant_server
                 case Defines.CTOS_CHAT:
                     ProcessChatting(data);
                     break;
+                case Defines.CTOS_LEAVE_GAME:
                 case Defines.CTOS_LOGOUT:
                     ProcessLogout(data);
                     break;
@@ -140,7 +141,8 @@ namespace mutant_server
             client.asyncUserToken = this;
             client.job = Server.jobArray[Server.globalOffset];
             client.InitPos = Server.initPosAry[Server.globalOffset];
-            Interlocked.CompareExchange(ref Server.globalOffset, (Server.globalOffset + 1) % Server.jobArray.Length, (Server.globalOffset + 1) % Server.jobArray.Length);
+            Server.globalOffset = (Server.globalOffset + 1) % Server.jobArray.Length;
+            //Interlocked.CompareExchange(ref Server.globalOffset, (Server.globalOffset + 1) % Server.jobArray.Length, (Server.globalOffset + 1) % Server.jobArray.Length);
 
             lock (Server.players)
             {
@@ -158,6 +160,14 @@ namespace mutant_server
                     return false;
                 }
                 else if(packet.id == tuple.Key)
+                {
+                    return false;
+                }
+                else if(packet.name == " ")
+                {
+                    return false;
+                }
+                else if(packet.name == "")
                 {
                     return false;
                 }
@@ -483,6 +493,28 @@ namespace mutant_server
             MutantPacket packet = new MutantPacket(readEventArgs.Buffer, readEventArgs.Offset);
             packet.ByteArrayToPacket();
 
+            for (int i = 0;i<Server.players.Count;++i)
+            {
+                var tuple = Server.players.ElementAt(i);
+                tuple.Value.position = tuple.Value.InitPos;
+                for(int j = i;j<Server.players.Count;++j)
+                {
+                    var token = Server.players.ElementAt(j).Value.asyncUserToken;
+                    PlayerStatusPacket posPacket = new PlayerStatusPacket(new byte[Defines.BUF_SIZE], 0);
+                    posPacket.id = tuple.Key;
+                    posPacket.name = tuple.Value.userName;
+                    posPacket.time = Defines.GetCurrentMilliseconds();
+
+                    posPacket.position = tuple.Value.position;
+                    posPacket.rotation = tuple.Value.rotation;
+                    posPacket.playerMotion = Defines.PLAYER_IDLE;
+
+                    posPacket.PacketToByteArray(Defines.STOC_STATUS_CHANGE);
+
+                    SendData(posPacket);
+                }
+            }
+
             foreach (var tuple in Server.players)
             {
                 var token = tuple.Value.asyncUserToken;
@@ -497,22 +529,20 @@ namespace mutant_server
 
                 token.SendData(sendPacket);
             }
-
-            for (int i = 0;i<Server.players.Count;++i)
-            {
-                var tuple = Server.players.ElementAt(i);
-                tuple.Value.position = tuple.Value.InitPos;
-                for(int j = i;j<Server.players.Count;++j)
-                {
-                    var token = Server.players.ElementAt(i).Value.asyncUserToken;
-
-                }
-            }
         }
         public void ProcessVote(byte[] data)
         {
             VotePacket packet = new VotePacket(readEventArgs.Buffer, readEventArgs.Offset);
             packet.ByteArrayToPacket();
+
+            if(!Server.voteCounter.ContainsKey(packet.votedPersonID))
+            {
+                Server.voteCounter.Add(packet.votedPersonID, 1);
+            }
+            else
+            {
+                Server.voteCounter[packet.votedPersonID] += 1;
+            }
 
             foreach (var tuple in Server.players)
             {
@@ -523,6 +553,7 @@ namespace mutant_server
                 sendPacket.time = packet.time;
 
                 sendPacket.votedPersonID = packet.votedPersonID;
+                sendPacket.votePairs = Server.voteCounter;
 
                 sendPacket.PacketToByteArray(Defines.STOC_VOTED);
 
