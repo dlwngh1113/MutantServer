@@ -39,10 +39,11 @@ namespace mutant_server
         public const byte STOC_ITEM_DENIED = 7;
         public const byte STOC_SYSTEM_CHANGE = 8;
         public const byte STOC_ENTER_FAIL = 9;
-        public const byte STOC_KILLED = 10;
-        public const byte STOC_ITEM_CRAFTED = 11;
-        public const byte STOC_VOTE_START = 12;
-        public const byte STOC_VOTED = 13;
+        public const byte STOC_ENTER_OK = 10;
+        public const byte STOC_KILLED = 11;
+        public const byte STOC_ITEM_CRAFTED = 12;
+        public const byte STOC_VOTE_START = 13;
+        public const byte STOC_VOTED = 14;
 
         /// <summary>
         /// player motions

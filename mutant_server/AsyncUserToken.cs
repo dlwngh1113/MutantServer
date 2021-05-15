@@ -46,6 +46,9 @@ namespace mutant_server
                 case Defines.CTOS_LOGIN:
                     ProcessLogin(data);
                     break;
+                case Defines.CTOS_JOIN_GAME:
+                    ProcessEnterPlayer(data);
+                    break;
                 case Defines.CTOS_STATUS_CHANGE:
                     ProcessStatus(data);
                     break;
@@ -125,12 +128,12 @@ namespace mutant_server
 
             Client client = new Client(Defines.id);
             client.userName = packet.name;
-            client.position = new MyVector3(95.09579f, 4.16f, 42.68918f);
+            client.position = new MyVector3(95.09579f, 5.16f, 42.68918f);
             client.rotation = new MyVector3();
             client.asyncUserToken = this;
             client.job = Server.jobArray[Server.globalOffset];
             client.InitPos = Server.initPosAry[Server.globalOffset];
-            Server.globalOffset = (byte)((Server.globalOffset + 1) % Server.jobArray.Length);
+            Interlocked.CompareExchange(ref Server.globalOffset, Server.globalOffset, (Server.globalOffset + 1) % Server.jobArray.Length);
 
             lock (Server.players)
             {
@@ -141,11 +144,7 @@ namespace mutant_server
         }
         private bool IsValidUser(MutantPacket packet)
         {
-            //if (packet.id < Defines.id)
-            //{
-            //    return false;
-            //}
-            if (packet.name != "admin")
+            if (packet.id == 0)
             {
                 return false;
             }
@@ -164,23 +163,37 @@ namespace mutant_server
             MutantPacket packet = new MutantPacket(readEventArgs.Buffer, readEventArgs.Offset);
             packet.ByteArrayToPacket();
 
-            if(!IsValidUser(packet))
-            {
-                return;
-            }
-
             Client c = InitClient(packet);
             Console.WriteLine("{0} client has {1} id, login request!", c.userName, c.userID);
 
-            PlayerStatusPacket sendPacket = new PlayerStatusPacket(new byte[Defines.BUF_SIZE], 0);
+            MutantPacket sendPacket = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
             sendPacket.id = c.userID;
-            sendPacket.name = packet.name;
-            sendPacket.time = packet.time;
-            sendPacket.position = c.position;
-            sendPacket.rotation = c.rotation;
-            sendPacket.playerJob = c.job;
+            sendPacket.name = c.userName;
+            sendPacket.time = Defines.GetCurrentMilliseconds();
 
             sendPacket.PacketToByteArray(Defines.STOC_LOGIN_OK);
+
+            SendData(sendPacket);
+        }
+
+        private void ProcessEnterPlayer(byte[] data)
+        {
+            MutantPacket packet = new MutantPacket(readEventArgs.Buffer, readEventArgs.Offset);
+            packet.ByteArrayToPacket();
+
+            PlayerStatusPacket sendPacket = new PlayerStatusPacket(new byte[Defines.BUF_SIZE], 0);
+            sendPacket.id = packet.id;
+            sendPacket.name = packet.name;
+            sendPacket.time = packet.time;
+            if(!Server.players.ContainsKey(packet.id))
+            {
+                return;
+            }
+            sendPacket.position = Server.players[packet.id].position;
+            sendPacket.rotation = Server.players[packet.id].rotation;
+            sendPacket.playerJob = Server.players[packet.id].job;
+
+            sendPacket.PacketToByteArray(Defines.STOC_PLAYER_ENTER);
 
             SendData(sendPacket);
 
@@ -206,6 +219,7 @@ namespace mutant_server
                     PlayerStatusPacket otherPacket = new PlayerStatusPacket(new byte[Defines.BUF_SIZE], 0);
                     otherPacket.id = tuple.Key;
                     otherPacket.name = tuple.Value.userName;
+                    otherPacket.time = sendPacket.time;
                     otherPacket.position = tuple.Value.position;
                     otherPacket.rotation = tuple.Value.rotation;
 
@@ -227,8 +241,6 @@ namespace mutant_server
             }
             Server.players[packet.id].position = packet.position;
             Server.players[packet.id].rotation = packet.rotation;
-            Server.players[packet.id].rotation.x = 0;
-            Server.players[packet.id].rotation.z = 0;
 
             foreach (var tuple in Server.players)
             {
