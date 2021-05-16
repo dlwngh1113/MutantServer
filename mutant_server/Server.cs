@@ -23,7 +23,9 @@ namespace mutant_server
         static public Dictionary<string, int> globalItem = new Dictionary<string, int>();
         static public Dictionary<string, int> voteCounter = new Dictionary<string, int>();
         static public byte[] jobArray = Defines.GenerateRandomJobs();
-        static public MyVector3[] initPosAry = { new MyVector3(), new MyVector3(), new MyVector3(), new MyVector3(), new MyVector3() };
+        static public MyVector3[] initPosAry = { new MyVector3(95.09579f, 5.16f, 42.68918f),
+            new MyVector3(95.09579f, 5.16f, 42.68918f), new MyVector3(95.09579f, 5.16f, 42.68918f),
+            new MyVector3(95.09579f, 5.16f, 42.68918f), new MyVector3(95.09579f, 5.16f, 42.68918f) };
         static public int globalOffset = 0;
 
         public Server(int numConnections, int receiveBufferSize)
