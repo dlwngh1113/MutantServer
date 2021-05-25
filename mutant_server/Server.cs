@@ -19,7 +19,6 @@ namespace mutant_server
         private SocketAsyncEventArgsPool _writePool;
         private int _numConnectedSockets;      // the total number of clients connected to the server
 
-        static public Timer timer = new Timer();
         static public Dictionary<int, Client> players = new Dictionary<int, Client>();
         static public byte[] jobArray = Defines.GenerateRandomJobs();
         static public byte jobOffset = 0;

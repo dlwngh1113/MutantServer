@@ -8,9 +8,8 @@ namespace mutant_server
         public Room()
         {
             _players = new Dictionary<int, Client>(5);
-            Server.timer.updateMethod += this.Update;
         }
-        public void Update(float elapsedTime)
+        public void Update(object elapsedTime)
         {
             var iter = _players.GetEnumerator();
             do

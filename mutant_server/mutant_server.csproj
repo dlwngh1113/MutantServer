@@ -82,7 +82,6 @@
     <Compile Include="Room.cs" />
     <Compile Include="Server.cs" />
     <Compile Include="SocketAsyncEventArgsPool.cs" />
-    <Compile Include="Timer.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
