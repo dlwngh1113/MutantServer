@@ -65,7 +65,7 @@ namespace mutant_server
             }
         }
 
-        private void SendData(MutantPacket packet)
+        public void SendData(MutantPacket packet)
         {
             lock(this.sendQueue)
             {

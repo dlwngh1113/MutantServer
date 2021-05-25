@@ -23,6 +23,8 @@ namespace mutant_server
         public const byte CTOS_ITEM_CLICKED = 5;
         public const byte CTOS_LEAVE_GAME = 6;
         public const byte CTOS_JOIN_GAME = 7;
+        public const byte CTOS_CREATE_ROOM = 8;
+        public const byte CTOS_SELECT_ROOM = 9;
 
         /// <summary>
         /// server to client operation
@@ -38,6 +40,8 @@ namespace mutant_server
         public const byte STOC_SYSTEM_CHANGE = 8;
         public const byte STOC_ENTER_FAIL = 9;
         public const byte STOC_KILLED = 10;
+        public const byte STOC_JOIN_ROOM = 11;
+        public const byte STOC_LEAVE_ROOM = 12;
 
         /// <summary>
         /// player motions

@@ -150,6 +150,56 @@ namespace mutant_server
                 CloseClientSocket(e);
             }
         }
+
+        bool IsValidUser(MutantPacket packet)
+        {
+
+            return true;
+        }
+        private Client InitClient(AsyncUserToken token)
+        {
+            Interlocked.Increment(ref Defines.id);
+
+            Client client = new Client(Defines.id);
+            client.asyncUserToken = token;
+            client.userID = Defines.id;
+
+            lock (Server.players)
+            {
+                Server.players[client.userID] = client;
+            }
+
+            return client;
+        }
+        private void ProcessLogin(AsyncUserToken token)
+        {
+            //if (DB에서 이미 플레이어의 이름이 존재하고, 서버에서 사용중이지 않다면)
+            //해당 정보로 로그인 login ok 클라이언트로 전송
+            //else if 서버, DB에 모두 존재하지 않는 이름이라면
+            //새롭게 DB에 유저 정보를 입력하고 login ok 전송
+            //else
+            //login fail과 이미
+            MutantPacket packet = new MutantPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
+            packet.ByteArrayToPacket();
+
+            if (!IsValidUser(packet))
+            {
+                return;
+            }
+
+            Client c = InitClient(token);
+            c.userName = packet.name;
+            Console.WriteLine("{0} client has {1} id, login request!", c.userName, c.userID);
+
+            MutantPacket sendPacket = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
+            sendPacket.id = c.userID;
+            sendPacket.name = packet.name;
+            sendPacket.time = packet.time;
+
+            sendPacket.PacketToByteArray(Defines.STOC_LOGIN_OK);
+
+            token.SendData(sendPacket);
+        }
         private void CloseClientSocket(SocketAsyncEventArgs e)
         {
             AsyncUserToken token = e.UserToken as AsyncUserToken;
