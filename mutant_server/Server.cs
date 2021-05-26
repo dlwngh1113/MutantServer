@@ -135,6 +135,15 @@ namespace mutant_server
             {
                 token.ResolveMessage(e.Buffer, e.Offset, e.BytesTransferred);
 
+                switch(e.Buffer[e.Offset])
+                {
+                    case Defines.CTOS_LOGIN:
+                        ProcessLogin(token);
+                        break;
+                    case Defines.CTOS_LOGOUT:
+                        ProcessLogout(token);
+                        break;
+                }
                 try
                 {
                     bool willRaise = token.socket.ReceiveAsync(token.readEventArgs);
@@ -244,6 +253,16 @@ namespace mutant_server
                 CloseClientSocket(e);
             }
         }
+        private void ProcessLogout(AsyncUserToken token)
+        {
+            //현재까지의 게임 정보를 DB에 업데이트 후 접속 종료
 
+            //지금 게임에 존재하는 유저들에게 해당 유저가 게임을 종료했음을 알림
+            //지금 게임을 같이 하고 있는 유저들을 어떻게 구분할 것인가?
+            MutantPacket packet = new MutantPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
+            packet.ByteArrayToPacket();
+
+            CloseClientSocket(token.readEventArgs);
+        }
     }
 }
