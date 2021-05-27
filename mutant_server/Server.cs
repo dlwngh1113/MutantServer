@@ -19,6 +19,8 @@ namespace mutant_server
         private SocketAsyncEventArgsPool _writePool;
         private int _numConnectedSockets;      // the total number of clients connected to the server
 
+        private Dictionary<int, Room> _roomsInServer;
+
         static public Dictionary<int, Client> players = new Dictionary<int, Client>();
         static public byte[] jobArray = Defines.GenerateRandomJobs();
         static public byte jobOffset = 0;
@@ -33,6 +35,8 @@ namespace mutant_server
 
             _readPool = new SocketAsyncEventArgsPool(numConnections);
             _writePool = new SocketAsyncEventArgsPool(numConnections);
+
+            _roomsInServer = new Dictionary<int, Room>();
         }
 
         public void Init()
@@ -143,6 +147,15 @@ namespace mutant_server
                     case Defines.CTOS_LOGOUT:
                         ProcessLogout(token);
                         break;
+                    case Defines.CTOS_CREATE_ROOM:
+                        ProcessCreateRoom(token);
+                        break;
+                    case Defines.CTOS_SELECT_ROOM:
+                        ProcessSelectRoom(token);
+                        break;
+                    default:
+                        ProcessInRoom(token);
+                        break;
                 }
                 try
                 {
@@ -172,6 +185,7 @@ namespace mutant_server
             Client client = new Client(Defines.id);
             client.asyncUserToken = token;
             client.userID = Defines.id;
+            token.userID = Defines.id;
 
             lock (Server.players)
             {
@@ -179,6 +193,17 @@ namespace mutant_server
             }
 
             return client;
+        }
+
+        private void ProcessInRoom(AsyncUserToken token)
+        {
+            foreach (var tuple in _roomsInServer)
+            {
+                if(tuple.Value.IsHavePlayer(token.userID))
+                {
+                    tuple.Value.ResolveMessge(token);
+                }
+            }
         }
         private void ProcessLogin(AsyncUserToken token)
         {
@@ -263,6 +288,17 @@ namespace mutant_server
             packet.ByteArrayToPacket();
 
             CloseClientSocket(token.readEventArgs);
+        }
+
+        private void ProcessSelectRoom(AsyncUserToken token)
+        {
+
+        }
+
+        private void ProcessCreateRoom(AsyncUserToken token)
+        {
+            Room room = new Room();
+            room.closeMethod = CloseClientSocket;
         }
     }
 }
