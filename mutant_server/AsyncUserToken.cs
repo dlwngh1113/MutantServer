@@ -274,6 +274,7 @@ namespace mutant_server
                     PlayerStatusPacket sendPacket = new PlayerStatusPacket(new byte[Defines.BUF_SIZE], 0);
                     sendPacket.id = packet.id;
                     sendPacket.name = packet.name;
+                    sendPacket.time = Defines.GetCurrentMilliseconds();
                     sendPacket.playerMotion = packet.playerMotion;
                     sendPacket.time = Defines.GetCurrentMilliseconds();
                     sendPacket.position = Server.players[packet.id].position;
@@ -443,6 +444,8 @@ namespace mutant_server
                 return;
             }
 
+            Console.WriteLine("id: {0} was killed", packet.id);
+
             foreach (var tuple in Server.players)
             {
                 var tmpToken = tuple.Value.asyncUserToken;
@@ -579,6 +582,8 @@ namespace mutant_server
                     sendPacket.name = packet.name;
                     sendPacket.id = packet.id;
                     sendPacket.time = packet.time;
+
+                    Console.WriteLine("{0} player out of game", packet.id);
 
                     sendPacket.PacketToByteArray(Defines.STOC_PLAYER_LEAVE);
 
