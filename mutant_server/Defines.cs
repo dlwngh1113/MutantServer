@@ -92,7 +92,7 @@ namespace mutant_server
             Random random = new Random();
             for(int i=0;i<ary.Length;++i)
             {
-                Swap<byte>(ref ary[random.Next(0, ary.Length)], ref ary[random.Next(0, ary.Length)]);
+                //Swap<byte>(ref ary[random.Next(0, ary.Length)], ref ary[random.Next(0, ary.Length)]);
             }
 
             return ary;
