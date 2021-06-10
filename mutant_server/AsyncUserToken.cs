@@ -197,7 +197,7 @@ namespace mutant_server
             MutantPacket sendPacket = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
             sendPacket.id = c.userID;
             sendPacket.name = c.userName;
-            sendPacket.time = Defines.GetCurrentMilliseconds();
+            sendPacket.time = 0;
 
             sendPacket.PacketToByteArray(Defines.STOC_LOGIN_OK);
 
@@ -274,7 +274,7 @@ namespace mutant_server
                     PlayerStatusPacket sendPacket = new PlayerStatusPacket(new byte[Defines.BUF_SIZE], 0);
                     sendPacket.id = packet.id;
                     sendPacket.name = packet.name;
-                    sendPacket.time = Defines.GetCurrentMilliseconds();
+                    sendPacket.time = 0;
                     sendPacket.playerMotion = packet.playerMotion;
                     sendPacket.time = 0;
                     sendPacket.position = Server.players[packet.id].position;
@@ -481,7 +481,7 @@ namespace mutant_server
                     ChattingPakcet sendPacket = new ChattingPakcet(new byte[Defines.BUF_SIZE], 0);
                     sendPacket.id = packet.id;
                     sendPacket.name = packet.name;
-                    sendPacket.time = Defines.GetCurrentMilliseconds();
+                    sendPacket.time = 0;
 
                     sendPacket.message = packet.message;
                     sendPacket.PacketToByteArray(Defines.STOC_CHAT);
@@ -506,7 +506,7 @@ namespace mutant_server
                     PlayerStatusPacket posPacket = new PlayerStatusPacket(new byte[Defines.BUF_SIZE], 0);
                     posPacket.id = tuple.Key;
                     posPacket.name = tuple.Value.userName;
-                    posPacket.time = Defines.GetCurrentMilliseconds();
+                    posPacket.time = 0;
 
                     posPacket.position = tuple.Value.position;
                     posPacket.rotation = tuple.Value.rotation;

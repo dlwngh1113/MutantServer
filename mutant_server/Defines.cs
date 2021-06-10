@@ -26,6 +26,8 @@ namespace mutant_server
         public const byte CTOS_ITEM_CRAFT_REQUEST = 8;
         public const byte CTOS_VOTE_REQUEST = 9;
         public const byte CTOS_VOTE_SELECTED = 10;
+        public const byte CTOS_CREATE_ROOM = 11;
+        public const byte CTOS_SELECT_ROOM = 12;
 
         /// <summary>
         /// server to client operation
