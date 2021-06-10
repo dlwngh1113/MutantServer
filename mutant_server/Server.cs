@@ -19,6 +19,8 @@ namespace mutant_server
         private SocketAsyncEventArgsPool _writePool;
         private int _numConnectedSockets;      // the total number of clients connected to the server
 
+        private Dictionary<int, Room> _roomsInServer;
+
         static public Dictionary<int, Client> players = new Dictionary<int, Client>();
         static public Dictionary<string, int> globalItem = new Dictionary<string, int>();
         static public Dictionary<string, int> voteCounter = new Dictionary<string, int>();
@@ -38,6 +40,8 @@ namespace mutant_server
 
             _readPool = new SocketAsyncEventArgsPool(numConnections);
             _writePool = new SocketAsyncEventArgsPool(numConnections);
+
+            _roomsInServer = new Dictionary<int, Room>();
         }
 
         public void Init()
@@ -140,6 +144,24 @@ namespace mutant_server
             {
                 token.ResolveMessage(e.Buffer, e.Offset, e.BytesTransferred);
 
+                switch(e.Buffer[e.Offset])
+                {
+                    case Defines.CTOS_LOGIN:
+                        ProcessLogin(token);
+                        break;
+                    case Defines.CTOS_LOGOUT:
+                        ProcessLogout(token);
+                        break;
+                    case Defines.CTOS_CREATE_ROOM:
+                        ProcessCreateRoom(token);
+                        break;
+                    case Defines.CTOS_SELECT_ROOM:
+                        ProcessSelectRoom(token);
+                        break;
+                    default:
+                        ProcessInRoom(token);
+                        break;
+                }
                 try
                 {
                     bool willRaise = token.socket.ReceiveAsync(token.readEventArgs);
@@ -154,6 +176,68 @@ namespace mutant_server
             {
                 CloseClientSocket(e);
             }
+        }
+
+        bool IsValidUser(MutantPacket packet)
+        {
+
+            return true;
+        }
+        private Client InitClient(AsyncUserToken token)
+        {
+            Interlocked.Increment(ref Defines.id);
+
+            Client client = new Client(Defines.id);
+            client.asyncUserToken = token;
+            client.userID = Defines.id;
+            token.userID = Defines.id;
+
+            lock (Server.players)
+            {
+                Server.players[client.userID] = client;
+            }
+
+            return client;
+        }
+
+        private void ProcessInRoom(AsyncUserToken token)
+        {
+            foreach (var tuple in _roomsInServer)
+            {
+                if(tuple.Value.IsHavePlayer(token.userID))
+                {
+                    tuple.Value.ResolveMessge(token);
+                }
+            }
+        }
+        private void ProcessLogin(AsyncUserToken token)
+        {
+            //if (DB에서 이미 플레이어의 이름이 존재하고, 서버에서 사용중이지 않다면)
+            //해당 정보로 로그인 login ok 클라이언트로 전송
+            //else if 서버, DB에 모두 존재하지 않는 이름이라면
+            //새롭게 DB에 유저 정보를 입력하고 login ok 전송
+            //else
+            //login fail과 이미
+            MutantPacket packet = new MutantPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
+            packet.ByteArrayToPacket();
+
+            if (!IsValidUser(packet))
+            {
+                return;
+            }
+
+            Client c = InitClient(token);
+            c.userName = packet.name;
+            Console.WriteLine("{0} client has {1} id, login request!", c.userName, c.userID);
+
+            MutantPacket sendPacket = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
+            sendPacket.id = c.userID;
+            sendPacket.name = packet.name;
+            sendPacket.time = packet.time;
+
+            sendPacket.PacketToByteArray(Defines.STOC_LOGIN_OK);
+
+            token.SendData(sendPacket);
         }
         private void CloseClientSocket(SocketAsyncEventArgs e)
         {
@@ -199,6 +283,27 @@ namespace mutant_server
                 CloseClientSocket(e);
             }
         }
+        private void ProcessLogout(AsyncUserToken token)
+        {
+            //현재까지의 게임 정보를 DB에 업데이트 후 접속 종료
 
+            //지금 게임에 존재하는 유저들에게 해당 유저가 게임을 종료했음을 알림
+            //지금 게임을 같이 하고 있는 유저들을 어떻게 구분할 것인가?
+            MutantPacket packet = new MutantPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
+            packet.ByteArrayToPacket();
+
+            CloseClientSocket(token.readEventArgs);
+        }
+
+        private void ProcessSelectRoom(AsyncUserToken token)
+        {
+
+        }
+
+        private void ProcessCreateRoom(AsyncUserToken token)
+        {
+            Room room = new Room();
+            room.closeMethod = CloseClientSocket;
+        }
     }
 }

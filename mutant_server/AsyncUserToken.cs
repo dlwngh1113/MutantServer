@@ -78,7 +78,7 @@ namespace mutant_server
             }
         }
 
-        private void SendData(MutantPacket packet)
+        public void SendData(MutantPacket packet)
         {
             lock(this.sendQueue)
             {
@@ -276,7 +276,7 @@ namespace mutant_server
                     sendPacket.name = packet.name;
                     sendPacket.time = Defines.GetCurrentMilliseconds();
                     sendPacket.playerMotion = packet.playerMotion;
-                    sendPacket.time = Defines.GetCurrentMilliseconds();
+                    sendPacket.time = 0;
                     sendPacket.position = Server.players[packet.id].position;
                     sendPacket.rotation = Server.players[packet.id].rotation;
 
@@ -454,7 +454,7 @@ namespace mutant_server
                 PlayerStatusPacket sendPacket = new PlayerStatusPacket(new byte[Defines.BUF_SIZE], 0);
                 sendPacket.id = packet.id;
                 sendPacket.name = packet.name;
-                sendPacket.time = Defines.GetCurrentMilliseconds();
+                sendPacket.time = 0;
 
                 sendPacket.position = Server.players[packet.id].position;
                 sendPacket.rotation = Server.players[packet.id].rotation;

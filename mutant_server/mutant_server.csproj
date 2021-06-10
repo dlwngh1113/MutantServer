@@ -79,6 +79,7 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="MessageResolver.cs" />
+    <Compile Include="Room.cs" />
     <Compile Include="Server.cs" />
     <Compile Include="SocketAsyncEventArgsPool.cs" />
   </ItemGroup>
