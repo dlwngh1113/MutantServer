@@ -343,6 +343,10 @@ namespace mutant_server
 
         private void AddItemInGlobal(string itemName)
         {
+            if (itemName == "Axe")
+            {
+                return;
+            }
             if (Server.globalItem.ContainsKey(itemName))
             {
                 Server.globalItem[itemName]++;
@@ -546,6 +550,8 @@ namespace mutant_server
             {
                 Server.voteCounter[packet.votedPersonID] += 1;
             }
+
+            Console.WriteLine("name = {0}, id = {1}", packet.name, packet.id);
 
             foreach (var tuple in Server.players)
             {
