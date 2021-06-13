@@ -207,6 +207,7 @@ namespace mutant_server
                 if(tuple.Value.IsHavePlayer(token.userID))
                 {
                     tuple.Value.ResolveMessge(token);
+                    return;
                 }
             }
         }
@@ -297,6 +298,9 @@ namespace mutant_server
 
         private void ProcessSelectRoom(AsyncUserToken token)
         {
+            MutantPacket packet = new MutantPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
+            packet.ByteArrayToPacket();
+
 
         }
 

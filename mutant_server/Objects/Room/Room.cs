@@ -1,4 +1,5 @@
-﻿using System;
+﻿using mutant_server.Packets;
+using System;
 using System.Collections.Generic;
 
 namespace mutant_server
@@ -198,8 +199,6 @@ namespace mutant_server
                     sendPacket.time = 0;
                     sendPacket.position = _players[packet.id].position;
                     sendPacket.rotation = _players[packet.id].rotation;
-
-                    //Console.WriteLine("id = {0} x = {1} y = {2} z = {3}", packet.id, packet.position.x, packet.position.y, packet.position.z);
 
                     sendPacket.PacketToByteArray((byte)STOC_OP.STOC_STATUS_CHANGE);
 
