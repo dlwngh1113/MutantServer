@@ -152,7 +152,7 @@ namespace mutant_server
         public ItemEventPacket(byte[] ary, int offset) : base(ary, offset)
         {
         }
-        public void Copy(ItemEventPacket packet, byte type = Defines.STOC_ITEM_GAIN)
+        public void Copy(ItemEventPacket packet, byte type = (byte)STOC_OP.STOC_ITEM_GAIN)
         {
             Array.Copy(packet.ary, packet.offset, ary, offset, Defines.BUF_SIZE);
             ary[offset] = type;
@@ -196,7 +196,7 @@ namespace mutant_server
         public ItemCraftPacket(byte[] ary, int offset) : base(ary, offset)
         {
         }
-        public void Copy(ItemCraftPacket packet, byte type = Defines.STOC_ITEM_GAIN)
+        public void Copy(ItemCraftPacket packet, byte type = (byte)STOC_OP.STOC_ITEM_GAIN)
         {
             Array.Copy(packet.ary, packet.offset, ary, offset, Defines.BUF_SIZE);
             ary[offset] = type;
@@ -254,7 +254,7 @@ namespace mutant_server
         public PlayerStatusPacket(byte[] ary, int offset) : base(ary, offset)
         {
         }
-        public void Copy(PlayerStatusPacket packet, byte type = Defines.STOC_STATUS_CHANGE)
+        public void Copy(PlayerStatusPacket packet, byte type = (byte)STOC_OP.STOC_STATUS_CHANGE)
         {
             Array.Copy(packet.ary, packet.offset, ary, offset, Defines.BUF_SIZE);
             ary[offset] = type;
@@ -289,7 +289,7 @@ namespace mutant_server
         {
 
         }
-        public void Copy(ChattingPakcet packet, byte type = Defines.STOC_CHAT)
+        public void Copy(ChattingPakcet packet, byte type = (byte)STOC_OP.STOC_CHAT)
         {
             Array.Copy(packet.ary, packet.offset, ary, offset, Defines.BUF_SIZE);
             ary[offset] = type;
@@ -314,7 +314,7 @@ namespace mutant_server
         {
 
         }
-        public void Copy(VotePacket packet, byte type = Defines.STOC_CHAT)
+        public void Copy(VotePacket packet, byte type = (byte)STOC_OP.STOC_CHAT)
         {
             Array.Copy(packet.ary, packet.offset, ary, offset, Defines.BUF_SIZE);
             ary[offset] = type;

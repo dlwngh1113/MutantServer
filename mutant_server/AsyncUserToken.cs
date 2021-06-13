@@ -40,37 +40,37 @@ namespace mutant_server
         }
         private void RecvEventSelect(byte[] data)
         {
-            switch (this.readEventArgs.Buffer[this.readEventArgs.Offset])
+            switch ((CTOS_OP)this.readEventArgs.Buffer[this.readEventArgs.Offset])
             {
-                case Defines.CTOS_LOGIN:
+                case CTOS_OP.CTOS_LOGIN:
                     ProcessLogin(data);
                     break;
-                case Defines.CTOS_JOIN_GAME:
+                case CTOS_OP.CTOS_JOIN_GAME:
                     ProcessEnterPlayer(data);
                     break;
-                case Defines.CTOS_STATUS_CHANGE:
+                case CTOS_OP.CTOS_STATUS_CHANGE:
                     ProcessStatus(data);
                     break;
-                case Defines.CTOS_ATTACK:
+                case CTOS_OP.CTOS_ATTACK:
                     ProcessAttack(data);
                     break;
-                case Defines.CTOS_CHAT:
+                case CTOS_OP.CTOS_CHAT:
                     ProcessChatting(data);
                     break;
-                case Defines.CTOS_LEAVE_GAME:
-                case Defines.CTOS_LOGOUT:
+                case CTOS_OP.CTOS_LEAVE_GAME:
+                case CTOS_OP.CTOS_LOGOUT:
                     ProcessLogout(data);
                     break;
-                case Defines.CTOS_ITEM_CLICKED:
+                case CTOS_OP.CTOS_ITEM_CLICKED:
                     ProcessItemEvent(data);
                     break;
-                case Defines.CTOS_ITEM_CRAFT_REQUEST:
+                case CTOS_OP.CTOS_ITEM_CRAFT_REQUEST:
                     ProcessItemCraft(data);
                     break;
-                case Defines.CTOS_VOTE_SELECTED:
+                case CTOS_OP.CTOS_VOTE_SELECTED:
                     ProcessVote(data);
                     break;
-                case Defines.CTOS_VOTE_REQUEST:
+                case CTOS_OP.CTOS_VOTE_REQUEST:
                     ProcessStartVote(data);
                     break;
                 default:
@@ -199,7 +199,7 @@ namespace mutant_server
             sendPacket.name = c.userName;
             sendPacket.time = 0;
 
-            sendPacket.PacketToByteArray(Defines.STOC_LOGIN_OK);
+            sendPacket.PacketToByteArray((byte)STOC_OP.STOC_LOGIN_OK);
 
             SendData(sendPacket);
         }
@@ -217,7 +217,7 @@ namespace mutant_server
             sendPacket.rotation = Server.players[packet.id].rotation;
             sendPacket.playerJob = Server.players[packet.id].job;
 
-            sendPacket.PacketToByteArray(Defines.STOC_PLAYER_ENTER);
+            sendPacket.PacketToByteArray((byte)STOC_OP.STOC_PLAYER_ENTER);
 
             SendData(sendPacket);
 
@@ -235,7 +235,7 @@ namespace mutant_server
                     curPacket.position = Server.players[sendPacket.id].position;
                     curPacket.rotation = Server.players[sendPacket.id].rotation;
 
-                    curPacket.PacketToByteArray(Defines.STOC_PLAYER_ENTER);
+                    curPacket.PacketToByteArray((byte)STOC_OP.STOC_PLAYER_ENTER);
 
                     tmpToken.SendData(curPacket);
 
@@ -247,7 +247,7 @@ namespace mutant_server
                     otherPacket.position = tuple.Value.position;
                     otherPacket.rotation = tuple.Value.rotation;
 
-                    otherPacket.PacketToByteArray(Defines.STOC_PLAYER_ENTER);
+                    otherPacket.PacketToByteArray((byte)STOC_OP.STOC_PLAYER_ENTER);
 
                     SendData(otherPacket);
                 }
@@ -282,7 +282,7 @@ namespace mutant_server
 
                     //Console.WriteLine("id = {0} x = {1} y = {2} z = {3}", packet.id, packet.position.x, packet.position.y, packet.position.z);
 
-                    sendPacket.PacketToByteArray(Defines.STOC_STATUS_CHANGE);
+                    sendPacket.PacketToByteArray((byte)STOC_OP.STOC_STATUS_CHANGE);
 
                     tmpToken.SendData(sendPacket);
                 }
@@ -310,7 +310,7 @@ namespace mutant_server
                 sendPacket.itemName = packet.itemName;
                 sendPacket.inventory = Server.players[packet.id].inventory;
                 sendPacket.canGainItem = false;
-                sendPacket.PacketToByteArray(Defines.STOC_ITEM_DENIED);
+                sendPacket.PacketToByteArray((byte)STOC_OP.STOC_ITEM_DENIED);
             }
             //그렇지 않은 경우는 아이템 획득 가능
             else
@@ -329,7 +329,7 @@ namespace mutant_server
                 sendPacket.itemName = packet.itemName;
                 sendPacket.inventory = Server.players[packet.id].inventory;
                 sendPacket.canGainItem = true;
-                sendPacket.PacketToByteArray(Defines.STOC_ITEM_GAIN);
+                sendPacket.PacketToByteArray((byte)STOC_OP.STOC_ITEM_GAIN);
             }
 
             foreach (var tuple in Server.players[packet.id].inventory)
@@ -400,7 +400,7 @@ namespace mutant_server
             sendPacket.itemName = packet.itemName;
             sendPacket.globalItem = Server.globalItem;
 
-            sendPacket.PacketToByteArray(Defines.STOC_ITEM_CRAFTED);
+            sendPacket.PacketToByteArray((byte)STOC_OP.STOC_ITEM_CRAFTED);
 
             SendData(sendPacket);
 
@@ -430,7 +430,7 @@ namespace mutant_server
                     otherPacket.itemName = sendPacket.itemName;
                     otherPacket.inventory = sendPacket.inventory;
                     otherPacket.globalItem = sendPacket.globalItem;
-                    otherPacket.PacketToByteArray(Defines.STOC_ITEM_CRAFTED);
+                    otherPacket.PacketToByteArray((byte)STOC_OP.STOC_ITEM_CRAFTED);
 
                     token.SendData(otherPacket);
                 }
@@ -463,7 +463,7 @@ namespace mutant_server
                 sendPacket.position = Server.players[packet.id].position;
                 sendPacket.rotation = Server.players[packet.id].rotation;
                 sendPacket.playerMotion = Defines.PLAYER_HIT;
-                sendPacket.PacketToByteArray(Defines.STOC_KILLED);
+                sendPacket.PacketToByteArray((byte)STOC_OP.STOC_KILLED);
 
                 tmpToken.SendData(sendPacket);
             }
@@ -488,7 +488,7 @@ namespace mutant_server
                     sendPacket.time = 0;
 
                     sendPacket.message = packet.message;
-                    sendPacket.PacketToByteArray(Defines.STOC_CHAT);
+                    sendPacket.PacketToByteArray((byte)STOC_OP.STOC_CHAT);
 
                     tmpToken.SendData(sendPacket);
                 }
@@ -516,7 +516,7 @@ namespace mutant_server
                     posPacket.rotation = tuple.Value.rotation;
                     posPacket.playerMotion = Defines.PLAYER_IDLE;
 
-                    posPacket.PacketToByteArray(Defines.STOC_STATUS_CHANGE);
+                    posPacket.PacketToByteArray((byte)STOC_OP.STOC_STATUS_CHANGE);
 
                     SendData(posPacket);
                 }
@@ -532,7 +532,7 @@ namespace mutant_server
                 sendPacket.rotation = tuple.Value.rotation;
                 sendPacket.playerMotion = Defines.PLAYER_IDLE;
 
-                sendPacket.PacketToByteArray(Defines.STOC_VOTE_START);
+                sendPacket.PacketToByteArray((byte)STOC_OP.STOC_VOTE_START);
 
                 token.SendData(sendPacket);
             }
@@ -564,7 +564,7 @@ namespace mutant_server
                 sendPacket.votedPersonID = packet.votedPersonID;
                 sendPacket.votePairs = Server.voteCounter;
 
-                sendPacket.PacketToByteArray(Defines.STOC_VOTED);
+                sendPacket.PacketToByteArray((byte)STOC_OP.STOC_VOTED);
 
                 token.SendData(sendPacket);
             }
@@ -591,7 +591,7 @@ namespace mutant_server
 
                     Console.WriteLine("{0} player out of game", packet.id);
 
-                    sendPacket.PacketToByteArray(Defines.STOC_PLAYER_LEAVE);
+                    sendPacket.PacketToByteArray((byte)STOC_OP.STOC_PLAYER_LEAVE);
 
                     token.SendData(sendPacket);
                 }

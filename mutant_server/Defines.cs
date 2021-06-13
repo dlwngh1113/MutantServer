@@ -2,6 +2,49 @@
 
 namespace mutant_server
 {
+    //client to server operation
+    enum CTOS_OP
+    {
+        //lobby, main server operation
+        CTOS_LOGIN,
+        CTOS_LOGOUT,
+        CTOS_JOIN_GAME,
+        CTOS_CREATE_ROOM,
+        CTOS_SELECT_ROOM,
+        CTOS_REFRESH_ROOMS,
+
+        //ingame operation
+        CTOS_STATUS_CHANGE = 100,
+        CTOS_ATTACK,
+        CTOS_CHAT,
+        CTOS_ITEM_CLICKED,
+        CTOS_ITEM_CRAFT_REQUEST,
+        CTOS_LEAVE_GAME,
+        CTOS_VOTE_REQUEST,
+        CTOS_VOTE_SELECTED,
+    }
+
+    enum STOC_OP
+    {
+        STOC_LOGIN_OK,
+        STOC_LOGIN_FAIL,
+        STOC_ENTER_FAIL,
+        STOC_ENTER_OK,
+        STOC_ROOM_CREATE_FAIL,
+        STOC_ROOM_CREATE_SUCCESS,
+
+        STOC_STATUS_CHANGE = 100,
+        STOC_PLAYER_ENTER,
+        STOC_PLAYER_LEAVE,
+        STOC_CHAT,
+        STOC_ITEM_GAIN,
+        STOC_ITEM_DENIED,
+        STOC_ITEM_CRAFTED,
+        STOC_SYSTEM_CHANGE,
+        STOC_KILLED,
+        STOC_VOTE_START,
+        STOC_VOTED,
+    }
     public class Defines
     {
         public const short BUF_SIZE = 1024;
@@ -11,42 +54,6 @@ namespace mutant_server
         public const int FrameRate = (int)((1.0 / 60.0) * 1000);
 
         public static int id = 0;
-
-        /// <summary>
-        /// client to server operation
-        /// </summary>
-        public const byte CTOS_LOGIN = 0;
-        public const byte CTOS_STATUS_CHANGE = 1;
-        public const byte CTOS_ATTACK = 2;
-        public const byte CTOS_CHAT = 3;
-        public const byte CTOS_LOGOUT = 4;
-        public const byte CTOS_ITEM_CLICKED = 5;
-        public const byte CTOS_LEAVE_GAME = 6;
-        public const byte CTOS_JOIN_GAME = 7;
-        public const byte CTOS_ITEM_CRAFT_REQUEST = 8;
-        public const byte CTOS_VOTE_REQUEST = 9;
-        public const byte CTOS_VOTE_SELECTED = 10;
-        public const byte CTOS_CREATE_ROOM = 11;
-        public const byte CTOS_SELECT_ROOM = 12;
-
-        /// <summary>
-        /// server to client operation
-        /// </summary>
-        public const byte STOC_LOGIN_OK = 0;
-        public const byte STOC_STATUS_CHANGE = 1;
-        public const byte STOC_PLAYER_ENTER = 2;
-        public const byte STOC_PLAYER_LEAVE = 3;
-        public const byte STOC_CHAT = 4;
-        public const byte STOC_LOGIN_FAIL = 5;
-        public const byte STOC_ITEM_GAIN = 6;
-        public const byte STOC_ITEM_DENIED = 7;
-        public const byte STOC_SYSTEM_CHANGE = 8;
-        public const byte STOC_ENTER_FAIL = 9;
-        public const byte STOC_ENTER_OK = 10;
-        public const byte STOC_KILLED = 11;
-        public const byte STOC_ITEM_CRAFTED = 12;
-        public const byte STOC_VOTE_START = 13;
-        public const byte STOC_VOTED = 14;
 
         /// <summary>
         /// player motions

@@ -144,18 +144,18 @@ namespace mutant_server
             {
                 token.ResolveMessage(e.Buffer, e.Offset, e.BytesTransferred);
 
-                switch(e.Buffer[e.Offset])
+                switch((CTOS_OP)e.Buffer[e.Offset])
                 {
-                    case Defines.CTOS_LOGIN:
+                    case CTOS_OP.CTOS_LOGIN:
                         ProcessLogin(token);
                         break;
-                    case Defines.CTOS_LOGOUT:
+                    case CTOS_OP.CTOS_LOGOUT:
                         ProcessLogout(token);
                         break;
-                    case Defines.CTOS_CREATE_ROOM:
+                    case CTOS_OP.CTOS_CREATE_ROOM:
                         ProcessCreateRoom(token);
                         break;
-                    case Defines.CTOS_SELECT_ROOM:
+                    case CTOS_OP.CTOS_SELECT_ROOM:
                         ProcessSelectRoom(token);
                         break;
                     default:
@@ -235,7 +235,7 @@ namespace mutant_server
             sendPacket.name = packet.name;
             sendPacket.time = packet.time;
 
-            sendPacket.PacketToByteArray(Defines.STOC_LOGIN_OK);
+            sendPacket.PacketToByteArray((byte)STOC_OP.STOC_LOGIN_OK);
 
             token.SendData(sendPacket);
         }

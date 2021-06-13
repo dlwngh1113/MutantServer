@@ -27,21 +27,21 @@ namespace mutant_server
         }
         private void RecvEventSelect(AsyncUserToken token)
         {
-            switch (token.readEventArgs.Buffer[token.readEventArgs.Offset])
+            switch ((CTOS_OP)token.readEventArgs.Buffer[token.readEventArgs.Offset])
             {
-                case Defines.CTOS_STATUS_CHANGE:
+                case CTOS_OP.CTOS_STATUS_CHANGE:
                     ProcessStatus(token);
                     break;
-                case Defines.CTOS_ATTACK:
+                case CTOS_OP.CTOS_ATTACK:
                     ProcessAttack(token);
                     break;
-                case Defines.CTOS_CHAT:
+                case CTOS_OP.CTOS_CHAT:
                     ProcessChatting(token);
                     break;
-                case Defines.CTOS_LOGOUT:
+                case CTOS_OP.CTOS_LOGOUT:
                     ProcessLogout(token);
                     break;
-                case Defines.CTOS_ITEM_CLICKED:
+                case CTOS_OP.CTOS_ITEM_CLICKED:
                     ProcessItemEvent(token);
                     break;
                 default:
@@ -68,7 +68,7 @@ namespace mutant_server
                     sendPacket.id = packet.id;
                     sendPacket.time = packet.time;
 
-                    sendPacket.PacketToByteArray(Defines.STOC_PLAYER_LEAVE);
+                    sendPacket.PacketToByteArray((byte)STOC_OP.STOC_PLAYER_LEAVE);
 
                     tmpToken.SendData(sendPacket);
                 }
@@ -93,7 +93,7 @@ namespace mutant_server
                 sendPacket.time = 0;
 
                 sendPacket.message = packet.message;
-                sendPacket.PacketToByteArray(Defines.STOC_CHAT);
+                sendPacket.PacketToByteArray((byte)STOC_OP.STOC_CHAT);
 
                 tmpToken.SendData(sendPacket);
             }
@@ -118,7 +118,7 @@ namespace mutant_server
                 sendPacket.position = _players[packet.id].position;
                 sendPacket.rotation = _players[packet.id].rotation;
                 sendPacket.playerMotion = Defines.PLAYER_HIT;
-                sendPacket.PacketToByteArray(Defines.STOC_KILLED);
+                sendPacket.PacketToByteArray((byte)STOC_OP.STOC_KILLED);
 
                 tmpToken.SendData(sendPacket);
             }
@@ -144,7 +144,7 @@ namespace mutant_server
                 sendPacket.itemName = packet.itemName;
                 sendPacket.inventory = packet.inventory;
                 sendPacket.canGainItem = false;
-                sendPacket.PacketToByteArray(Defines.STOC_ITEM_DENIED);
+                sendPacket.PacketToByteArray((byte)STOC_OP.STOC_ITEM_DENIED);
             }
             //그렇지 않은 경우는 아이템 획득 가능
             else
@@ -163,7 +163,7 @@ namespace mutant_server
                 sendPacket.itemName = packet.itemName;
                 sendPacket.inventory = _players[packet.id].inventory;
                 sendPacket.canGainItem = true;
-                sendPacket.PacketToByteArray(Defines.STOC_ITEM_GAIN);
+                sendPacket.PacketToByteArray((byte)STOC_OP.STOC_ITEM_GAIN);
             }
 
             foreach (var tuple in sendPacket.inventory)
@@ -201,7 +201,7 @@ namespace mutant_server
 
                     //Console.WriteLine("id = {0} x = {1} y = {2} z = {3}", packet.id, packet.position.x, packet.position.y, packet.position.z);
 
-                    sendPacket.PacketToByteArray(Defines.STOC_STATUS_CHANGE);
+                    sendPacket.PacketToByteArray((byte)STOC_OP.STOC_STATUS_CHANGE);
 
                     tmpToken.SendData(sendPacket);
                 }
