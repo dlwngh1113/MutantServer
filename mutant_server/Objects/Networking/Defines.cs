@@ -12,6 +12,7 @@ namespace mutant_server
         CTOS_CREATE_ROOM,
         CTOS_SELECT_ROOM,
         CTOS_REFRESH_ROOMS,
+        CTOS_CREATE_USER_INFO,
 
         //ingame operation
         CTOS_STATUS_CHANGE = 100,
@@ -24,15 +25,20 @@ namespace mutant_server
         CTOS_VOTE_SELECTED,
     }
 
+    //server to client operation
     enum STOC_OP
     {
+        //lobby, main server operation
         STOC_LOGIN_OK,
         STOC_LOGIN_FAIL,
         STOC_ENTER_FAIL,
         STOC_ENTER_OK,
         STOC_ROOM_CREATE_FAIL,
         STOC_ROOM_CREATE_SUCCESS,
+        STOC_CREATE_USER_INFO_SUCCESS,
+        STOC_CREATE_USER_INFO_FAIL,
 
+        //ingame operation
         STOC_STATUS_CHANGE = 100,
         STOC_PLAYER_ENTER,
         STOC_PLAYER_LEAVE,

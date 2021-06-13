@@ -112,20 +112,22 @@
   <ItemGroup>
     <Compile Include="Objects\AsyncUserToken.cs" />
     <Compile Include="MemoryPools\BufferManager.cs" />
+    <Compile Include="Objects\Networking\DBConnector.cs" />
     <Compile Include="Objects\Server\Client.cs" />
     <Compile Include="Objects\Server\Listener.cs" />
-    <Compile Include="Arguments\Networking\Defines.cs" />
-    <Compile Include="Arguments\Networking\Header.cs" />
+    <Compile Include="Objects\Networking\Defines.cs" />
+    <Compile Include="Objects\Networking\Header.cs" />
     <Compile Include="Packets\ChattingPacket.cs" />
     <Compile Include="Packets\ItemCraftPacket.cs" />
     <Compile Include="Packets\ItemEventPacket.cs" />
+    <Compile Include="Packets\LoginPacket.cs" />
     <Compile Include="Packets\MutantPacket.cs" />
     <Compile Include="Objects\MyVector3.cs" />
     <Compile Include="Packets\PlayerStatusPacket.cs" />
     <Compile Include="Packets\VotePacket.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Arguments\Networking\MessageResolver.cs" />
+    <Compile Include="Objects\Networking\MessageResolver.cs" />
     <Compile Include="Objects\Room\Room.cs" />
     <Compile Include="Objects\Server\Server.cs" />
     <Compile Include="MemoryPools\SocketAsyncEventArgsPool.cs" />

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using mutant_server.Packets;
+using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
@@ -158,6 +159,9 @@ namespace mutant_server
                     case CTOS_OP.CTOS_SELECT_ROOM:
                         ProcessSelectRoom(token);
                         break;
+                    case CTOS_OP.CTOS_CREATE_USER_INFO:
+                        ProcessCreateUser(token);
+                        break;
                     default:
                         ProcessInRoom(token);
                         break;
@@ -211,6 +215,15 @@ namespace mutant_server
                 }
             }
         }
+
+        private void ProcessCreateUser(AsyncUserToken token)
+        {
+            LoginPacket packet = new LoginPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
+            packet.ByteArrayToPacket();
+
+
+        }
+
         private void ProcessLogin(AsyncUserToken token)
         {
             //if (DB에서 이미 플레이어의 이름이 존재하고, 서버에서 사용중이지 않다면)
