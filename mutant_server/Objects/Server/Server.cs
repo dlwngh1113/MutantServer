@@ -1,4 +1,5 @@
-﻿using mutant_server.Packets;
+﻿using mutant_server.Objects.Networking;
+using mutant_server.Packets;
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -21,6 +22,7 @@ namespace mutant_server
         private int _numConnectedSockets;      // the total number of clients connected to the server
 
         private Dictionary<int, Room> _roomsInServer;
+        private DBConnector _dBConnector;
 
         static public Dictionary<int, Client> players = new Dictionary<int, Client>();
         static public Dictionary<string, int> globalItem = new Dictionary<string, int>();
@@ -41,17 +43,25 @@ namespace mutant_server
 
             _readPool = new SocketAsyncEventArgsPool(numConnections);
             _writePool = new SocketAsyncEventArgsPool(numConnections);
-
-            _roomsInServer = new Dictionary<int, Room>();
         }
 
         public void Init()
         {
-            // Allocates one large byte buffer which all I/O operations use a piece of.  This gaurds
-            // against memory fragmentation
+            _roomsInServer = new Dictionary<int, Room>();
+            _dBConnector = new DBConnector();
+            //LoginPacket packet = new LoginPacket(new byte[1024], 0);
+            //packet.id = 10;
+            //packet.name = "hello";
+            //packet.time = 0;
+            //packet.passwd = "ljh1348";
+            //_dBConnector.InsertData(packet);
+            Client client = new Client(0);
+            client.userName = "hello";
+            client.passWd = "ljh1348";
+            client.winCoundTrator = 3;
+            _dBConnector.UpdateData(client);
             _bufferManager.InitBuffer();
 
-            // preallocate pool of SocketAsyncEventArgs objects
             for (int i = 0; i < _numConnections; i++)
             {
                 AsyncUserToken token = new AsyncUserToken();
