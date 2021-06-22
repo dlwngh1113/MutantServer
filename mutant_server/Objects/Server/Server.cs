@@ -55,11 +55,11 @@ namespace mutant_server
             //packet.time = 0;
             //packet.passwd = "ljh1348";
             //_dBConnector.InsertData(packet);
-            Client client = new Client(0);
-            client.userName = "hello";
-            client.passWd = "ljh1348";
-            client.winCoundTrator = 3;
-            _dBConnector.UpdateData(client);
+            //Client client = new Client(0);
+            //client.userName = "hello";
+            //client.passWd = "ljh1348";
+            //client.winCoundTrator = 3;
+            //_dBConnector.UpdateData(client);
             _bufferManager.InitBuffer();
 
             for (int i = 0; i < _numConnections; i++)
@@ -169,6 +169,9 @@ namespace mutant_server
                     case CTOS_OP.CTOS_SELECT_ROOM:
                         ProcessSelectRoom(token);
                         break;
+                    case CTOS_OP.CTOS_REFRESH_ROOMS:
+                        ProcessRefreshRooms(token);
+                        break;
                     case CTOS_OP.CTOS_CREATE_USER_INFO:
                         ProcessCreateUser(token);
                         break;
@@ -231,6 +234,34 @@ namespace mutant_server
             LoginPacket packet = new LoginPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
             packet.ByteArrayToPacket();
 
+            if( _dBConnector.InsertData(packet))
+            {
+                DBPacket sendPacket = new DBPacket(new byte[Defines.BUF_SIZE], 0);
+                sendPacket.id = packet.id;
+                sendPacket.name = packet.name;
+                sendPacket.time = 0;
+
+                sendPacket.isSuccess = true;
+                sendPacket.message = "계정 생성이 정상적으로 처리되었습니다!";
+
+                players[packet.id].asyncUserToken.SendData(sendPacket);
+            }
+            else
+            {
+                DBPacket sendPacket = new DBPacket(new byte[Defines.BUF_SIZE], 0);
+                sendPacket.id = packet.id;
+                sendPacket.name = packet.name;
+                sendPacket.time = 0;
+
+                sendPacket.isSuccess = false;
+                sendPacket.message = "이미 존재하는 아이디입니다!";
+
+                players[packet.id].asyncUserToken.SendData(sendPacket);
+            }
+        }
+
+        private void ProcessRefreshRooms(AsyncUserToken token)
+        {
 
         }
 

@@ -118,6 +118,7 @@
     <Compile Include="Objects\Networking\Defines.cs" />
     <Compile Include="Objects\Networking\Header.cs" />
     <Compile Include="Packets\ChattingPacket.cs" />
+    <Compile Include="Packets\DBPacket.cs" />
     <Compile Include="Packets\ItemCraftPacket.cs" />
     <Compile Include="Packets\ItemEventPacket.cs" />
     <Compile Include="Packets\LoginPacket.cs" />

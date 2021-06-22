@@ -8,7 +8,7 @@ namespace mutant_server
         //lobby, main server operation
         CTOS_LOGIN,
         CTOS_LOGOUT,
-        CTOS_JOIN_GAME,
+        //CTOS_JOIN_GAME,
         CTOS_CREATE_ROOM,
         CTOS_SELECT_ROOM,
         CTOS_REFRESH_ROOMS,

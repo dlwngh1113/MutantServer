@@ -28,7 +28,7 @@ namespace mutant_server.Objects.Networking
             }
         }
 
-        public void InsertData(LoginPacket packet)
+        public bool InsertData(LoginPacket packet)
         {
             string myQuery = "insert into lulus.mutant (nameMutant, pwMutant) values(\"" + packet.name + "\", \"" + packet.passwd + "\")";
             Console.WriteLine(myQuery);
@@ -38,11 +38,12 @@ namespace mutant_server.Objects.Networking
             {
                 if (command.ExecuteNonQuery() == 1)
                 {
-                    return;
+                    return true;
                 }
                 else
                 {
                     Console.WriteLine("InsertData to Database is somethig wrong");
+                    return false;
                 }
             } 
             catch (MySqlException ex)
@@ -50,6 +51,7 @@ namespace mutant_server.Objects.Networking
                 Console.WriteLine(ex.Message);
             }
             _connection.Close();
+            return true;
         }
 
         public void UpdateData(Client client)
