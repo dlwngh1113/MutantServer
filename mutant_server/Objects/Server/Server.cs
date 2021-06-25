@@ -49,17 +49,6 @@ namespace mutant_server
         {
             _roomsInServer = new Dictionary<int, Room>();
             _dBConnector = new DBConnector();
-            //LoginPacket packet = new LoginPacket(new byte[1024], 0);
-            //packet.id = 10;
-            //packet.name = "hello";
-            //packet.time = 0;
-            //packet.passwd = "ljh1348";
-            //_dBConnector.InsertData(packet);
-            //Client client = new Client(0);
-            //client.userName = "hello";
-            //client.passWd = "ljh1348";
-            //client.winCoundTrator = 3;
-            //_dBConnector.UpdateData(client);
             _bufferManager.InitBuffer();
 
             for (int i = 0; i < _numConnections; i++)
@@ -153,8 +142,6 @@ namespace mutant_server
             AsyncUserToken token = (AsyncUserToken)e.UserToken;
             if (e.BytesTransferred > 0 && e.SocketError == SocketError.Success)
             {
-                token.ResolveMessage(e.Buffer, e.Offset, e.BytesTransferred);
-
                 switch((CTOS_OP)e.Buffer[e.Offset])
                 {
                     case CTOS_OP.CTOS_LOGIN:
@@ -195,10 +182,13 @@ namespace mutant_server
             }
         }
 
-        bool IsValidUser(MutantPacket packet)
+        bool IsValidUser(LoginPacket packet)
         {
-
-            return true;
+            if(_dBConnector.isValidData(packet))
+            {
+                return true;
+            }
+            return false;
         }
         private Client InitClient(AsyncUserToken token)
         {
@@ -273,7 +263,7 @@ namespace mutant_server
             //새롭게 DB에 유저 정보를 입력하고 login ok 전송
             //else
             //login fail과 이미
-            MutantPacket packet = new MutantPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
+            LoginPacket packet = new LoginPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
             packet.ByteArrayToPacket();
 
             if (!IsValidUser(packet))

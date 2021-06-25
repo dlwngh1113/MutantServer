@@ -1,6 +1,7 @@
 ﻿using mutant_server.Packets;
 using MySql.Data.MySqlClient;
 using System;
+using System.Data;
 
 namespace mutant_server.Objects.Networking
 {
@@ -52,6 +53,21 @@ namespace mutant_server.Objects.Networking
             }
             _connection.Close();
             return true;
+        }
+
+        public bool isValidData(LoginPacket packet)
+        {
+            DataSet dataSet = new DataSet();
+            string myQuery = "select * from lulus.mutant where nameMutant=\"" + packet.name + "\" pwMutant=\"" + packet.passwd + "\"";
+
+            MySqlDataAdapter adapter = new MySqlDataAdapter(myQuery, _connection);
+            adapter.Fill(dataSet, "lulus.mutant");
+            if(dataSet.Tables.Count == 1)
+            {
+                return true;
+            }
+
+            return false;
         }
 
         public void UpdateData(Client client)

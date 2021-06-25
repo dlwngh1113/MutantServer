@@ -1,6 +1,7 @@
 ﻿using mutant_server.Packets;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace mutant_server
 {
@@ -44,6 +45,15 @@ namespace mutant_server
                     break;
                 case CTOS_OP.CTOS_ITEM_CLICKED:
                     ProcessItemEvent(token);
+                    break;
+                case CTOS_OP.CTOS_ITEM_CRAFT_REQUEST:
+                    ProcessItemCraft(token);
+                    break;
+                case CTOS_OP.CTOS_VOTE_SELECTED:
+                    ProcessVote(token);
+                    break;
+                case CTOS_OP.CTOS_VOTE_REQUEST:
+                    ProcessStartVote(token);
                     break;
                 default:
                     throw new Exception("operation from client is not valid\n");
@@ -99,6 +109,177 @@ namespace mutant_server
                 tmpToken.SendData(sendPacket);
             }
         }
+
+        private void AddItemInGlobal(string itemName)
+        {
+            if (itemName == "Axe")
+            {
+                return;
+            }
+            if (Server.globalItem.ContainsKey(itemName))
+            {
+                Server.globalItem[itemName]++;
+            }
+            else
+            {
+                Server.globalItem.Add(itemName, 1);
+            }
+        }
+
+        public void ProcessStartVote(AsyncUserToken token)
+        {
+            MutantPacket packet = new MutantPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
+            packet.ByteArrayToPacket();
+
+            for (int i = 0; i < Server.players.Count; ++i)
+            {
+                var tuple = Server.players.ElementAt(i);
+                tuple.Value.position = tuple.Value.InitPos;
+                for (int j = i; j < Server.players.Count; ++j)
+                {
+                    var tmpToken = Server.players.ElementAt(j).Value.asyncUserToken;
+                    PlayerStatusPacket posPacket = new PlayerStatusPacket(new byte[Defines.BUF_SIZE], 0);
+                    posPacket.id = tuple.Key;
+                    posPacket.name = tuple.Value.userName;
+                    posPacket.time = 0;
+
+                    posPacket.position = tuple.Value.position;
+                    posPacket.rotation = tuple.Value.rotation;
+                    posPacket.playerMotion = Defines.PLAYER_IDLE;
+
+                    posPacket.PacketToByteArray((byte)STOC_OP.STOC_STATUS_CHANGE);
+
+                    tmpToken.SendData(posPacket);
+                }
+            }
+
+            foreach (var tuple in Server.players)
+            {
+                var tmpToken = tuple.Value.asyncUserToken;
+                PlayerStatusPacket sendPacket = new PlayerStatusPacket(new byte[Defines.BUF_SIZE], 0);
+                sendPacket.id = tuple.Value.userID;
+                sendPacket.name = tuple.Value.userName;
+                sendPacket.position = tuple.Value.InitPos;
+                sendPacket.rotation = tuple.Value.rotation;
+                sendPacket.playerMotion = Defines.PLAYER_IDLE;
+
+                sendPacket.PacketToByteArray((byte)STOC_OP.STOC_VOTE_START);
+
+                tmpToken.SendData(sendPacket);
+            }
+        }
+        public void ProcessVote(AsyncUserToken token)
+        {
+            VotePacket packet = new VotePacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
+            packet.ByteArrayToPacket();
+
+            if (!Server.voteCounter.ContainsKey(packet.votedPersonID))
+            {
+                Server.voteCounter.Add(packet.votedPersonID, 1);
+            }
+            else
+            {
+                Server.voteCounter[packet.votedPersonID] += 1;
+            }
+
+            Console.WriteLine("name = {0}, id = {1}", packet.name, packet.id);
+
+            foreach (var tuple in Server.players)
+            {
+                var tmpToken = tuple.Value.asyncUserToken;
+                VotePacket sendPacket = new VotePacket(new byte[Defines.BUF_SIZE], 0);
+                sendPacket.name = packet.name;
+                sendPacket.id = packet.id;
+                sendPacket.time = packet.time;
+
+                sendPacket.votedPersonID = packet.votedPersonID;
+                sendPacket.votePairs = Server.voteCounter;
+
+                sendPacket.PacketToByteArray((byte)STOC_OP.STOC_VOTED);
+
+                tmpToken.SendData(sendPacket);
+            }
+        }
+
+        private void ProcessItemCraft(AsyncUserToken token)
+        {
+            ItemCraftPacket packet = new ItemCraftPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
+            packet.ByteArrayToPacket();
+
+            ItemCraftPacket sendPacket = new ItemCraftPacket(token.writeEventArgs.Buffer, token.writeEventArgs.Offset);
+            sendPacket.id = packet.id;
+            sendPacket.name = packet.name;
+            sendPacket.time = packet.time;
+
+            if (!Server.players.ContainsKey(packet.id))
+            {
+                return;
+            }
+
+            Console.WriteLine("packet.itemName - {0}", packet.itemName);
+            switch (packet.itemName)
+            {
+                case "Axe":
+                    Server.players[packet.id].inventory["Stick"] -= 1;
+                    Server.players[packet.id].inventory["Rock"] -= 1;
+                    if (!Server.players[packet.id].inventory.ContainsKey("Axe"))
+                    {
+                        Server.players[packet.id].inventory.Add("Axe", 1);
+                    }
+                    break;
+                case "Plane":
+                    Server.players[packet.id].inventory["Log"] -= 2;
+                    break;
+                case "Sail":
+                    Server.players[packet.id].inventory["Log"] -= 1;
+                    Server.players[packet.id].inventory["Rope"] -= 1;
+                    break;
+                case "Paddle":
+                    Server.players[packet.id].inventory["Log"] -= 1;
+                    break;
+            }
+            AddItemInGlobal(packet.itemName);
+
+            sendPacket.inventory = Server.players[packet.id].inventory;
+            sendPacket.itemName = packet.itemName;
+            sendPacket.globalItem = Server.globalItem;
+
+            sendPacket.PacketToByteArray((byte)STOC_OP.STOC_ITEM_CRAFTED);
+
+            token.SendData(sendPacket);
+
+            foreach (var tuple in Server.players[packet.id].inventory)
+            {
+                Console.Write("key - {0}, value - {1}", tuple.Key, tuple.Value);
+            }
+            Console.WriteLine("");
+
+            foreach (var tuple in Server.globalItem)
+            {
+                Console.Write("key - {0}, value - {1}", tuple.Key, tuple.Value);
+            }
+            Console.WriteLine("");
+
+            foreach (var tuple in Server.players)
+            {
+                if (tuple.Key != packet.id)
+                {
+                    var tmpToken = tuple.Value.asyncUserToken;
+
+                    ItemCraftPacket otherPacket = new ItemCraftPacket(new byte[Defines.BUF_SIZE], 0);
+                    otherPacket.id = sendPacket.id;
+                    otherPacket.name = sendPacket.name;
+                    otherPacket.time = sendPacket.time;
+
+                    otherPacket.itemName = sendPacket.itemName;
+                    otherPacket.inventory = sendPacket.inventory;
+                    otherPacket.globalItem = sendPacket.globalItem;
+                    otherPacket.PacketToByteArray((byte)STOC_OP.STOC_ITEM_CRAFTED);
+
+                    tmpToken.SendData(otherPacket);
+                }
+            }
+        }
         private void ProcessAttack(AsyncUserToken token)
         {
             //누가 어떤 플레이어를 공격했는가?
@@ -124,6 +305,7 @@ namespace mutant_server
                 tmpToken.SendData(sendPacket);
             }
         }
+
         private void ProcessItemEvent(AsyncUserToken token)
         {
             ItemEventPacket packet = new ItemEventPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
@@ -175,6 +357,7 @@ namespace mutant_server
 
             token.SendData(sendPacket);
         }
+
         private void ProcessStatus(AsyncUserToken token)
         {
             PlayerStatusPacket packet = new PlayerStatusPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
@@ -210,7 +393,7 @@ namespace mutant_server
         public bool IsHavePlayer(int id)
         {
             foreach (var tuple in _players)
-            { 
+            {
                 if(tuple.Key == id)
                 {
                     return true;
@@ -218,6 +401,7 @@ namespace mutant_server
             }
             return false;
         }
+
         public void Update(object elapsedTime)
         {
             var iter = _players.GetEnumerator();
