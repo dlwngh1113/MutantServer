@@ -125,6 +125,7 @@
     <Compile Include="Packets\MutantPacket.cs" />
     <Compile Include="Objects\MyVector3.cs" />
     <Compile Include="Packets\PlayerStatusPacket.cs" />
+    <Compile Include="Packets\RoomPacket.cs" />
     <Compile Include="Packets\VotePacket.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -21,17 +21,10 @@ namespace mutant_server
         private SocketAsyncEventArgsPool _writePool;
         private int _numConnectedSockets;      // the total number of clients connected to the server
 
+        private int _roomCount;
         private Dictionary<int, Room> _roomsInServer;
         private DBConnector _dBConnector;
-
-        static public Dictionary<int, Client> players = new Dictionary<int, Client>();
-        static public Dictionary<string, int> globalItem = new Dictionary<string, int>();
-        static public Dictionary<string, int> voteCounter = new Dictionary<string, int>();
-        static public byte[] jobArray = Defines.GenerateRandomJobs();
-        static public MyVector3[] initPosAry = { new MyVector3(95.09579f, 5.16f, 42.68918f),
-            new MyVector3(95.09579f, 5.16f, 42.68918f), new MyVector3(95.09579f, 5.16f, 42.68918f),
-            new MyVector3(95.09579f, 5.16f, 42.68918f), new MyVector3(95.09579f, 5.16f, 42.68918f) };
-        static public int globalOffset = 0;
+        private Dictionary<int, Client> _players;
 
         public Server(int numConnections, int receiveBufferSize)
         {
@@ -43,12 +36,15 @@ namespace mutant_server
 
             _readPool = new SocketAsyncEventArgsPool(numConnections);
             _writePool = new SocketAsyncEventArgsPool(numConnections);
+
+            _roomCount = 0;
+            _roomsInServer = new Dictionary<int, Room>();
+            _dBConnector = new DBConnector();
+            _players = new Dictionary<int, Client>();
         }
 
         public void Init()
         {
-            _roomsInServer = new Dictionary<int, Room>();
-            _dBConnector = new DBConnector();
             _bufferManager.InitBuffer();
 
             for (int i = 0; i < _numConnections; i++)
@@ -199,9 +195,9 @@ namespace mutant_server
             client.userID = Defines.id;
             token.userID = Defines.id;
 
-            lock (Server.players)
+            lock (_players)
             {
-                Server.players[client.userID] = client;
+                _players[client.userID] = client;
             }
 
             return client;
@@ -234,7 +230,7 @@ namespace mutant_server
                 sendPacket.isSuccess = true;
                 sendPacket.message = "계정 생성이 정상적으로 처리되었습니다!";
 
-                players[packet.id].asyncUserToken.SendData(sendPacket);
+                _players[packet.id].asyncUserToken.SendData(sendPacket);
             }
             else
             {
@@ -246,13 +242,8 @@ namespace mutant_server
                 sendPacket.isSuccess = false;
                 sendPacket.message = "이미 존재하는 아이디입니다!";
 
-                players[packet.id].asyncUserToken.SendData(sendPacket);
+                _players[packet.id].asyncUserToken.SendData(sendPacket);
             }
-        }
-
-        private void ProcessRefreshRooms(AsyncUserToken token)
-        {
-
         }
 
         private void ProcessLogin(AsyncUserToken token)
@@ -295,9 +286,9 @@ namespace mutant_server
             }
             // throws if client process has already closed
             catch (Exception) { }
-            lock (players)
+            lock (_players)
             {
-                players.Remove(token.userID);
+                _players.Remove(token.userID);
             }
             token.socket.Close();
 
@@ -340,18 +331,82 @@ namespace mutant_server
             CloseClientSocket(token.readEventArgs);
         }
 
-        private void ProcessSelectRoom(AsyncUserToken token)
+        private void ProcessRefreshRooms(AsyncUserToken token)
         {
             MutantPacket packet = new MutantPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
             packet.ByteArrayToPacket();
 
+            RoomPacket sendPacket = new RoomPacket(new byte[Defines.BUF_SIZE], 0);
+            sendPacket.id = packet.id;
+            sendPacket.name = packet.name;
+            sendPacket.time = packet.time;
 
+            foreach(var tuple in _roomsInServer)
+            {
+                sendPacket.roomList.Add(new KeyValuePair<int, int>(tuple.Key, tuple.Value.PlayerNum));
+            }
+
+            sendPacket.PacketToByteArray((byte)STOC_OP.STOC_ROOM_REFRESHED);
+            token.SendData(sendPacket);
+        }
+
+        private void ProcessSelectRoom(AsyncUserToken token)
+        {
+            RoomPacket packet = new RoomPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
+            packet.ByteArrayToPacket();
+
+            Room room = _roomsInServer[packet.roomList[0].Key];
+
+            if(room.PlayerNum < 5)
+            {
+                room.AddPlayer(packet.id, _players[packet.id]);
+                _players.Remove(packet.id);
+
+                RoomPacket sendPacket = new RoomPacket(new byte[Defines.BUF_SIZE], 0);
+                sendPacket.id = packet.id;
+                sendPacket.name = packet.name;
+                sendPacket.time = 0;
+
+                sendPacket.roomList.Add(new KeyValuePair<int, int>(packet.roomList[0].Key, room.PlayerNum));
+                sendPacket.PacketToByteArray((byte)STOC_OP.STOC_PLAYER_ENTER);
+
+                token.SendData(sendPacket);
+            }
+            else
+            {
+                RoomPacket sendPacket = new RoomPacket(new byte[Defines.BUF_SIZE], 0);
+                sendPacket.id = packet.id;
+                sendPacket.name = packet.name;
+                sendPacket.time = 0;
+
+                sendPacket.roomList.Add(new KeyValuePair<int, int>(packet.roomList[0].Key, room.PlayerNum));
+                sendPacket.PacketToByteArray((byte)STOC_OP.STOC_ENTER_FAIL);
+
+                token.SendData(sendPacket);
+            }
         }
 
         private void ProcessCreateRoom(AsyncUserToken token)
         {
+            MutantPacket packet = new MutantPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
+            packet.ByteArrayToPacket();
+
             Room room = new Room();
             room.closeMethod = CloseClientSocket;
+            _roomsInServer.Add(++_roomCount, room);
+
+            room.AddPlayer(packet.id, _players[packet.id]);
+            _players.Remove(packet.id);
+
+            RoomPacket sendPacket = new RoomPacket(new byte[Defines.BUF_SIZE], 0);
+            sendPacket.id = packet.id;
+            sendPacket.name = packet.name;
+            sendPacket.time = 0;
+
+            sendPacket.roomList.Add(new KeyValuePair<int, int>(_roomCount, 1));
+            sendPacket.PacketToByteArray((byte)STOC_OP.STOC_ROOM_CREATE_SUCCESS);
+
+            token.SendData(sendPacket);
         }
     }
 }

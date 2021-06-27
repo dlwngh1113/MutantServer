@@ -35,6 +35,7 @@ namespace mutant_server
         STOC_ENTER_OK,
         STOC_ROOM_CREATE_FAIL,
         STOC_ROOM_CREATE_SUCCESS,
+        STOC_ROOM_REFRESHED,
         STOC_CREATE_USER_INFO_SUCCESS,
         STOC_CREATE_USER_INFO_FAIL,
 

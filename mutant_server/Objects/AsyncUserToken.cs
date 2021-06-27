@@ -89,15 +89,15 @@ namespace mutant_server
             sendPacket.id = packet.id;
             sendPacket.name = packet.name;
             sendPacket.time = packet.time;
-            sendPacket.position = Server.players[packet.id].position;
-            sendPacket.rotation = Server.players[packet.id].rotation;
-            sendPacket.playerJob = Server.players[packet.id].job;
+            sendPacket.position = Server._players[packet.id].position;
+            sendPacket.rotation = Server._players[packet.id].rotation;
+            sendPacket.playerJob = Server._players[packet.id].job;
 
             sendPacket.PacketToByteArray((byte)STOC_OP.STOC_PLAYER_ENTER);
 
             SendData(sendPacket);
 
-            foreach (var tuple in Server.players)
+            foreach (var tuple in Server._players)
             {
                 if (tuple.Key != sendPacket.id)
                 {
@@ -108,8 +108,8 @@ namespace mutant_server
                     curPacket.id = sendPacket.id;
                     curPacket.name = sendPacket.name;
                     curPacket.time = sendPacket.time;
-                    curPacket.position = Server.players[sendPacket.id].position;
-                    curPacket.rotation = Server.players[sendPacket.id].rotation;
+                    curPacket.position = Server._players[sendPacket.id].position;
+                    curPacket.rotation = Server._players[sendPacket.id].rotation;
 
                     curPacket.PacketToByteArray((byte)STOC_OP.STOC_PLAYER_ENTER);
 

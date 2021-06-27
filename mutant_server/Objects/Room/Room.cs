@@ -13,10 +13,28 @@ namespace mutant_server
         private Dictionary<int, Client> _players;
         private MessageResolver _messageResolver;
         public CloseMethod closeMethod;
+
+        private Dictionary<string, int> globalItem = new Dictionary<string, int>();
+        private Dictionary<string, int> voteCounter = new Dictionary<string, int>();
+        private byte[] jobArray = Defines.GenerateRandomJobs();
+        private MyVector3[] initPosAry = { new MyVector3(95.09579f, 5.16f, 42.68918f),
+            new MyVector3(95.09579f, 5.16f, 42.68918f), new MyVector3(95.09579f, 5.16f, 42.68918f),
+            new MyVector3(95.09579f, 5.16f, 42.68918f), new MyVector3(95.09579f, 5.16f, 42.68918f) };
+        private int globalOffset = 0;
+
+        public int PlayerNum
+        {
+            get => _players.Count;
+        }
         public Room()
         {
             _players = new Dictionary<int, Client>(5);
             _messageResolver = new MessageResolver();
+        }
+
+        public void AddPlayer(int id, Client c)
+        {
+            this._players.Add(id, c);
         }
 
         public void ResolveMessge(AsyncUserToken token)
@@ -40,8 +58,8 @@ namespace mutant_server
                 case CTOS_OP.CTOS_CHAT:
                     ProcessChatting(token);
                     break;
-                case CTOS_OP.CTOS_LOGOUT:
-                    ProcessLogout(token);
+                case CTOS_OP.CTOS_LEAVE_GAME:
+                    ProcessLeaveGame(token);
                     break;
                 case CTOS_OP.CTOS_ITEM_CLICKED:
                     ProcessItemEvent(token);
@@ -60,12 +78,8 @@ namespace mutant_server
             }
         }
 
-        private void ProcessLogout(AsyncUserToken token)
+        private void ProcessLeaveGame(AsyncUserToken token)
         {
-            //현재까지의 게임 정보를 DB에 업데이트 후 접속 종료
-
-            //지금 게임에 존재하는 유저들에게 해당 유저가 게임을 종료했음을 알림
-            //지금 게임을 같이 하고 있는 유저들을 어떻게 구분할 것인가?
             MutantPacket packet = new MutantPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
             packet.ByteArrayToPacket();
 
@@ -116,13 +130,13 @@ namespace mutant_server
             {
                 return;
             }
-            if (Server.globalItem.ContainsKey(itemName))
+            if (globalItem.ContainsKey(itemName))
             {
-                Server.globalItem[itemName]++;
+                globalItem[itemName]++;
             }
             else
             {
-                Server.globalItem.Add(itemName, 1);
+                globalItem.Add(itemName, 1);
             }
         }
 
@@ -131,13 +145,13 @@ namespace mutant_server
             MutantPacket packet = new MutantPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
             packet.ByteArrayToPacket();
 
-            for (int i = 0; i < Server.players.Count; ++i)
+            for (int i = 0; i < _players.Count; ++i)
             {
-                var tuple = Server.players.ElementAt(i);
+                var tuple = _players.ElementAt(i);
                 tuple.Value.position = tuple.Value.InitPos;
-                for (int j = i; j < Server.players.Count; ++j)
+                for (int j = i; j < _players.Count; ++j)
                 {
-                    var tmpToken = Server.players.ElementAt(j).Value.asyncUserToken;
+                    var tmpToken = _players.ElementAt(j).Value.asyncUserToken;
                     PlayerStatusPacket posPacket = new PlayerStatusPacket(new byte[Defines.BUF_SIZE], 0);
                     posPacket.id = tuple.Key;
                     posPacket.name = tuple.Value.userName;
@@ -153,7 +167,7 @@ namespace mutant_server
                 }
             }
 
-            foreach (var tuple in Server.players)
+            foreach (var tuple in _players)
             {
                 var tmpToken = tuple.Value.asyncUserToken;
                 PlayerStatusPacket sendPacket = new PlayerStatusPacket(new byte[Defines.BUF_SIZE], 0);
@@ -173,18 +187,18 @@ namespace mutant_server
             VotePacket packet = new VotePacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
             packet.ByteArrayToPacket();
 
-            if (!Server.voteCounter.ContainsKey(packet.votedPersonID))
+            if (!voteCounter.ContainsKey(packet.votedPersonID))
             {
-                Server.voteCounter.Add(packet.votedPersonID, 1);
+                voteCounter.Add(packet.votedPersonID, 1);
             }
             else
             {
-                Server.voteCounter[packet.votedPersonID] += 1;
+                voteCounter[packet.votedPersonID] += 1;
             }
 
             Console.WriteLine("name = {0}, id = {1}", packet.name, packet.id);
 
-            foreach (var tuple in Server.players)
+            foreach (var tuple in _players)
             {
                 var tmpToken = tuple.Value.asyncUserToken;
                 VotePacket sendPacket = new VotePacket(new byte[Defines.BUF_SIZE], 0);
@@ -193,7 +207,7 @@ namespace mutant_server
                 sendPacket.time = packet.time;
 
                 sendPacket.votedPersonID = packet.votedPersonID;
-                sendPacket.votePairs = Server.voteCounter;
+                sendPacket.votePairs = voteCounter;
 
                 sendPacket.PacketToByteArray((byte)STOC_OP.STOC_VOTED);
 
@@ -211,7 +225,7 @@ namespace mutant_server
             sendPacket.name = packet.name;
             sendPacket.time = packet.time;
 
-            if (!Server.players.ContainsKey(packet.id))
+            if (!_players.ContainsKey(packet.id))
             {
                 return;
             }
@@ -220,47 +234,47 @@ namespace mutant_server
             switch (packet.itemName)
             {
                 case "Axe":
-                    Server.players[packet.id].inventory["Stick"] -= 1;
-                    Server.players[packet.id].inventory["Rock"] -= 1;
-                    if (!Server.players[packet.id].inventory.ContainsKey("Axe"))
+                    _players[packet.id].inventory["Stick"] -= 1;
+                    _players[packet.id].inventory["Rock"] -= 1;
+                    if (!_players[packet.id].inventory.ContainsKey("Axe"))
                     {
-                        Server.players[packet.id].inventory.Add("Axe", 1);
+                        _players[packet.id].inventory.Add("Axe", 1);
                     }
                     break;
                 case "Plane":
-                    Server.players[packet.id].inventory["Log"] -= 2;
+                    _players[packet.id].inventory["Log"] -= 2;
                     break;
                 case "Sail":
-                    Server.players[packet.id].inventory["Log"] -= 1;
-                    Server.players[packet.id].inventory["Rope"] -= 1;
+                    _players[packet.id].inventory["Rope"] -= 1;
+                    _players[packet.id].inventory["Log"] -= 1;
                     break;
                 case "Paddle":
-                    Server.players[packet.id].inventory["Log"] -= 1;
+                    _players[packet.id].inventory["Log"] -= 1;
                     break;
             }
             AddItemInGlobal(packet.itemName);
 
-            sendPacket.inventory = Server.players[packet.id].inventory;
+            sendPacket.inventory = _players[packet.id].inventory;
             sendPacket.itemName = packet.itemName;
-            sendPacket.globalItem = Server.globalItem;
+            sendPacket.globalItem = globalItem;
 
             sendPacket.PacketToByteArray((byte)STOC_OP.STOC_ITEM_CRAFTED);
 
             token.SendData(sendPacket);
 
-            foreach (var tuple in Server.players[packet.id].inventory)
+            foreach (var tuple in _players[packet.id].inventory)
             {
                 Console.Write("key - {0}, value - {1}", tuple.Key, tuple.Value);
             }
             Console.WriteLine("");
 
-            foreach (var tuple in Server.globalItem)
+            foreach (var tuple in globalItem)
             {
                 Console.Write("key - {0}, value - {1}", tuple.Key, tuple.Value);
             }
             Console.WriteLine("");
 
-            foreach (var tuple in Server.players)
+            foreach (var tuple in _players)
             {
                 if (tuple.Key != packet.id)
                 {
@@ -332,7 +346,6 @@ namespace mutant_server
             //그렇지 않은 경우는 아이템 획득 가능
             else
             {
-                //SendPacket.inventory Null Reference Exception
                 if (_players[packet.id].inventory.ContainsKey(packet.itemName))
                 {
                     _players[packet.id].inventory[packet.itemName] += 1;
@@ -363,7 +376,7 @@ namespace mutant_server
             PlayerStatusPacket packet = new PlayerStatusPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
             packet.ByteArrayToPacket();
 
-            if (!(Server.players.ContainsKey(packet.id)))
+            if (!(_players.ContainsKey(packet.id)))
             {
                 return;
             }
