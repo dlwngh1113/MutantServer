@@ -14,8 +14,8 @@ namespace mutant_server
         private MessageResolver _messageResolver;
         public CloseMethod closeMethod;
 
-        private Dictionary<string, int> globalItem = new Dictionary<string, int>();
-        private Dictionary<string, int> voteCounter = new Dictionary<string, int>();
+        private Dictionary<string, int> _globalItem = new Dictionary<string, int>();
+        private Dictionary<string, int> _voteCounter = new Dictionary<string, int>();
         private byte[] jobArray = Defines.GenerateRandomJobs();
         private MyVector3[] initPosAry = { new MyVector3(95.09579f, 5.16f, 42.68918f),
             new MyVector3(95.09579f, 5.16f, 42.68918f), new MyVector3(95.09579f, 5.16f, 42.68918f),
@@ -57,6 +57,9 @@ namespace mutant_server
                     break;
                 case CTOS_OP.CTOS_CHAT:
                     ProcessChatting(token);
+                    break;
+                case CTOS_OP.CTOS_JOIN_GAME:
+                    //Do Something
                     break;
                 case CTOS_OP.CTOS_LEAVE_GAME:
                     ProcessLeaveGame(token);
@@ -130,13 +133,13 @@ namespace mutant_server
             {
                 return;
             }
-            if (globalItem.ContainsKey(itemName))
+            if (_globalItem.ContainsKey(itemName))
             {
-                globalItem[itemName]++;
+                _globalItem[itemName]++;
             }
             else
             {
-                globalItem.Add(itemName, 1);
+                _globalItem.Add(itemName, 1);
             }
         }
 
@@ -187,13 +190,13 @@ namespace mutant_server
             VotePacket packet = new VotePacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
             packet.ByteArrayToPacket();
 
-            if (!voteCounter.ContainsKey(packet.votedPersonID))
+            if (!_voteCounter.ContainsKey(packet.votedPersonID))
             {
-                voteCounter.Add(packet.votedPersonID, 1);
+                _voteCounter.Add(packet.votedPersonID, 1);
             }
             else
             {
-                voteCounter[packet.votedPersonID] += 1;
+                _voteCounter[packet.votedPersonID] += 1;
             }
 
             Console.WriteLine("name = {0}, id = {1}", packet.name, packet.id);
@@ -207,7 +210,7 @@ namespace mutant_server
                 sendPacket.time = packet.time;
 
                 sendPacket.votedPersonID = packet.votedPersonID;
-                sendPacket.votePairs = voteCounter;
+                sendPacket.votePairs = _voteCounter;
 
                 sendPacket.PacketToByteArray((byte)STOC_OP.STOC_VOTED);
 
@@ -256,7 +259,7 @@ namespace mutant_server
 
             sendPacket.inventory = _players[packet.id].inventory;
             sendPacket.itemName = packet.itemName;
-            sendPacket.globalItem = globalItem;
+            sendPacket.globalItem = _globalItem;
 
             sendPacket.PacketToByteArray((byte)STOC_OP.STOC_ITEM_CRAFTED);
 
@@ -268,7 +271,7 @@ namespace mutant_server
             }
             Console.WriteLine("");
 
-            foreach (var tuple in globalItem)
+            foreach (var tuple in _globalItem)
             {
                 Console.Write("key - {0}, value - {1}", tuple.Key, tuple.Value);
             }

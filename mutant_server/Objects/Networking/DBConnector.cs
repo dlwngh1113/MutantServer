@@ -32,7 +32,7 @@ namespace mutant_server.Objects.Networking
         public bool InsertData(LoginPacket packet)
         {
             string myQuery = "insert into lulus.mutant (nameMutant, pwMutant) values(\"" + packet.name + "\", \"" + packet.passwd + "\")";
-            Console.WriteLine(myQuery);
+            Console.WriteLine("System(DB): " + myQuery);
             _connection.Open();
             MySqlCommand command = new MySqlCommand(myQuery, _connection);
             try
@@ -75,7 +75,7 @@ namespace mutant_server.Objects.Networking
             string myQuery = "update lulus.mutant set winCountTrator=" + client.winCoundTrator.ToString() + ", winCountResearcher=" + client.winCountResearcher.ToString() +
                 ", winCountNocturn=" + client.winCountNocturn.ToString() + ", winCountPsychy=" + client.winCountPsychy.ToString() + ", winCountTanker=" + client.winCountTanker.ToString() + 
                 " where nameMutant=\"" + client.userName + "\"";
-            Console.WriteLine(myQuery);
+            Console.WriteLine("System(DB): " + myQuery);
             _connection.Open();
             MySqlCommand command = new MySqlCommand(myQuery, _connection);
             try

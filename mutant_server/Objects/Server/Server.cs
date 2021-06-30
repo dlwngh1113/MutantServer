@@ -223,6 +223,7 @@ namespace mutant_server
             if( _dBConnector.InsertData(packet))
             {
                 DBPacket sendPacket = new DBPacket(new byte[Defines.BUF_SIZE], 0);
+
                 sendPacket.id = packet.id;
                 sendPacket.name = packet.name;
                 sendPacket.time = 0;
@@ -327,6 +328,8 @@ namespace mutant_server
             //지금 게임을 같이 하고 있는 유저들을 어떻게 구분할 것인가?
             MutantPacket packet = new MutantPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
             packet.ByteArrayToPacket();
+
+            _dBConnector.UpdateData(_players[packet.id]);
 
             CloseClientSocket(token.readEventArgs);
         }
