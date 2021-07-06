@@ -34,7 +34,10 @@ namespace mutant_server
 
         public void AddPlayer(int id, Client c)
         {
-            this._players.Add(id, c);
+            lock (this._players)
+            {
+                this._players.Add(id, c);
+            }
         }
 
         public void ResolveMessge(AsyncUserToken token)
@@ -100,6 +103,11 @@ namespace mutant_server
 
                     tmpToken.SendData(sendPacket);
                 }
+            }
+
+            lock(_players)
+            {
+                _players.Remove(packet.id);
             }
 
             closeMethod(token.readEventArgs);

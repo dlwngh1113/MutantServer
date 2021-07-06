@@ -396,7 +396,10 @@ namespace mutant_server
 
             Room room = new Room();
             room.closeMethod = CloseClientSocket;
-            _roomsInServer.Add(++_roomCount, room);
+            lock (_roomsInServer)
+            {
+                _roomsInServer.Add(++_roomCount, room);
+            }
 
             room.AddPlayer(packet.id, _players[packet.id]);
             _players.Remove(packet.id);
