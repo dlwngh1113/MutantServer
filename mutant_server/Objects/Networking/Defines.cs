@@ -8,7 +8,7 @@ namespace mutant_server
         //lobby, main server operation
         CTOS_LOGIN,
         CTOS_LOGOUT,
-        CTOS_JOIN_GAME,
+        CTOS_LEAVE_ROOM,
         CTOS_CREATE_ROOM,
         CTOS_SELECT_ROOM,
         CTOS_REFRESH_ROOMS,
@@ -16,11 +16,11 @@ namespace mutant_server
 
         //ingame operation
         CTOS_STATUS_CHANGE = 100,
+        CTOS_LEAVE_GAME,
         CTOS_ATTACK,
         CTOS_CHAT,
         CTOS_ITEM_CLICKED,
         CTOS_ITEM_CRAFT_REQUEST,
-        CTOS_LEAVE_GAME,
         CTOS_VOTE_REQUEST,
         CTOS_VOTE_SELECTED,
     }
@@ -31,8 +31,8 @@ namespace mutant_server
         //lobby, main server operation
         STOC_LOGIN_OK,
         STOC_LOGIN_FAIL,
-        STOC_ENTER_FAIL,
-        STOC_ENTER_OK,
+        STOC_PLAYER_ENTER,
+        STOC_PLAYER_LEAVE_ROOM,
         STOC_ROOM_CREATE_FAIL,
         STOC_ROOM_CREATE_SUCCESS,
         STOC_ROOM_REFRESHED,
@@ -41,8 +41,7 @@ namespace mutant_server
 
         //ingame operation
         STOC_STATUS_CHANGE = 100,
-        STOC_PLAYER_ENTER,
-        STOC_PLAYER_LEAVE,
+        STOC_PLAYER_LEAVE_GAME,
         STOC_CHAT,
         STOC_ITEM_GAIN,
         STOC_ITEM_DENIED,

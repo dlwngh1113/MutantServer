@@ -61,8 +61,8 @@ namespace mutant_server
                 case CTOS_OP.CTOS_CHAT:
                     ProcessChatting(token);
                     break;
-                case CTOS_OP.CTOS_JOIN_GAME:
-                    //Do Something
+                case CTOS_OP.CTOS_LEAVE_ROOM:
+                    ProcessLeaveRoom(token);
                     break;
                 case CTOS_OP.CTOS_LEAVE_GAME:
                     ProcessLeaveGame(token);
@@ -84,6 +84,33 @@ namespace mutant_server
             }
         }
 
+        private void ProcessLeaveRoom(AsyncUserToken token)
+        {
+            MutantPacket packet = new MutantPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
+            packet.ByteArrayToPacket();
+
+            foreach (var tuple in _players)
+            {
+                if (tuple.Key != packet.id)
+                {
+                    var tmpToken = tuple.Value.asyncUserToken;
+                    MutantPacket sendPacket = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
+                    sendPacket.name = packet.name;
+                    sendPacket.id = packet.id;
+                    sendPacket.time = packet.time;
+
+                    sendPacket.PacketToByteArray((byte)STOC_OP.STOC_PLAYER_LEAVE_ROOM);
+
+                    tmpToken.SendData(sendPacket);
+                }
+            }
+
+            lock (_players)
+            {
+                _players.Remove(packet.id);
+            }
+        }
+
         private void ProcessLeaveGame(AsyncUserToken token)
         {
             MutantPacket packet = new MutantPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
@@ -99,7 +126,7 @@ namespace mutant_server
                     sendPacket.id = packet.id;
                     sendPacket.time = packet.time;
 
-                    sendPacket.PacketToByteArray((byte)STOC_OP.STOC_PLAYER_LEAVE);
+                    sendPacket.PacketToByteArray((byte)STOC_OP.STOC_PLAYER_LEAVE_GAME);
 
                     tmpToken.SendData(sendPacket);
                 }
@@ -109,8 +136,6 @@ namespace mutant_server
             {
                 _players.Remove(packet.id);
             }
-
-            closeMethod(token.readEventArgs);
         }
         private void ProcessChatting(AsyncUserToken token)
         {

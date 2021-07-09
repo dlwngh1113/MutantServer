@@ -363,7 +363,6 @@ namespace mutant_server
             if(room.PlayerNum < 5)
             {
                 room.AddPlayer(packet.id, _players[packet.id]);
-                _players.Remove(packet.id);
 
                 RoomPacket sendPacket = new RoomPacket(new byte[Defines.BUF_SIZE], 0);
                 sendPacket.id = packet.id;
@@ -402,7 +401,6 @@ namespace mutant_server
             }
 
             room.AddPlayer(packet.id, _players[packet.id]);
-            _players.Remove(packet.id);
 
             RoomPacket sendPacket = new RoomPacket(new byte[Defines.BUF_SIZE], 0);
             sendPacket.id = packet.id;
