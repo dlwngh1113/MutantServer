@@ -209,7 +209,7 @@ namespace mutant_server
             {
                 if(tuple.Value.IsHavePlayer(token.userID))
                 {
-                    tuple.Value.ResolveMessge(token);
+                    tuple.Value.ResolveMessage(token);
                     return;
                 }
             }

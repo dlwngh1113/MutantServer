@@ -14,8 +14,8 @@ namespace mutant_server
         private MessageResolver _messageResolver;
         public CloseMethod closeMethod;
 
-        private Dictionary<string, int> _globalItem = new Dictionary<string, int>();
-        private Dictionary<string, int> _voteCounter = new Dictionary<string, int>();
+        private Dictionary<string, int> _globalItem;
+        private Dictionary<string, int> _voteCounter;
         private byte[] jobArray = Defines.GenerateRandomJobs();
         private MyVector3[] initPosAry = { new MyVector3(95.09579f, 5.16f, 42.68918f),
             new MyVector3(95.09579f, 5.16f, 42.68918f), new MyVector3(95.09579f, 5.16f, 42.68918f),
@@ -30,6 +30,8 @@ namespace mutant_server
         {
             _players = new Dictionary<int, Client>(5);
             _messageResolver = new MessageResolver();
+            _globalItem = new Dictionary<string, int>();
+            _voteCounter = new Dictionary<string, int>();
         }
 
         public void AddPlayer(int id, Client c)
@@ -40,7 +42,7 @@ namespace mutant_server
             }
         }
 
-        public void ResolveMessge(AsyncUserToken token)
+        public void ResolveMessage(AsyncUserToken token)
         {
             byte[] data = _messageResolver.ResolveMessage(token.readEventArgs.Buffer, token.readEventArgs.Offset, token.readEventArgs.BytesTransferred);
             if (data != null)
@@ -79,8 +81,83 @@ namespace mutant_server
                 case CTOS_OP.CTOS_VOTE_REQUEST:
                     ProcessStartVote(token);
                     break;
+                case CTOS_OP.CTOS_READY:
+                    ProcessReady(token);
+                    break;
+                case CTOS_OP.CTOS_UNREADY:
+                    ProcessUnready(token);
+                    break;
+                case CTOS_OP.CTOS_GAME_START:
+                    ProcessGameStart(token);
+                    break;
                 default:
                     throw new Exception("operation from client is not valid\n");
+            }
+        }
+
+        private void ProcessReady(AsyncUserToken token)
+        {
+            MutantPacket packet = new MutantPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
+            packet.ByteArrayToPacket();
+
+            foreach (var tuple in _players)
+            {
+                if (tuple.Key != packet.id)
+                {
+                    var tmpToken = tuple.Value.asyncUserToken;
+                    MutantPacket sendPacket = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
+                    sendPacket.name = packet.name;
+                    sendPacket.id = packet.id;
+                    sendPacket.time = packet.time;
+
+                    sendPacket.PacketToByteArray((byte)STOC_OP.STOC_READY);
+
+                    tmpToken.SendData(sendPacket);
+                }
+            }
+        }
+
+        private void ProcessUnready(AsyncUserToken token)
+        {
+            MutantPacket packet = new MutantPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
+            packet.ByteArrayToPacket();
+
+            foreach (var tuple in _players)
+            {
+                if (tuple.Key != packet.id)
+                {
+                    var tmpToken = tuple.Value.asyncUserToken;
+                    MutantPacket sendPacket = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
+                    sendPacket.name = packet.name;
+                    sendPacket.id = packet.id;
+                    sendPacket.time = packet.time;
+
+                    sendPacket.PacketToByteArray((byte)STOC_OP.STOC_UNREADY);
+
+                    tmpToken.SendData(sendPacket);
+                }
+            }
+        }
+
+        private void ProcessGameStart(AsyncUserToken token)
+        {
+            MutantPacket packet = new MutantPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
+            packet.ByteArrayToPacket();
+
+            foreach (var tuple in _players)
+            {
+                if (tuple.Key != packet.id)
+                {
+                    var tmpToken = tuple.Value.asyncUserToken;
+                    MutantPacket sendPacket = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
+                    sendPacket.name = packet.name;
+                    sendPacket.id = packet.id;
+                    sendPacket.time = packet.time;
+
+                    sendPacket.PacketToByteArray((byte)STOC_OP.STOC_GAME_START);
+
+                    tmpToken.SendData(sendPacket);
+                }
             }
         }
 
