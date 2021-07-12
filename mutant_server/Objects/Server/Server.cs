@@ -220,31 +220,24 @@ namespace mutant_server
             LoginPacket packet = new LoginPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
             packet.ByteArrayToPacket();
 
-            if( _dBConnector.InsertData(packet))
+            DBPacket sendPacket = new DBPacket(new byte[Defines.BUF_SIZE], 0);
+
+            sendPacket.id = packet.id;
+            sendPacket.name = packet.name;
+            sendPacket.time = 0;
+
+            if ( _dBConnector.InsertData(packet))
             {
-                DBPacket sendPacket = new DBPacket(new byte[Defines.BUF_SIZE], 0);
-
-                sendPacket.id = packet.id;
-                sendPacket.name = packet.name;
-                sendPacket.time = 0;
-
                 sendPacket.isSuccess = true;
                 sendPacket.message = "계정 생성이 정상적으로 처리되었습니다!";
-
-                _players[packet.id].asyncUserToken.SendData(sendPacket);
             }
             else
             {
-                DBPacket sendPacket = new DBPacket(new byte[Defines.BUF_SIZE], 0);
-                sendPacket.id = packet.id;
-                sendPacket.name = packet.name;
-                sendPacket.time = 0;
-
                 sendPacket.isSuccess = false;
                 sendPacket.message = "이미 존재하는 아이디입니다!";
-
-                _players[packet.id].asyncUserToken.SendData(sendPacket);
             }
+
+            _players[packet.id].asyncUserToken.SendData(sendPacket);
         }
 
         private void ProcessLogin(AsyncUserToken token)
@@ -382,7 +375,7 @@ namespace mutant_server
                 sendPacket.time = 0;
 
                 sendPacket.roomList.Add(new KeyValuePair<int, int>(packet.roomList[0].Key, room.PlayerNum));
-                sendPacket.PacketToByteArray((byte)STOC_OP.STOC_ENTER_FAIL);
+                sendPacket.PacketToByteArray((byte)STOC_OP.STOC_ROOM_ENTER_FAIL);
 
                 token.SendData(sendPacket);
             }
