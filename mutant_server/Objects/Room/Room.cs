@@ -2,6 +2,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Timers;
 
 namespace mutant_server
 {
@@ -159,6 +161,10 @@ namespace mutant_server
                     tmpToken.SendData(sendPacket);
                 }
             }
+
+            System.Timers.Timer timer = new System.Timers.Timer();
+            timer.Interval = Defines.FrameRate;
+            timer.Elapsed += new ElapsedEventHandler(Update);
         }
 
         private void ProcessLeaveRoom(AsyncUserToken token)
@@ -528,13 +534,20 @@ namespace mutant_server
             return false;
         }
 
-        public void Update(object elapsedTime)
+        public void Update(object elapsedTime, ElapsedEventArgs e)
         {
-            var iter = _players.GetEnumerator();
-            do
+            foreach (var tuple in _players)
             {
-                var token = iter.Current.Value.asyncUserToken;
-            } while (iter.MoveNext());
+                var tmpToken = tuple.Value.asyncUserToken;
+                MutantPacket packet = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
+                packet.id = tuple.Key;
+                packet.name = tuple.Value.userName;
+                packet.time = 0;
+
+                packet.PacketToByteArray((byte)STOC_OP.STOC_SYSTEM_CHANGE);
+
+                tmpToken.SendData(packet);
+            }
         }
     }
 }
