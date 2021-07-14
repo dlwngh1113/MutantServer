@@ -13,6 +13,11 @@ namespace mutant_server
         /// player id, player class
         /// </summary>
         private Dictionary<int, Client> _players;
+        public string RoomTitle
+        {
+            get => RoomTitle;
+            private set => RoomTitle = value;
+        }
         private MessageResolver _messageResolver;
         public CloseMethod closeMethod;
 
@@ -28,6 +33,12 @@ namespace mutant_server
         {
             get => _players.Count;
         }
+
+        public void SetRoomTitle(string s)
+        {
+            this.RoomTitle = s;
+        }
+
         public Room()
         {
             _players = new Dictionary<int, Client>(5);

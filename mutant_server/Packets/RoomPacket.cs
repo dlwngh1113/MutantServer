@@ -6,12 +6,12 @@ namespace mutant_server.Packets
     public class RoomPacket : MutantPacket
     {
         /// <summary>
-        /// room id, playerCount
+        /// room name, playerCount
         /// </summary>
-        public List<KeyValuePair<int, int>> roomList;
+        public Dictionary<string, int> roomList;
         public RoomPacket(byte[] ary, int offset) : base(ary, offset)
         {
-            roomList = new List<KeyValuePair<int, int>>();
+            roomList = new Dictionary<string, int>();
         }
         public void Copy(RoomPacket packet, byte type = (byte)STOC_OP.STOC_ROOM_CREATE_SUCCESS)
         {
@@ -34,7 +34,7 @@ namespace mutant_server.Packets
             int cnt = ByteToInt();
             for(int i=0;i<cnt;++i)
             {
-                roomList.Add(new KeyValuePair<int, int>(ByteToInt(), ByteToInt()));
+                roomList.Add(ByteToString(), ByteToInt());
             }
         }
     }

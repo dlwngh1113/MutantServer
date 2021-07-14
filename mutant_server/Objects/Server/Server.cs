@@ -22,7 +22,7 @@ namespace mutant_server
         private int _numConnectedSockets;      // the total number of clients connected to the server
 
         private int _roomCount;
-        private Dictionary<int, Room> _roomsInServer;
+        private List<Room> _roomsInServer;
         private DBConnector _dBConnector;
         private Dictionary<int, Client> _players;
 
@@ -38,7 +38,7 @@ namespace mutant_server
             _writePool = new SocketAsyncEventArgsPool(numConnections);
 
             _roomCount = 0;
-            _roomsInServer = new Dictionary<int, Room>();
+            _roomsInServer = new List<Room>();
             _dBConnector = new DBConnector();
             _players = new Dictionary<int, Client>();
         }
@@ -213,11 +213,11 @@ namespace mutant_server
 
         private void ProcessInRoom(AsyncUserToken token)
         {
-            foreach (var tuple in _roomsInServer)
+            foreach(var i in _roomsInServer)
             {
-                if(tuple.Value.IsHavePlayer(token.userID))
+                if (i.IsHavePlayer(token.userID))
                 {
-                    tuple.Value.ResolveMessage(token);
+                    i.ResolveMessage(token);
                     return;
                 }
             }
@@ -250,16 +250,11 @@ namespace mutant_server
 
         private void ProcessLogin(AsyncUserToken token)
         {
-            //if (DB에서 이미 플레이어의 이름이 존재하고, 서버에서 사용중이지 않다면)
-            //해당 정보로 로그인 login ok 클라이언트로 전송
-            //else if 서버, DB에 모두 존재하지 않는 이름이라면
-            //새롭게 DB에 유저 정보를 입력하고 login ok 전송
-            //else
-            //login fail과 이미
             LoginPacket packet = new LoginPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
             packet.ByteArrayToPacket();
 
             MutantPacket sendPacket = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
+            //서버에서 사용중이거나 잘못된 아이디, 비밀번호
             if (!IsValidUser(packet))
             {
                 sendPacket.id = packet.id;
@@ -272,6 +267,7 @@ namespace mutant_server
                 return;
             }
 
+            //정상 접속한 유저
             Client client = _dBConnector.GetUserData(packet.name, packet.passwd);
             client.asyncUserToken = token;
             
@@ -358,9 +354,9 @@ namespace mutant_server
             sendPacket.name = packet.name;
             sendPacket.time = packet.time;
 
-            foreach(var tuple in _roomsInServer)
+            foreach(var room in _roomsInServer)
             {
-                sendPacket.roomList.Add(new KeyValuePair<int, int>(tuple.Key, tuple.Value.PlayerNum));
+                sendPacket.roomList.Add(room.RoomTitle, room.PlayerNum);
             }
 
             sendPacket.PacketToByteArray((byte)STOC_OP.STOC_ROOM_REFRESHED);
@@ -372,7 +368,21 @@ namespace mutant_server
             RoomPacket packet = new RoomPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
             packet.ByteArrayToPacket();
 
-            Room room = _roomsInServer[packet.roomList[0].Key];
+            Room room = null;
+            foreach (var v in _roomsInServer)
+            {
+                //패킷에 온 방 제목이 서버의 방 제목과 일치하는가?
+                if(v.RoomTitle == packet.roomList.GetEnumerator().Current.Key)
+                {
+                    room = v;
+                    break;
+                }
+            }
+            if(room == null)
+            {
+                Console.WriteLine("room title is wrong(Server.cs)");
+                return;
+            }
 
             if(room.PlayerNum < 5)
             {
@@ -383,7 +393,7 @@ namespace mutant_server
                 sendPacket.name = packet.name;
                 sendPacket.time = 0;
 
-                sendPacket.roomList.Add(new KeyValuePair<int, int>(packet.roomList[0].Key, room.PlayerNum));
+                sendPacket.roomList.Add(room.RoomTitle, room.PlayerNum);
                 sendPacket.PacketToByteArray((byte)STOC_OP.STOC_PLAYER_ENTER);
 
                 token.SendData(sendPacket);
@@ -395,7 +405,7 @@ namespace mutant_server
                 sendPacket.name = packet.name;
                 sendPacket.time = 0;
 
-                sendPacket.roomList.Add(new KeyValuePair<int, int>(packet.roomList[0].Key, room.PlayerNum));
+                sendPacket.roomList.Add(room.RoomTitle, room.PlayerNum);
                 sendPacket.PacketToByteArray((byte)STOC_OP.STOC_ROOM_ENTER_FAIL);
 
                 token.SendData(sendPacket);
@@ -411,17 +421,18 @@ namespace mutant_server
             room.closeMethod = CloseClientSocket;
             lock (_roomsInServer)
             {
-                _roomsInServer.Add(++_roomCount, room);
+                _roomsInServer.Add(room);
             }
 
             room.AddPlayer(packet.id, _players[packet.id]);
+            room.SetRoomTitle("hello");
 
             RoomPacket sendPacket = new RoomPacket(new byte[Defines.BUF_SIZE], 0);
             sendPacket.id = packet.id;
             sendPacket.name = packet.name;
             sendPacket.time = 0;
 
-            sendPacket.roomList.Add(new KeyValuePair<int, int>(_roomCount, 1));
+            sendPacket.roomList.Add(room.RoomTitle, room.PlayerNum);
             sendPacket.PacketToByteArray((byte)STOC_OP.STOC_ROOM_CREATE_SUCCESS);
 
             token.SendData(sendPacket);

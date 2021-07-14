@@ -106,11 +106,11 @@ namespace mutant_server
         public static byte[] GenerateRandomJobs()
         {
             byte[] ary = { JOB_TRACKER, JOB_PSYCHY, JOB_NOCTURN, JOB_RESEARCHER, JOB_TANKER };
-            Random random = new Random();
-            for(int i=0;i<ary.Length;++i)
-            {
-                //Swap<byte>(ref ary[random.Next(0, ary.Length)], ref ary[random.Next(0, ary.Length)]);
-            }
+            //Random random = new Random();
+            //for(int i=0;i<ary.Length;++i)
+            //{
+            //    Swap<byte>(ref ary[random.Next(0, ary.Length)], ref ary[random.Next(0, ary.Length)]);
+            //}
 
             return ary;
         }
