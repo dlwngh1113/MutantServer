@@ -64,8 +64,7 @@ namespace mutant_server
         public const short MAX_CHAT_LEN = 100;
         public const short PORT = 9000;
         public const float FrameRate = (float)((1.0 / 60.0) * 1000);
-
-        public static int id = 0;
+        public const byte MAX_ROOM_USER = 5;
 
         /// <summary>
         /// player motions

@@ -24,9 +24,9 @@ namespace mutant_server
         private Dictionary<string, int> _globalItem;
         private Dictionary<string, int> _voteCounter;
         private byte[] jobArray = Defines.GenerateRandomJobs();
-        private MyVector3[] initPosAry = { new MyVector3(95.09579f, 5.16f, 42.68918f),
-            new MyVector3(95.09579f, 5.16f, 42.68918f), new MyVector3(95.09579f, 5.16f, 42.68918f),
-            new MyVector3(95.09579f, 5.16f, 42.68918f), new MyVector3(95.09579f, 5.16f, 42.68918f) };
+        private MyVector3[] initPosAry = { new MyVector3(95.05f, 4.67f, 47.55f),
+            new MyVector3(94.05f, 4.16f, 45.18f), new MyVector3(91.49f, 4.69f, 45.57f),
+            new MyVector3(89.98f, 4.42f, 48.5f), new MyVector3(92.11f, 5.08f, 50.36f) };
         private int globalOffset = 0;
 
         public int PlayerNum
@@ -152,25 +152,42 @@ namespace mutant_server
             }
         }
 
+        private GameInitPacket SetGameInitPacket(MutantPacket p)
+        {
+            GameInitPacket packet = new GameInitPacket(new byte[Defines.BUF_SIZE], 0);
+            packet.id = p.id;
+            packet.name = p.name;
+            packet.time = 0;
+
+            for(int i =0;i<_players.Count; ++i)
+            {
+                Client c = _players.ElementAt(i).Value;
+                c.InitPos = initPosAry[globalOffset];
+                c.job = jobArray[globalOffset];
+
+                //name, id, initPos, job
+                packet.names[i] = c.userName;
+                packet.IDs[i] = c.userID;
+                packet.positions[i] = c.InitPos;
+                packet.jobs[i] = c.job;
+                Interlocked.Increment(ref globalOffset);
+            }
+
+            packet.PacketToByteArray((byte)STOC_OP.STOC_GAME_START);
+
+            return packet;
+        }
+
         private void ProcessGameStart(AsyncUserToken token)
         {
             MutantPacket packet = new MutantPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
             packet.ByteArrayToPacket();
 
+            GameInitPacket sendPacket = SetGameInitPacket(packet);
+
             foreach (var tuple in _players)
             {
-                if (tuple.Key != packet.id)
-                {
-                    var tmpToken = tuple.Value.asyncUserToken;
-                    MutantPacket sendPacket = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
-                    sendPacket.name = packet.name;
-                    sendPacket.id = packet.id;
-                    sendPacket.time = packet.time;
-
-                    sendPacket.PacketToByteArray((byte)STOC_OP.STOC_GAME_START);
-
-                    tmpToken.SendData(sendPacket);
-                }
+                tuple.Value.asyncUserToken.SendData(sendPacket);
             }
 
             System.Timers.Timer timer = new System.Timers.Timer();
