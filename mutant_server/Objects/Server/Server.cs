@@ -414,18 +414,18 @@ namespace mutant_server
 
         private void ProcessCreateRoom(AsyncUserToken token)
         {
-            MutantPacket packet = new MutantPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
+            RoomPacket packet = new RoomPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
             packet.ByteArrayToPacket();
 
             Room room = new Room();
             room.closeMethod = CloseClientSocket;
+            room.SetRoomTitle(packet.roomList.GetEnumerator().Current.Key);
             lock (_roomsInServer)
             {
                 _roomsInServer.Add(room);
             }
 
             room.AddPlayer(packet.id, _players[packet.id]);
-            room.SetRoomTitle("hello");
 
             RoomPacket sendPacket = new RoomPacket(new byte[Defines.BUF_SIZE], 0);
             sendPacket.id = packet.id;
