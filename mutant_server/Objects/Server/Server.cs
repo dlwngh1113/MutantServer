@@ -182,26 +182,34 @@ namespace mutant_server
         {
             if(_dBConnector.isValidData(packet))
             {
+                foreach(var tuple in _players)
+                {
+                    if(tuple.Value.userName == packet.name)
+                    {
+                        return false;
+                    }
+                }
                 return true;
             }
             return false;
         }
-        private Client InitClient(AsyncUserToken token)
-        {
-            Interlocked.Increment(ref Defines.id);
 
-            Client client = new Client(Defines.id);
-            client.asyncUserToken = token;
-            client.userID = Defines.id;
-            token.userID = Defines.id;
+        //private Client InitClient(AsyncUserToken token)
+        //{
+        //    Interlocked.Increment(ref Defines.id);
 
-            lock (_players)
-            {
-                _players[client.userID] = client;
-            }
+        //    Client client = new Client(Defines.id);
+        //    client.asyncUserToken = token;
+        //    client.userID = Defines.id;
+        //    token.userID = Defines.id;
 
-            return client;
-        }
+        //    lock (_players)
+        //    {
+        //        _players[client.userID] = client;
+        //    }
+
+        //    return client;
+        //}
 
         private void ProcessInRoom(AsyncUserToken token)
         {
@@ -237,7 +245,7 @@ namespace mutant_server
                 sendPacket.message = "이미 존재하는 아이디입니다!";
             }
 
-            _players[packet.id].asyncUserToken.SendData(sendPacket);
+            token.SendData(sendPacket);
         }
 
         private void ProcessLogin(AsyncUserToken token)
@@ -251,18 +259,31 @@ namespace mutant_server
             LoginPacket packet = new LoginPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
             packet.ByteArrayToPacket();
 
+            MutantPacket sendPacket = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
             if (!IsValidUser(packet))
             {
+                sendPacket.id = packet.id;
+                sendPacket.name = packet.name;
+                sendPacket.time = 0;
+
+                sendPacket.PacketToByteArray((byte)STOC_OP.STOC_LOGIN_FAIL);
+
+                token.SendData(sendPacket);
                 return;
             }
 
-            Client c = InitClient(token);
-            c.userName = packet.name;
-            Console.WriteLine("{0} client has {1} id, login request!", c.userName, c.userID);
+            Client client = _dBConnector.GetUserData(packet.name, packet.passwd);
+            client.asyncUserToken = token;
+            
+            lock(_players)
+            {
+                _players[client.userID] = client;
+            }
 
-            MutantPacket sendPacket = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
-            sendPacket.id = c.userID;
-            sendPacket.name = packet.name;
+            Console.WriteLine("{0} client has {1} id, login request!", client.userName, client.userID);
+
+            sendPacket.id = client.userID;
+            sendPacket.name = client.userName;
             sendPacket.time = packet.time;
 
             sendPacket.PacketToByteArray((byte)STOC_OP.STOC_LOGIN_OK);

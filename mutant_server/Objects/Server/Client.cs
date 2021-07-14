@@ -9,7 +9,7 @@ namespace mutant_server
         public string userName = "admin";
 
         public string passWd = "";
-        public int winCoundTrator = 0;
+        public int winCountTrator = 0;
         public int winCountResearcher = 0;
         public int winCountNocturn = 0;
         public int winCountPsychy = 0;

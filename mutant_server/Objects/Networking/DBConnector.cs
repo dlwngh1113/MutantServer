@@ -58,7 +58,7 @@ namespace mutant_server.Objects.Networking
         public bool isValidData(LoginPacket packet)
         {
             DataSet dataSet = new DataSet();
-            string myQuery = "select * from lulus.mutant where nameMutant=\"" + packet.name + "\" pwMutant=\"" + packet.passwd + "\"";
+            string myQuery = "select * from lulus.mutant where nameMutant=\"" + packet.name + "\" and pwMutant=\"" + packet.passwd + "\"";
 
             MySqlDataAdapter adapter = new MySqlDataAdapter(myQuery, _connection);
             adapter.Fill(dataSet, "lulus.mutant");
@@ -70,9 +70,31 @@ namespace mutant_server.Objects.Networking
             return false;
         }
 
+        public Client GetUserData(string name, string passWd)
+        {
+            string myQuery = "select * from lulus.mutant where nameMutant=\"" + name + "\" and pwMutant=\"" + passWd + "\"";
+
+            MySqlCommand command = new MySqlCommand(myQuery, _connection);
+            MySqlDataReader table = command.ExecuteReader();
+
+            Client c = new Client(0);
+            while(table.Read())
+            {
+                c.userName = name;
+                c.passWd = passWd;
+                c.userID = (int)table["idMutant"];
+                c.winCountTrator = (int)table["winCountTrator"];
+                c.winCountNocturn = (int)table["winCountNocturn"];
+                c.winCountPsychy = (int)table["winCountPsychy"];
+                c.winCountResearcher = (int)table["winCountResearcher"];
+                c.winCountTanker = (int)table["winCountTanker"];
+            }
+            return c;
+        }
+
         public void UpdateData(Client client)
         {
-            string myQuery = "update lulus.mutant set winCountTrator=" + client.winCoundTrator.ToString() + ", winCountResearcher=" + client.winCountResearcher.ToString() +
+            string myQuery = "update lulus.mutant set winCountTrator=" + client.winCountTrator.ToString() + ", winCountResearcher=" + client.winCountResearcher.ToString() +
                 ", winCountNocturn=" + client.winCountNocturn.ToString() + ", winCountPsychy=" + client.winCountPsychy.ToString() + ", winCountTanker=" + client.winCountTanker.ToString() + 
                 " where nameMutant=\"" + client.userName + "\"";
             Console.WriteLine("System(DB): " + myQuery);
