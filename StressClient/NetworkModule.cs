@@ -1,8 +1,10 @@
 ﻿using mutant_server;
+using mutant_server.Packets;
+using mutant_server.Objects.Networking;
+using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
-using System.Collections.Generic;
-using System;
 using System.Threading;
 
 namespace StressClient
@@ -51,7 +53,7 @@ namespace StressClient
             {
                 Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
                 SocketAsyncEventArgs args = new SocketAsyncEventArgs();
-                args.RemoteEndPoint = new IPEndPoint(IPAddress.Loopback, MutantGlobal.PORT);
+                args.RemoteEndPoint = new IPEndPoint(IPAddress.Loopback, Defines.PORT);
                 args.Completed += new EventHandler<SocketAsyncEventArgs>(ConnectArgs_Completed);
                 socket.ConnectAsync(args);
             }
@@ -65,12 +67,12 @@ namespace StressClient
             AsyncUserToken token = new AsyncUserToken();
 
             SocketAsyncEventArgs recv_event = new SocketAsyncEventArgs();
-            recv_event.SetBuffer(new byte[MutantGlobal.BUF_SIZE], 0, MutantGlobal.BUF_SIZE);
+            recv_event.SetBuffer(new byte[Defines.BUF_SIZE], 0, Defines.BUF_SIZE);
             recv_event.Completed += new EventHandler<SocketAsyncEventArgs>(RecvCompleted);
             recv_event.UserToken = token;
 
             SocketAsyncEventArgs send_event = new SocketAsyncEventArgs();
-            send_event.SetBuffer(new byte[MutantGlobal.BUF_SIZE], 0, MutantGlobal.BUF_SIZE);
+            send_event.SetBuffer(new byte[Defines.BUF_SIZE], 0, Defines.BUF_SIZE);
             send_event.Completed += new EventHandler<SocketAsyncEventArgs>(SendCompleted);
             send_event.UserToken = token;
 
@@ -97,8 +99,8 @@ namespace StressClient
             MutantPacket p = new MutantPacket(send_event.Buffer, 0);
             p.name = player.name;
             p.id = player.id;
-            p.time = MutantGlobal.GetCurrentMilliseconds();
-            p.PacketToByteArray(MutantGlobal.CTOS_LOGIN);
+            p.time = 0;
+            p.PacketToByteArray((byte)CTOS_OP.CTOS_LOGIN);
 
             bool willRaise = socket.SendAsync(send_event);
             if(!willRaise)
@@ -117,20 +119,20 @@ namespace StressClient
             if(e.SocketError == SocketError.Success && e.BytesTransferred > 0)
             {
                 AsyncUserToken token = e.UserToken as AsyncUserToken;
-                switch(token.readEventArgs.Buffer[e.Offset])
+                switch((STOC_OP)token.readEventArgs.Buffer[e.Offset])
                 {
-                    case MutantGlobal.STOC_CHAT:
+                    case STOC_OP.STOC_CHAT:
                         break;
-                    case MutantGlobal.STOC_ENTER:
+                    //case STOC_OP.STOC_ENTER:
+                    //    break;
+                    //case STOC_OP.STOC_LEAVE:
+                    //    break;
+                    case STOC_OP.STOC_LOGIN_FAIL:
                         break;
-                    case MutantGlobal.STOC_LEAVE:
-                        break;
-                    case MutantGlobal.STOC_LOGIN_FAIL:
-                        break;
-                    case MutantGlobal.STOC_LOGIN_OK:
+                    case STOC_OP.STOC_LOGIN_OK:
                         ProcessLoginOK(e);
                         break;
-                    case MutantGlobal.STOC_STATUS_CHANGE:
+                    case STOC_OP.STOC_STATUS_CHANGE:
                         ProcessStatus(e);
                         break;
                     default:
@@ -152,8 +154,6 @@ namespace StressClient
 
             clients[token.socket].position = packet.position;
             clients[token.socket].rotation = packet.rotation;
-            clients[token.socket].posVelocity = packet.posVelocity;
-            clients[token.socket].rotVelocity = packet.rotVelocity;
         }
 
         private void ProcessStatus(SocketAsyncEventArgs e)
@@ -164,8 +164,6 @@ namespace StressClient
 
             clients[token.socket].position = packet.position;
             clients[token.socket].rotation = packet.rotation;
-            clients[token.socket].posVelocity = packet.posVelocity;
-            clients[token.socket].rotVelocity = packet.rotVelocity;
         }
 
         private void SendCompleted(object sender, SocketAsyncEventArgs e)

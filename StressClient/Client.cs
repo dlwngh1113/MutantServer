@@ -1,6 +1,6 @@
 ﻿using mutant_server;
+using mutant_server.Packets;
 using System;
-using System.Numerics;
 
 namespace StressClient
 {
@@ -10,8 +10,6 @@ namespace StressClient
         public string name;
         public MyVector3 position;
         public MyVector3 rotation;
-        public MyVector3 posVelocity;
-        public MyVector3 rotVelocity;
 
         public int id;
         public Client(int id)
@@ -49,31 +47,26 @@ namespace StressClient
             switch(random.Next(4))
             {
                 case 0:
-                    this.posVelocity.x = 1f;
                     break;
                 case 1:
-                    this.posVelocity.x = -1f;
                     break;
                 case 2:
-                    this.posVelocity.z = 1f;
                     break;
                 case 3:
-                    this.posVelocity.z = -1f;
                     break;
             }
 
             PlayerStatusPacket packet = new PlayerStatusPacket(this.asyncUserToken.writeEventArgs.Buffer, 0);
             packet.id = this.id;
             packet.name = this.name;
-            packet.time = MutantGlobal.GetCurrentMilliseconds();
+            packet.time = 0;
 
             packet.position = this.position;
             packet.rotation = this.rotation;
-            packet.posVelocity = this.posVelocity;
-            packet.rotVelocity = this.rotVelocity;
             
-            packet.PacketToByteArray(MutantGlobal.CTOS_STATUS_CHANGE);
-            this.asyncUserToken.socket.SendAsync(this.asyncUserToken.writeEventArgs);
+            packet.PacketToByteArray((byte)CTOS_OP.CTOS_STATUS_CHANGE);
+
+            asyncUserToken.SendData(packet);
         }
     }
 }

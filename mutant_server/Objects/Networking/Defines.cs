@@ -3,7 +3,7 @@
 namespace mutant_server
 {
     //client to server operation
-    enum CTOS_OP
+    public enum CTOS_OP
     {
         //lobby, main server operation
         CTOS_LOGIN,
@@ -29,7 +29,7 @@ namespace mutant_server
     }
 
     //server to client operation
-    enum STOC_OP
+    public enum STOC_OP
     { 
         //lobby, main server operation
         STOC_LOGIN_OK,
