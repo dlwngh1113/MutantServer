@@ -13,11 +13,6 @@ namespace mutant_server
         /// player id, player class
         /// </summary>
         private Dictionary<int, Client> _players;
-        public string RoomTitle
-        {
-            get => RoomTitle;
-            private set => RoomTitle = value;
-        }
         private MessageResolver _messageResolver;
         public CloseMethod closeMethod;
 
@@ -28,10 +23,20 @@ namespace mutant_server
             new MyVector3(94.05f, 4.16f, 45.18f), new MyVector3(91.49f, 4.69f, 45.57f),
             new MyVector3(89.98f, 4.42f, 48.5f), new MyVector3(92.11f, 5.08f, 50.36f) };
         private int globalOffset = 0;
+        private byte gameState = Defines.ROOM_WAIT;
+        public byte GameState
+        {
+            get => gameState;
+        }
 
         public int PlayerNum
         {
             get => _players.Count;
+        }
+        public string RoomTitle
+        {
+            get => RoomTitle;
+            private set => RoomTitle = value;
         }
 
         public void SetRoomTitle(string s)
@@ -193,6 +198,8 @@ namespace mutant_server
             System.Timers.Timer timer = new System.Timers.Timer();
             timer.Interval = Defines.FrameRate;
             timer.Elapsed += new ElapsedEventHandler(Update);
+
+            gameState = Defines.ROOM_PLAYING;
         }
 
         private void ProcessLeaveRoom(AsyncUserToken token)

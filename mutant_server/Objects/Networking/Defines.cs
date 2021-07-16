@@ -95,6 +95,10 @@ namespace mutant_server
         public const byte JOB_RESEARCHER = 3;
         public const byte JOB_TANKER = 4;
 
+        public const byte ROOM_WAIT = 0;
+        public const byte ROOM_PLAYING = 1;
+        public const byte ROOM_RESULT = 2;
+
         public static void Swap<T> (ref T a, ref T b)
         {
             var tmp = a;

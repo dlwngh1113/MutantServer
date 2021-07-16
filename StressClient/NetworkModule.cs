@@ -96,10 +96,13 @@ namespace StressClient
                 clients.Add(socket, player);
             }
 
-            MutantPacket p = new MutantPacket(send_event.Buffer, 0);
+            LoginPacket p = new LoginPacket(new byte[Defines.BUF_SIZE], 0);
             p.name = player.name;
             p.id = player.id;
             p.time = 0;
+
+            p.passwd = "1111";
+
             p.PacketToByteArray((byte)CTOS_OP.CTOS_LOGIN);
 
             bool willRaise = socket.SendAsync(send_event);
@@ -128,12 +131,13 @@ namespace StressClient
                     //case STOC_OP.STOC_LEAVE:
                     //    break;
                     case STOC_OP.STOC_LOGIN_FAIL:
+                        ProcessLoginFail(token);
                         break;
                     case STOC_OP.STOC_LOGIN_OK:
-                        ProcessLoginOK(e);
+                        ProcessLoginOK(token);
                         break;
                     case STOC_OP.STOC_STATUS_CHANGE:
-                        ProcessStatus(e);
+                        ProcessStatus(token);
                         break;
                     default:
                         throw new Exception("Unknown Packet from " + clients[token.socket].name);
@@ -146,20 +150,22 @@ namespace StressClient
             }
         }
 
-        private void ProcessLoginOK(SocketAsyncEventArgs e)
+        private void ProcessLoginFail(AsyncUserToken token)
+        { 
+
+        }
+        private void ProcessLoginOK(AsyncUserToken token)
         {
-            AsyncUserToken token = e.UserToken as AsyncUserToken;
-            PlayerStatusPacket packet = new PlayerStatusPacket(e.Buffer, e.Offset);
+            PlayerStatusPacket packet = new PlayerStatusPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
             packet.ByteArrayToPacket();
 
             clients[token.socket].position = packet.position;
             clients[token.socket].rotation = packet.rotation;
         }
 
-        private void ProcessStatus(SocketAsyncEventArgs e)
+        private void ProcessStatus(AsyncUserToken token)
         {
-            AsyncUserToken token = e.UserToken as AsyncUserToken;
-            PlayerStatusPacket packet = new PlayerStatusPacket(e.Buffer, e.Offset);
+            PlayerStatusPacket packet = new PlayerStatusPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
             packet.ByteArrayToPacket();
 
             clients[token.socket].position = packet.position;

@@ -356,7 +356,8 @@ namespace mutant_server
 
             foreach(var room in _roomsInServer)
             {
-                sendPacket.roomList.Add(room.RoomTitle, room.PlayerNum);
+                sendPacket.names.Add(room.RoomTitle);
+                sendPacket.numOfPlayers.Add(room.PlayerNum);
             }
 
             sendPacket.PacketToByteArray((byte)STOC_OP.STOC_ROOM_REFRESHED);

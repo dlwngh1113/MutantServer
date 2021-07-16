@@ -5,13 +5,14 @@ namespace mutant_server.Packets
 {
     public class RoomPacket : MutantPacket
     {
-        /// <summary>
-        /// room name, playerCount
-        /// </summary>
-        public Dictionary<string, int> roomList;
+        public List<string> names;
+        public List<int> numOfPlayers;
+        public List<byte> gameState;
         public RoomPacket(byte[] ary, int offset) : base(ary, offset)
         {
-            roomList = new Dictionary<string, int>();
+            names = new List<string>();
+            numOfPlayers = new List<int>();
+            gameState = new List<byte>();
         }
         public void Copy(RoomPacket packet, byte type = (byte)STOC_OP.STOC_ROOM_CREATE_SUCCESS)
         {
@@ -21,11 +22,12 @@ namespace mutant_server.Packets
         public override void PacketToByteArray(byte type)
         {
             base.PacketToByteArray(type);
-            ConvertToByte(roomList.Count);
-            foreach(var tuple in roomList)
+            ConvertToByte(names.Count);
+            for(int i=0;i<names.Count;++i)
             {
-                ConvertToByte(tuple.Key);
-                ConvertToByte(tuple.Value);
+                ConvertToByte(names[i]);
+                ConvertToByte(numOfPlayers[i]);
+                ConvertToByte(gameState[i]);
             }
         }
         public override void ByteArrayToPacket()
@@ -34,7 +36,9 @@ namespace mutant_server.Packets
             int cnt = ByteToInt();
             for(int i=0;i<cnt;++i)
             {
-                roomList.Add(ByteToString(), ByteToInt());
+                names.Add(ByteToString());
+                numOfPlayers.Add(ByteToInt());
+                gameState.Add(ByteToByte());
             }
         }
     }
