@@ -373,7 +373,7 @@ namespace mutant_server
             foreach (var v in _roomsInServer)
             {
                 //패킷에 온 방 제목이 서버의 방 제목과 일치하는가?
-                if(v.RoomTitle == packet.roomList.GetEnumerator().Current.Key)
+                if(v.RoomTitle == packet.names[0])
                 {
                     room = v;
                     break;
@@ -394,7 +394,7 @@ namespace mutant_server
                 sendPacket.name = packet.name;
                 sendPacket.time = 0;
 
-                sendPacket.roomList.Add(room.RoomTitle, room.PlayerNum);
+                //sendPacket.roomList.Add(room.RoomTitle, room.PlayerNum);
                 sendPacket.PacketToByteArray((byte)STOC_OP.STOC_PLAYER_ENTER);
 
                 token.SendData(sendPacket);
@@ -406,7 +406,7 @@ namespace mutant_server
                 sendPacket.name = packet.name;
                 sendPacket.time = 0;
 
-                sendPacket.roomList.Add(room.RoomTitle, room.PlayerNum);
+                //sendPacket.roomList.Add(room.RoomTitle, room.PlayerNum);
                 sendPacket.PacketToByteArray((byte)STOC_OP.STOC_ROOM_ENTER_FAIL);
 
                 token.SendData(sendPacket);
@@ -420,7 +420,7 @@ namespace mutant_server
 
             Room room = new Room();
             room.closeMethod = CloseClientSocket;
-            room.SetRoomTitle(packet.roomList.GetEnumerator().Current.Key);
+            room.SetRoomTitle(packet.names[0]);
             lock (_roomsInServer)
             {
                 _roomsInServer.Add(room);
@@ -428,12 +428,11 @@ namespace mutant_server
 
             room.AddPlayer(packet.id, _players[packet.id]);
 
-            RoomPacket sendPacket = new RoomPacket(new byte[Defines.BUF_SIZE], 0);
+            MutantPacket sendPacket = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
             sendPacket.id = packet.id;
             sendPacket.name = packet.name;
-            sendPacket.time = 0;
+            sendPacket.time = packet.time;
 
-            sendPacket.roomList.Add(room.RoomTitle, room.PlayerNum);
             sendPacket.PacketToByteArray((byte)STOC_OP.STOC_ROOM_CREATE_SUCCESS);
 
             token.SendData(sendPacket);

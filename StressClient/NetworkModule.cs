@@ -151,7 +151,10 @@ namespace StressClient
         }
 
         private void ProcessLoginFail(AsyncUserToken token)
-        { 
+        {
+            MutantPacket packet = new MutantPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
+            packet.ByteArrayToPacket();
+
 
         }
         private void ProcessLoginOK(AsyncUserToken token)
