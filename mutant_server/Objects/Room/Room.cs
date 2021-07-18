@@ -23,10 +23,12 @@ namespace mutant_server
             new MyVector3(94.05f, 4.16f, 45.18f), new MyVector3(91.49f, 4.69f, 45.57f),
             new MyVector3(89.98f, 4.42f, 48.5f), new MyVector3(92.11f, 5.08f, 50.36f) };
         private int globalOffset = 0;
+        private string roomTitle;
         private byte gameState = Defines.ROOM_WAIT;
         public byte GameState
         {
             get => gameState;
+            set => gameState = value;
         }
 
         public int PlayerNum
@@ -35,13 +37,13 @@ namespace mutant_server
         }
         public string RoomTitle
         {
-            get => RoomTitle;
-            private set => RoomTitle = value;
+            get => roomTitle;
+            private set => roomTitle = value;
         }
 
         public void SetRoomTitle(string s)
         {
-            this.RoomTitle = s;
+            roomTitle = s;
         }
 
         public Room()

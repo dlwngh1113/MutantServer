@@ -270,6 +270,8 @@ namespace mutant_server
             //정상 접속한 유저
             Client client = _dBConnector.GetUserData(packet.name, packet.passwd);
             client.asyncUserToken = token;
+
+            token.userID = client.userID;
             
             lock(_players)
             {
@@ -310,7 +312,7 @@ namespace mutant_server
             _readPool.Push(token.readEventArgs);
             _writePool.Push(token.writeEventArgs);
 
-            Console.WriteLine("A client has been disconnected from the server. There are {0} clients connected to the server", _numConnectedSockets);
+            Console.WriteLine("A client - {0} has been disconnected from the server. There are {1} clients connected to the server", token.userID, _numConnectedSockets);
         }
 
         private void SendCompleted(object sender, SocketAsyncEventArgs e)
@@ -358,6 +360,7 @@ namespace mutant_server
             {
                 sendPacket.names.Add(room.RoomTitle);
                 sendPacket.numOfPlayers.Add(room.PlayerNum);
+                sendPacket.gameState.Add(room.GameState);
             }
 
             sendPacket.PacketToByteArray((byte)STOC_OP.STOC_ROOM_REFRESHED);
@@ -394,7 +397,9 @@ namespace mutant_server
                 sendPacket.name = packet.name;
                 sendPacket.time = 0;
 
-                //sendPacket.roomList.Add(room.RoomTitle, room.PlayerNum);
+                sendPacket.names.Add(packet.names[0]);
+                sendPacket.numOfPlayers.Add(room.PlayerNum);
+                sendPacket.gameState.Add(Defines.ROOM_WAIT);
                 sendPacket.PacketToByteArray((byte)STOC_OP.STOC_PLAYER_ENTER);
 
                 token.SendData(sendPacket);
@@ -406,7 +411,9 @@ namespace mutant_server
                 sendPacket.name = packet.name;
                 sendPacket.time = 0;
 
-                //sendPacket.roomList.Add(room.RoomTitle, room.PlayerNum);
+                sendPacket.names.Add(packet.names[0]);
+                sendPacket.numOfPlayers.Add(room.PlayerNum);
+                sendPacket.gameState.Add(Defines.ROOM_WAIT);
                 sendPacket.PacketToByteArray((byte)STOC_OP.STOC_ROOM_ENTER_FAIL);
 
                 token.SendData(sendPacket);

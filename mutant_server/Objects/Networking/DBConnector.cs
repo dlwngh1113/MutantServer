@@ -33,17 +33,20 @@ namespace mutant_server.Objects.Networking
         {
             string myQuery = "insert into lulus.mutant (nameMutant, pwMutant) values(\"" + packet.name + "\", \"" + packet.passwd + "\")";
             Console.WriteLine("System(DB): " + myQuery);
+
             _connection.Open();
             MySqlCommand command = new MySqlCommand(myQuery, _connection);
             try
             {
                 if (command.ExecuteNonQuery() == 1)
                 {
+                    _connection.Close();
                     return true;
                 }
                 else
                 {
                     Console.WriteLine("InsertData to Database is somethig wrong");
+                    _connection.Close();
                     return false;
                 }
             } 
@@ -51,6 +54,7 @@ namespace mutant_server.Objects.Networking
             {
                 Console.WriteLine(ex.Message);
             }
+
             _connection.Close();
             return true;
         }
@@ -60,13 +64,17 @@ namespace mutant_server.Objects.Networking
             DataSet dataSet = new DataSet();
             string myQuery = "select * from lulus.mutant where nameMutant=\"" + packet.name + "\" and pwMutant=\"" + packet.passwd + "\"";
 
-            MySqlDataAdapter adapter = new MySqlDataAdapter(myQuery, _connection);
-            adapter.Fill(dataSet, "lulus.mutant");
-            if(dataSet.Tables.Count == 1)
+            _connection.Open();
+            MySqlCommand command = new MySqlCommand(myQuery, _connection);
+            MySqlDataReader table = command.ExecuteReader();
+
+            if(table.Read())
             {
+                _connection.Close();
                 return true;
             }
 
+            _connection.Close();
             return false;
         }
 
@@ -74,6 +82,7 @@ namespace mutant_server.Objects.Networking
         {
             string myQuery = "select * from lulus.mutant where nameMutant=\"" + name + "\" and pwMutant=\"" + passWd + "\"";
 
+            _connection.Open();
             MySqlCommand command = new MySqlCommand(myQuery, _connection);
             MySqlDataReader table = command.ExecuteReader();
 
@@ -89,6 +98,8 @@ namespace mutant_server.Objects.Networking
                 c.winCountResearcher = (int)table["winCountResearcher"];
                 c.winCountTanker = (int)table["winCountTanker"];
             }
+
+            _connection.Close();
             return c;
         }
 
