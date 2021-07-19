@@ -229,6 +229,14 @@ namespace mutant_server
             {
                 _players.Remove(packet.id);
             }
+
+            if (PlayerNum < 1)
+            {
+                lock (Server._roomsInServer)
+                {
+                    Server._roomsInServer.Remove(this);
+                }
+            }
         }
 
         private void ProcessLeaveGame(AsyncUserToken token)
@@ -255,6 +263,14 @@ namespace mutant_server
             lock(_players)
             {
                 _players.Remove(packet.id);
+            }
+
+            if (PlayerNum < 1)
+            {
+                lock (Server._roomsInServer)
+                {
+                    Server._roomsInServer.Remove(this);
+                }
             }
         }
         private void ProcessChatting(AsyncUserToken token)

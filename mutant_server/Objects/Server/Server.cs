@@ -22,7 +22,7 @@ namespace mutant_server
         private int _numConnectedSockets;      // the total number of clients connected to the server
 
         private int _roomCount;
-        private List<Room> _roomsInServer;
+        public static List<Room> _roomsInServer;
         private DBConnector _dBConnector;
         private Dictionary<int, Client> _players;
 
