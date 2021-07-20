@@ -21,7 +21,6 @@ namespace mutant_server
         private SocketAsyncEventArgsPool _writePool;
         private int _numConnectedSockets;      // the total number of clients connected to the server
 
-        private int _roomCount;
         public static List<Room> _roomsInServer;
         private DBConnector _dBConnector;
         private Dictionary<int, Client> _players;
@@ -37,7 +36,6 @@ namespace mutant_server
             _readPool = new SocketAsyncEventArgsPool(numConnections);
             _writePool = new SocketAsyncEventArgsPool(numConnections);
 
-            _roomCount = 0;
             _roomsInServer = new List<Room>();
             _dBConnector = new DBConnector();
             _players = new Dictionary<int, Client>();

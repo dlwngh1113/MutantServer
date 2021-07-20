@@ -317,6 +317,8 @@ namespace mutant_server
             MutantPacket packet = new MutantPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
             packet.ByteArrayToPacket();
 
+            _voteCounter.Clear();
+
             for (int i = 0; i < _players.Count; ++i)
             {
                 var tuple = _players.ElementAt(i);

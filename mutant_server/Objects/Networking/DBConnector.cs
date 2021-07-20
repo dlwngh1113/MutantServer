@@ -1,7 +1,6 @@
 ﻿using mutant_server.Packets;
 using MySql.Data.MySqlClient;
 using System;
-using System.Data;
 
 namespace mutant_server.Objects.Networking
 {
@@ -61,7 +60,6 @@ namespace mutant_server.Objects.Networking
 
         public bool isValidData(LoginPacket packet)
         {
-            DataSet dataSet = new DataSet();
             string myQuery = "select * from lulus.mutant where nameMutant=\"" + packet.name + "\" and pwMutant=\"" + packet.passwd + "\"";
 
             _connection.Open();
@@ -74,6 +72,7 @@ namespace mutant_server.Objects.Networking
                 return true;
             }
 
+            Console.WriteLine("System(DB): id({0}), pwd({1}) is not created account", packet.name, packet.passwd);
             _connection.Close();
             return false;
         }
@@ -97,6 +96,8 @@ namespace mutant_server.Objects.Networking
                 c.winCountPsychy = (int)table["winCountPsychy"];
                 c.winCountResearcher = (int)table["winCountResearcher"];
                 c.winCountTanker = (int)table["winCountTanker"];
+
+                Console.WriteLine("System(DB): id({0}), name({1}), pwd({2}) get user data", c.userID, c.userName, c.passWd);
             }
 
             _connection.Close();
