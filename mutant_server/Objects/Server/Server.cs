@@ -156,6 +156,9 @@ namespace mutant_server
                     case CTOS_OP.CTOS_CREATE_USER_INFO:
                         ProcessCreateUser(token);
                         break;
+                    case CTOS_OP.CTOS_GET_HISTORY:
+                        ProcessUserInfo(token);
+                        break;
                     default:
                         ProcessInRoom(token);
                         break;
@@ -192,23 +195,6 @@ namespace mutant_server
             return false;
         }
 
-        //private Client InitClient(AsyncUserToken token)
-        //{
-        //    Interlocked.Increment(ref Defines.id);
-
-        //    Client client = new Client(Defines.id);
-        //    client.asyncUserToken = token;
-        //    client.userID = Defines.id;
-        //    token.userID = Defines.id;
-
-        //    lock (_players)
-        //    {
-        //        _players[client.userID] = client;
-        //    }
-
-        //    return client;
-        //}
-
         private void ProcessInRoom(AsyncUserToken token)
         {
             foreach(var i in _roomsInServer)
@@ -219,6 +205,14 @@ namespace mutant_server
                     return;
                 }
             }
+        }
+
+        private void ProcessUserInfo(AsyncUserToken token)
+        {
+            MutantPacket packet = new MutantPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
+            packet.ByteArrayToPacket();
+
+
         }
 
         private void ProcessCreateUser(AsyncUserToken token)

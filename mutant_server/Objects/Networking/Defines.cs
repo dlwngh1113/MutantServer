@@ -16,6 +16,7 @@ namespace mutant_server
         CTOS_READY,
         CTOS_UNREADY,
         CTOS_GAME_START,
+        CTOS_GET_HISTORY,
 
         //ingame operation
         CTOS_STATUS_CHANGE = 100,
@@ -44,6 +45,7 @@ namespace mutant_server
         STOC_READY,
         STOC_UNREADY,
         STOC_GAME_START,
+        STOC_PROVISION_HISTORY,
 
         //ingame operation
         STOC_STATUS_CHANGE = 100,
