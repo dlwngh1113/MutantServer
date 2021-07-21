@@ -15,6 +15,12 @@ namespace mutant_server
         public int winCountPsychy = 0;
         public int winCountTanker = 0;
 
+        public int playCountTrator = 0;
+        public int playCountResearcher = 0;
+        public int playCountNocturn = 0;
+        public int playCountPsychy = 0;
+        public int playCountTanker = 0;
+
         public MyVector3 InitPos;
         public MyVector3 position;
         public MyVector3 rotation;

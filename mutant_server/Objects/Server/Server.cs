@@ -212,7 +212,25 @@ namespace mutant_server
             MutantPacket packet = new MutantPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
             packet.ByteArrayToPacket();
 
+            UserInfoPacket sendPacket = new UserInfoPacket(new byte[Defines.BUF_SIZE], 0);
+            sendPacket.id = packet.id;
+            sendPacket.name = _players[packet.id].userName;
+            sendPacket.time = 0;
+            sendPacket.winCountTrator = _players[packet.id].winCountTrator;
+            sendPacket.winCountTanker = _players[packet.id].winCountTanker;
+            sendPacket.winCountResearcher = _players[packet.id].winCountResearcher;
+            sendPacket.winCountPsychy = _players[packet.id].winCountPsychy;
+            sendPacket.winCountNocturn = _players[packet.id].winCountNocturn;
 
+            sendPacket.playCountTrator = _players[packet.id].playCountTrator;
+            sendPacket.playCountTanker = _players[packet.id].playCountTanker;
+            sendPacket.playCountResearcher = _players[packet.id].playCountResearcher;
+            sendPacket.playCountPsychy = _players[packet.id].playCountPsychy;
+            sendPacket.playCountNocturn = _players[packet.id].playCountNocturn;
+
+            sendPacket.PacketToByteArray((byte)STOC_OP.STOC_PROVISION_HISTORY);
+
+            token.SendData(sendPacket);
         }
 
         private void ProcessCreateUser(AsyncUserToken token)

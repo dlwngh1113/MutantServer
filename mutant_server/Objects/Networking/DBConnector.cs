@@ -97,6 +97,12 @@ namespace mutant_server.Objects.Networking
                 c.winCountResearcher = (int)table["winCountResearcher"];
                 c.winCountTanker = (int)table["winCountTanker"];
 
+                c.playCountTrator = (int)table["playCountTrator"];
+                c.playCountNocturn = (int)table["playCountNocturn"];
+                c.playCountResearcher = (int)table["playCountResearcher"];
+                c.playCountTanker = (int)table["playCountTanker"];
+                c.playCountPsychy = (int)table["playCountPsychy"];
+
                 Console.WriteLine("System(DB): id({0}), name({1}), pwd({2}) get user data", c.userID, c.userName, c.passWd);
             }
 
@@ -107,7 +113,9 @@ namespace mutant_server.Objects.Networking
         public void UpdateData(Client client)
         {
             string myQuery = "update lulus.mutant set winCountTrator=" + client.winCountTrator.ToString() + ", winCountResearcher=" + client.winCountResearcher.ToString() +
-                ", winCountNocturn=" + client.winCountNocturn.ToString() + ", winCountPsychy=" + client.winCountPsychy.ToString() + ", winCountTanker=" + client.winCountTanker.ToString() + 
+                ", winCountNocturn=" + client.winCountNocturn.ToString() + ", winCountPsychy=" + client.winCountPsychy.ToString() + ", winCountTanker=" + client.winCountTanker.ToString() +
+                ", playCountTrator=" + client.playCountTrator.ToString() + ", playCountResearcher=" + client.playCountResearcher.ToString() +
+                ", playCountNocturn=" + client.playCountNocturn.ToString() + ", playCountPsychy=" + client.playCountPsychy.ToString() + ", playCountTanker=" + client.playCountTanker.ToString() +
                 " where nameMutant=\"" + client.userName + "\"";
             Console.WriteLine("System(DB): " + myQuery);
             _connection.Open();
