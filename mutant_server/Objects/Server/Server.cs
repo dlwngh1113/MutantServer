@@ -255,6 +255,8 @@ namespace mutant_server
                 sendPacket.message = "이미 존재하는 아이디입니다!";
             }
 
+            sendPacket.PacketToByteArray((byte)STOC_OP.STOC_CREATE_USER_INFO_SUCCESS);
+
             token.SendData(sendPacket);
         }
 
