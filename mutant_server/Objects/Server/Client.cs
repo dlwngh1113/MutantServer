@@ -26,6 +26,7 @@ namespace mutant_server
         public MyVector3 rotation;
         public Dictionary<string, int> inventory;
         public byte job;
+        public bool isReady;
         public Client(int id)
         {
             this.userID = id;

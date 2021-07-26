@@ -11,6 +11,7 @@ namespace mutant_server
         CTOS_LEAVE_ROOM,
         CTOS_CREATE_ROOM,
         CTOS_SELECT_ROOM,
+        CTOS_GET_ROOM_USERS,
         CTOS_REFRESH_ROOMS,
         CTOS_CREATE_USER_INFO,
         CTOS_READY,
