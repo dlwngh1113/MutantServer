@@ -404,29 +404,38 @@ namespace mutant_server
             {
                 room.AddPlayer(packet.id, _players[packet.id]);
 
-                foreach (var p in _players)
+                MutantPacket p = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
+                p.id = packet.id;
+                p.name = packet.name;
+                p.time = 0;
+
+                p.PacketToByteArray((byte)STOC_OP.STOC_ROOM_ENTER_SUCCESS);
+
+                token.SendData(p);
+
+                foreach (var tuple in _players)
                 {
-                    MutantPacket sendPacket = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
-
-                    if (p.Key != packet.id)
+                    if (tuple.Key != p.id)
                     {
-                        sendPacket.id = p.Key;
-                        sendPacket.name = p.Value.userName;
-                        sendPacket.time = p.Value.isReady ? 1 : 0;
+                        //this player to other player
+                        MutantPacket sendPacket = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
 
-                        sendPacket.PacketToByteArray((byte)STOC_OP.STOC_PLAYER_ENTER);
-
-                        token.SendData(sendPacket);
-                    }
-                    else
-                    {
                         sendPacket.id = packet.id;
                         sendPacket.name = packet.name;
                         sendPacket.time = 0;
-
                         sendPacket.PacketToByteArray((byte)STOC_OP.STOC_PLAYER_ENTER);
 
-                        p.Value.asyncUserToken.SendData(sendPacket);
+                        tuple.Value.asyncUserToken.SendData(sendPacket);
+
+
+                        //other player to this player
+                        MutantPacket pPacket = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
+                        pPacket.id = tuple.Key;
+                        pPacket.name = tuple.Value.userName;
+                        pPacket.time = 0;
+                        pPacket.PacketToByteArray((byte)STOC_OP.STOC_PLAYER_ENTER);
+
+                        token.SendData(pPacket);
                     }
                 }
             }

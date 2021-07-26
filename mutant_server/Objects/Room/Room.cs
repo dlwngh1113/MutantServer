@@ -120,20 +120,19 @@ namespace mutant_server
             MutantPacket packet = new MutantPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
             packet.ByteArrayToPacket();
 
+            _players[packet.id].isReady = !_players[packet.id].isReady;
+
             foreach (var tuple in _players)
             {
-                if (tuple.Key != packet.id)
-                {
-                    var tmpToken = tuple.Value.asyncUserToken;
-                    MutantPacket sendPacket = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
-                    sendPacket.name = packet.name;
-                    sendPacket.id = packet.id;
-                    sendPacket.time = packet.time;
+                var tmpToken = tuple.Value.asyncUserToken;
+                MutantPacket sendPacket = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
+                sendPacket.id = packet.id;
+                sendPacket.name = packet.name;
+                sendPacket.time = _players[packet.id].isReady ? 1 : 0;
 
-                    sendPacket.PacketToByteArray((byte)STOC_OP.STOC_READY);
+                sendPacket.PacketToByteArray((byte)STOC_OP.STOC_READY);
 
-                    tmpToken.SendData(sendPacket);
-                }
+                tmpToken.SendData(sendPacket);
             }
         }
 
