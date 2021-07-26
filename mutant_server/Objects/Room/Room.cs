@@ -265,6 +265,8 @@ namespace mutant_server
                 _players.Remove(packet.id);
             }
 
+            closeMethod(token.readEventArgs);
+
             if (PlayerNum < 1)
             {
                 lock (Server._roomsInServer)

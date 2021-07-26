@@ -404,17 +404,31 @@ namespace mutant_server
             {
                 room.AddPlayer(packet.id, _players[packet.id]);
 
-                RoomPacket sendPacket = new RoomPacket(new byte[Defines.BUF_SIZE], 0);
-                sendPacket.id = packet.id;
-                sendPacket.name = packet.name;
-                sendPacket.time = 0;
+                foreach (var p in _players)
+                {
+                    MutantPacket sendPacket = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
 
-                sendPacket.names.Add(packet.names[0]);
-                sendPacket.numOfPlayers.Add(room.PlayerNum);
-                sendPacket.gameState.Add(Defines.ROOM_WAIT);
-                sendPacket.PacketToByteArray((byte)STOC_OP.STOC_PLAYER_ENTER);
+                    if (p.Key != packet.id)
+                    {
+                        sendPacket.id = p.Key;
+                        sendPacket.name = p.Value.userName;
+                        sendPacket.time = p.Value.isReady ? 1 : 0;
 
-                token.SendData(sendPacket);
+                        sendPacket.PacketToByteArray((byte)STOC_OP.STOC_PLAYER_ENTER);
+
+                        token.SendData(sendPacket);
+                    }
+                    else
+                    {
+                        sendPacket.id = packet.id;
+                        sendPacket.name = packet.name;
+                        sendPacket.time = 0;
+
+                        sendPacket.PacketToByteArray((byte)STOC_OP.STOC_PLAYER_ENTER);
+
+                        p.Value.asyncUserToken.SendData(sendPacket);
+                    }
+                }
             }
             else
             {

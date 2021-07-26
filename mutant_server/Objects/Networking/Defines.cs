@@ -36,6 +36,7 @@ namespace mutant_server
         //lobby, main server operation
         STOC_LOGIN_OK,
         STOC_LOGIN_FAIL,
+        STOC_ROOM_ENTER_SUCCESS,
         STOC_PLAYER_ENTER,
         STOC_PLAYER_LEAVE_ROOM,
         STOC_ROOM_ENTER_FAIL,
@@ -82,10 +83,10 @@ namespace mutant_server
         /// <summary>
         /// items
         /// </summary>
-        public const byte ITEM_LOG = 0;
-        public const byte ITEM_STICK = 1;
-        public const byte ITEM_ROCK = 2;
-        public const byte ITEM_AXE = 3;
+        public const byte ITEM_AXE = 0;
+        public const byte ITEM_LOG = 1;
+        public const byte ITEM_STICK = 2;
+        public const byte ITEM_ROCK = 3;
         public const byte ITEM_ROPE = 4;
         public const byte ITEM_PLANE = 5;
         public const byte ITEM_SAIL = 6;
