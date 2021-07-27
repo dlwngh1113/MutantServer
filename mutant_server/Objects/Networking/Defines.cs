@@ -15,12 +15,12 @@ namespace mutant_server
         CTOS_REFRESH_ROOMS,
         CTOS_CREATE_USER_INFO,
         CTOS_READY,
-        CTOS_UNREADY,
         CTOS_GAME_START,
         CTOS_GET_HISTORY,
 
         //ingame operation
-        CTOS_STATUS_CHANGE = 100,
+        CTOS_GAME_INIT = 100,
+        CTOS_STATUS_CHANGE,
         CTOS_LEAVE_GAME,
         CTOS_ATTACK,
         CTOS_CHAT,
@@ -50,7 +50,8 @@ namespace mutant_server
         STOC_PROVISION_HISTORY,
 
         //ingame operation
-        STOC_STATUS_CHANGE = 100,
+        STOC_GAME_INIT = 100,
+        STOC_STATUS_CHANGE,
         STOC_PLAYER_LEAVE_GAME,
         STOC_CHAT,
         STOC_ITEM_GAIN,
@@ -63,7 +64,7 @@ namespace mutant_server
     }
     public class Defines
     {
-        public const short BUF_SIZE = 1024;
+        public const short BUF_SIZE = 2048;
         public const short MAX_USERS = 10000;
         public const short MAX_CHAT_LEN = 100;
         public const short PORT = 9000;

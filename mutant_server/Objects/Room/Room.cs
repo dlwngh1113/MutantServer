@@ -48,7 +48,7 @@ namespace mutant_server
 
         public Room()
         {
-            _players = new Dictionary<int, Client>(5);
+            _players = new Dictionary<int, Client>();
             _messageResolver = new MessageResolver();
             _globalItem = new Dictionary<string, int>();
             _voteCounter = new Dictionary<string, int>();
@@ -74,6 +74,9 @@ namespace mutant_server
         {
             switch ((CTOS_OP)token.readEventArgs.Buffer[token.readEventArgs.Offset])
             {
+                case CTOS_OP.CTOS_GAME_INIT:
+                    ProcessGameInit(token);
+                    break;
                 case CTOS_OP.CTOS_STATUS_CHANGE:
                     ProcessStatus(token);
                     break;
@@ -104,15 +107,29 @@ namespace mutant_server
                 case CTOS_OP.CTOS_READY:
                     ProcessReady(token);
                     break;
-                case CTOS_OP.CTOS_UNREADY:
-                    ProcessUnready(token);
-                    break;
                 case CTOS_OP.CTOS_GAME_START:
-                    ProcessGameStart(token);
+                    //ProcessGameStart(token);
                     break;
                 default:
                     throw new Exception("operation from client is not valid\n");
             }
+        }
+
+        private void ProcessGameInit(AsyncUserToken token)
+        {
+            MutantPacket packet = new MutantPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
+            packet.ByteArrayToPacket();
+
+            GameInitPacket sendPacket = SetGameInitPacket(packet);
+            sendPacket.PacketToByteArray((byte)STOC_OP.STOC_GAME_INIT);
+
+            token.SendData(sendPacket);
+
+            System.Timers.Timer timer = new System.Timers.Timer();
+            timer.Interval = Defines.FrameRate;
+            timer.Elapsed += new ElapsedEventHandler(Update);
+
+            gameState = Defines.ROOM_PLAYING;
         }
 
         private void ProcessReady(AsyncUserToken token)
@@ -122,36 +139,34 @@ namespace mutant_server
 
             _players[packet.id].isReady = !_players[packet.id].isReady;
 
-            foreach (var tuple in _players)
+            byte readyCount = 0;
+            foreach(var t in _players)
             {
-                var tmpToken = tuple.Value.asyncUserToken;
-                MutantPacket sendPacket = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
-                sendPacket.id = packet.id;
-                sendPacket.name = packet.name;
-                sendPacket.time = _players[packet.id].isReady ? 1 : 0;
-
-                sendPacket.PacketToByteArray((byte)STOC_OP.STOC_READY);
-
-                tmpToken.SendData(sendPacket);
+                if(t.Value.isReady)
+                {
+                    ++readyCount;
+                }
             }
-        }
 
-        private void ProcessUnready(AsyncUserToken token)
-        {
-            MutantPacket packet = new MutantPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
-            packet.ByteArrayToPacket();
-
-            foreach (var tuple in _players)
+            if(readyCount >= 1)
             {
-                if (tuple.Key != packet.id)
+                ProcessGameStart();
+            }
+            else
+            {
+                foreach (var tuple in _players)
                 {
                     var tmpToken = tuple.Value.asyncUserToken;
+                    if (tuple.Value.isReady)
+                    {
+                        ++readyCount;
+                    }
                     MutantPacket sendPacket = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
-                    sendPacket.name = packet.name;
                     sendPacket.id = packet.id;
-                    sendPacket.time = packet.time;
+                    sendPacket.name = packet.name;
+                    sendPacket.time = _players[packet.id].isReady ? 1 : 0;
 
-                    sendPacket.PacketToByteArray((byte)STOC_OP.STOC_UNREADY);
+                    sendPacket.PacketToByteArray((byte)STOC_OP.STOC_READY);
 
                     tmpToken.SendData(sendPacket);
                 }
@@ -164,6 +179,7 @@ namespace mutant_server
             packet.id = p.id;
             packet.name = p.name;
             packet.time = 0;
+            packet.pCount = _players.Count;
 
             for(int i =0;i<_players.Count; ++i)
             {
@@ -172,35 +188,32 @@ namespace mutant_server
                 c.job = jobArray[globalOffset];
 
                 //name, id, initPos, job
-                packet.names[i] = c.userName;
-                packet.IDs[i] = c.userID;
-                packet.positions[i] = c.InitPos;
-                packet.jobs[i] = c.job;
+                packet.names.Add(c.userName);
+                packet.IDs.Add(c.userID);
+                packet.positions.Add(c.InitPos);
+                packet.jobs.Add(c.job);
                 Interlocked.Increment(ref globalOffset);
+                Console.WriteLine("name - {0}, ID - {1}, position - {2}, job - {3}",
+                    c.userName, c.userID, c.InitPos, c.job);
             }
-
-            packet.PacketToByteArray((byte)STOC_OP.STOC_GAME_START);
 
             return packet;
         }
 
-        private void ProcessGameStart(AsyncUserToken token)
+        private void ProcessGameStart()
         {
-            MutantPacket packet = new MutantPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
-            packet.ByteArrayToPacket();
-
-            GameInitPacket sendPacket = SetGameInitPacket(packet);
-
             foreach (var tuple in _players)
             {
-                tuple.Value.asyncUserToken.SendData(sendPacket);
+                MutantPacket packet = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
+                packet.id = tuple.Key;
+                packet.name = tuple.Value.userName;
+                packet.time = 0;
+
+                packet.PacketToByteArray((byte)STOC_OP.STOC_GAME_START);
+
+                tuple.Value.asyncUserToken.SendData(packet);
             }
 
-            System.Timers.Timer timer = new System.Timers.Timer();
-            timer.Interval = Defines.FrameRate;
-            timer.Elapsed += new ElapsedEventHandler(Update);
-
-            gameState = Defines.ROOM_PLAYING;
         }
 
         private void ProcessLeaveRoom(AsyncUserToken token)

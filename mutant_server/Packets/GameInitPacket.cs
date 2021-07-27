@@ -1,21 +1,23 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace mutant_server.Packets
 {
     class GameInitPacket : MutantPacket
     {
-        //이름, 아이디, 위치, 직업 각각 5개씩
-        public string[] names;
-        public int[] IDs;
-        public MyVector3[] positions;
-        public byte[] jobs;
+        //이름, 아이디, 위치, 직업 각각 n개씩
+        public List<string> names;
+        public List<int> IDs;
+        public List<MyVector3> positions;
+        public List<byte> jobs;
+        public int pCount = 0;
         //어떤 위치의 상자가 어떤 아이템을 가지고 있는지
         public GameInitPacket(byte[] ary, int p) : base(ary, p)
         {
-            names = new string[Defines.MAX_ROOM_USER];
-            IDs = new int[Defines.MAX_ROOM_USER];
-            positions = new MyVector3[Defines.MAX_ROOM_USER];
-            jobs = new byte[Defines.MAX_ROOM_USER];
+            names = new List<string>();
+            IDs = new List<int>();
+            positions = new List<MyVector3>();
+            jobs = new List<byte>();
         }
         public void Copy(GameInitPacket packet)
         {
@@ -25,19 +27,21 @@ namespace mutant_server.Packets
         public override void ByteArrayToPacket()
         {
             base.ByteArrayToPacket();
-            for(int i=0;i<Defines.MAX_ROOM_USER;++i)
+            pCount = ByteToInt();
+            for(int i=0;i< pCount; ++i)
             {
-                names[i] = ByteToString();
-                IDs[i] = ByteToInt();
-                positions[i] = ByteToVector();
-                jobs[i] = ByteToByte();
+                names.Add(ByteToString());
+                IDs.Add(ByteToInt());
+                positions.Add(ByteToVector());
+                jobs.Add(ByteToByte());
             }
         }
 
         public override void PacketToByteArray(byte type)
         {
             base.PacketToByteArray(type);
-            for(int i = 0;i<Defines.MAX_ROOM_USER;++i)
+            ConvertToByte(pCount);
+            for(int i = 0;i< pCount; ++i)
             {
                 ConvertToByte(names[i]);
                 ConvertToByte(IDs[i]);
