@@ -19,9 +19,9 @@ namespace mutant_server
         private Dictionary<string, int> _globalItem;
         private Dictionary<string, int> _voteCounter;
         private byte[] jobArray = Defines.GenerateRandomJobs();
-        private MyVector3[] initPosAry = { new MyVector3(95.05f, 4.67f, 47.55f),
-            new MyVector3(94.05f, 4.16f, 45.18f), new MyVector3(91.49f, 4.69f, 45.57f),
-            new MyVector3(89.98f, 4.42f, 48.5f), new MyVector3(92.11f, 5.08f, 50.36f) };
+        private MyVector3[] initPosAry = { new MyVector3(95.05f, 15.4f, 47.55f),
+            new MyVector3(94.05f, 15.4f, 45.18f), new MyVector3(91.49f, 15.4f, 45.57f),
+            new MyVector3(89.98f, 15.4f, 48.5f), new MyVector3(92.11f, 15.4f, 50.36f) };
         private int globalOffset = 0;
         private string roomTitle;
         private byte gameState = Defines.ROOM_WAIT;
