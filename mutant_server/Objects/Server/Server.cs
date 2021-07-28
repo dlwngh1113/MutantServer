@@ -412,32 +412,6 @@ namespace mutant_server
                 p.PacketToByteArray((byte)STOC_OP.STOC_ROOM_ENTER_SUCCESS);
 
                 token.SendData(p);
-
-                foreach (var tuple in _players)
-                {
-                    if (tuple.Key != p.id)
-                    {
-                        //this player to other player
-                        MutantPacket sendPacket = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
-
-                        sendPacket.id = packet.id;
-                        sendPacket.name = packet.name;
-                        sendPacket.time = 0;
-                        sendPacket.PacketToByteArray((byte)STOC_OP.STOC_PLAYER_ENTER);
-
-                        tuple.Value.asyncUserToken.SendData(sendPacket);
-
-
-                        //other player to this player
-                        MutantPacket pPacket = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
-                        pPacket.id = tuple.Key;
-                        pPacket.name = tuple.Value.userName;
-                        pPacket.time = 0;
-                        pPacket.PacketToByteArray((byte)STOC_OP.STOC_PLAYER_ENTER);
-
-                        token.SendData(pPacket);
-                    }
-                }
             }
             else
             {
@@ -454,6 +428,7 @@ namespace mutant_server
                 token.SendData(sendPacket);
             }
         }
+
 
         private void ProcessCreateRoom(AsyncUserToken token)
         {

@@ -95,6 +95,9 @@ namespace mutant_server
                 case CTOS_OP.CTOS_ITEM_CLICKED:
                     ProcessItemEvent(token);
                     break;
+                case CTOS_OP.CTOS_GET_ROOM_USERS:
+                    ProcessGetRoomUsers(token);
+                    break;
                 case CTOS_OP.CTOS_ITEM_CRAFT_REQUEST:
                     ProcessItemCraft(token);
                     break;
@@ -139,6 +142,8 @@ namespace mutant_server
 
             _players[packet.id].isReady = !_players[packet.id].isReady;
 
+            Console.WriteLine("{0} player ready is {1}", packet.name, _players[packet.id].isReady);
+
             byte readyCount = 0;
             foreach(var t in _players)
             {
@@ -148,7 +153,7 @@ namespace mutant_server
                 }
             }
 
-            if(readyCount >= 1)
+            if(readyCount >= 2)
             {
                 ProcessGameStart();
             }
@@ -213,7 +218,37 @@ namespace mutant_server
 
                 tuple.Value.asyncUserToken.SendData(packet);
             }
+        }
+        private void ProcessGetRoomUsers(AsyncUserToken token)
+        {
+            MutantPacket packet = new MutantPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
+            packet.ByteArrayToPacket();
 
+            foreach (var tuple in _players)
+            {
+                if (tuple.Key != packet.id)
+                {
+                    //this player to other player
+                    MutantPacket sendPacket = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
+
+                    sendPacket.id = packet.id;
+                    sendPacket.name = packet.name;
+                    sendPacket.time = 0;
+                    sendPacket.PacketToByteArray((byte)STOC_OP.STOC_PLAYER_ENTER);
+
+                    tuple.Value.asyncUserToken.SendData(sendPacket);
+
+
+                    //other player to this player
+                    MutantPacket pPacket = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
+                    pPacket.id = tuple.Key;
+                    pPacket.name = tuple.Value.userName;
+                    pPacket.time = 0;
+                    pPacket.PacketToByteArray((byte)STOC_OP.STOC_PLAYER_ENTER);
+
+                    token.SendData(pPacket);
+                }
+            }
         }
 
         private void ProcessLeaveRoom(AsyncUserToken token)
