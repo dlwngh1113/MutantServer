@@ -202,6 +202,8 @@ namespace mutant_server
                     c.userName, c.userID, c.InitPos, c.job);
             }
 
+            packet.SetItemChest();
+
             return packet;
         }
 
