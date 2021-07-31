@@ -24,7 +24,7 @@ namespace mutant_server
         public MyVector3 InitPos;
         public MyVector3 position;
         public MyVector3 rotation;
-        public Dictionary<string, int> inventory;
+        public Dictionary<int, int> inventory;
         public byte job;
         public bool isReady = false;
         public Client(int id)

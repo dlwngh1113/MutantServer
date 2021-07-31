@@ -1,6 +1,7 @@
 ﻿using mutant_server.Packets;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Timers;
@@ -16,6 +17,7 @@ namespace mutant_server
         private MessageResolver _messageResolver;
         public CloseMethod closeMethod;
 
+        private Dictionary<int, List<int>> _chestItems;
         private Dictionary<string, int> _globalItem;
         private Dictionary<string, int> _voteCounter;
         private byte[] jobArray = Defines.GenerateRandomJobs();
@@ -52,6 +54,8 @@ namespace mutant_server
             _messageResolver = new MessageResolver();
             _globalItem = new Dictionary<string, int>();
             _voteCounter = new Dictionary<string, int>();
+            _chestItems = new Dictionary<int, List<int>>();
+            SetItemChest();
         }
 
         public void AddPlayer(int id, Client c)
@@ -118,6 +122,57 @@ namespace mutant_server
             }
         }
 
+        private void SetItemChest()
+        {
+            //file io를 통한 아이템 생성
+            foreach (string line in File.ReadLines(@"..\..\Files\item.txt"))
+            {
+                string[] strs = line.Split(' ');
+                int index = Int32.Parse(strs[0]);
+                _chestItems.Add(index, new List<int>());
+                for (int i = 1; i < strs.Length; ++i)
+                {
+                    _chestItems[index].Add(Int32.Parse(strs[i]));
+                }
+            }
+        }
+
+        private void SetGameInit()
+        {
+            for (int i = 0; i < _players.Count; ++i)
+            {
+                Client c = _players.ElementAt(i).Value;
+                c.InitPos = initPosAry[globalOffset];
+                c.job = jobArray[globalOffset];
+                c.inventory.Clear();
+                Interlocked.Increment(ref globalOffset);
+            }
+        }
+
+        private GameInitPacket SetGameInitPacket(MutantPacket packet)
+        {
+            GameInitPacket sendPacket = new GameInitPacket(new byte[Defines.BUF_SIZE], 0);
+            sendPacket.id = packet.id;
+            sendPacket.name = packet.name;
+            sendPacket.time = packet.time;
+            sendPacket.pCount = _players.Count;
+
+            for(int i=0;i<_players.Count;++i)
+            {
+                Client c = _players.ElementAt(i).Value;
+                sendPacket.names.Add(c.userName);
+                sendPacket.IDs.Add(c.userID);
+                sendPacket.positions.Add(c.InitPos);
+                sendPacket.jobs.Add(c.job);
+
+                Console.WriteLine("packet name {0}, name {1}, id {2}", packet.name, c.userName, c.userID);
+            }
+
+            sendPacket.chestItems = _chestItems;
+
+            return sendPacket;
+        }
+
         private void ProcessGameInit(AsyncUserToken token)
         {
             MutantPacket packet = new MutantPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
@@ -155,6 +210,7 @@ namespace mutant_server
 
             if(readyCount >= 2)
             {
+                SetGameInit();
                 ProcessGameStart();
             }
             else
@@ -176,35 +232,6 @@ namespace mutant_server
                     tmpToken.SendData(sendPacket);
                 }
             }
-        }
-
-        private GameInitPacket SetGameInitPacket(MutantPacket p)
-        {
-            GameInitPacket packet = new GameInitPacket(new byte[Defines.BUF_SIZE], 0);
-            packet.id = p.id;
-            packet.name = p.name;
-            packet.time = 0;
-            packet.pCount = _players.Count;
-
-            for(int i =0;i<_players.Count; ++i)
-            {
-                Client c = _players.ElementAt(i).Value;
-                c.InitPos = initPosAry[globalOffset];
-                c.job = jobArray[globalOffset];
-
-                //name, id, initPos, job
-                packet.names.Add(c.userName);
-                packet.IDs.Add(c.userID);
-                packet.positions.Add(c.InitPos);
-                packet.jobs.Add(c.job);
-                Interlocked.Increment(ref globalOffset);
-                Console.WriteLine("name - {0}, ID - {1}, position - {2}, job - {3}",
-                    c.userName, c.userID, c.InitPos, c.job);
-            }
-
-            packet.SetItemChest();
-
-            return packet;
         }
 
         private void ProcessGameStart()
@@ -563,7 +590,7 @@ namespace mutant_server
             {
                 sendPacket.id = packet.id;
                 sendPacket.name = packet.name;
-                sendPacket.itemName = packet.itemName;
+                sendPacket.chestItem = packet.chestItem;
                 sendPacket.inventory = packet.inventory;
                 sendPacket.canGainItem = false;
                 sendPacket.PacketToByteArray((byte)STOC_OP.STOC_ITEM_DENIED);
@@ -571,17 +598,18 @@ namespace mutant_server
             //그렇지 않은 경우는 아이템 획득 가능
             else
             {
-                if (_players[packet.id].inventory.ContainsKey(packet.itemName))
+                _chestItems[packet.chestItem.Item1].Remove(packet.chestItem.Item2);
+                if (_players[packet.id].inventory.ContainsKey(packet.chestItem.Item2))
                 {
-                    _players[packet.id].inventory[packet.itemName] += 1;
+                    _players[packet.id].inventory[packet.chestItem.Item2] += 1;
                 }
                 else
                 {
-                    _players[packet.id].inventory.Add(packet.itemName, 1);
+                    _players[packet.id].inventory.Add(packet.chestItem.Item2, 1);
                 }
                 sendPacket.id = packet.id;
                 sendPacket.name = packet.name;
-                sendPacket.itemName = packet.itemName;
+                sendPacket.chestItem = packet.chestItem;
                 sendPacket.inventory = _players[packet.id].inventory;
                 sendPacket.canGainItem = true;
                 sendPacket.PacketToByteArray((byte)STOC_OP.STOC_ITEM_GAIN);
@@ -589,7 +617,7 @@ namespace mutant_server
 
             foreach (var tuple in sendPacket.inventory)
             {
-                Console.Write("key - {0}, value - {1}", tuple.Key, tuple.Value);
+                Console.Write("key - {0}, value - {1}, player - {2}", tuple.Key, tuple.Value, packet.name);
             }
             Console.WriteLine("");
 
@@ -601,6 +629,7 @@ namespace mutant_server
             PlayerStatusPacket packet = new PlayerStatusPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
             packet.ByteArrayToPacket();
 
+            //Console.WriteLine("packet id - {0}, name - {1}", packet.id, packet.name);
             if (!(_players.ContainsKey(packet.id)))
             {
                 return;
@@ -613,7 +642,7 @@ namespace mutant_server
                 if (tuple.Key != packet.id)
                 {
                     var tmpToken = tuple.Value.asyncUserToken;
-                    PlayerStatusPacket sendPacket = new PlayerStatusPacket(tmpToken.writeEventArgs.Buffer, tmpToken.writeEventArgs.Offset);
+                    PlayerStatusPacket sendPacket = new PlayerStatusPacket(new byte[Defines.BUF_SIZE], 0);
                     sendPacket.id = packet.id;
                     sendPacket.name = packet.name;
                     sendPacket.playerMotion = packet.playerMotion;

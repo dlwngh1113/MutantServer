@@ -5,8 +5,8 @@ namespace mutant_server.Packets
 {
     public class ItemEventPacket : MutantPacket
     {
-        public string itemName;
-        public Dictionary<string, int> inventory;
+        public Tuple<int, int> chestItem;
+        public Dictionary<int, int> inventory;
         public bool canGainItem;
         public ushort size
         {
@@ -14,6 +14,7 @@ namespace mutant_server.Packets
         }
         public ItemEventPacket(byte[] ary, int offset) : base(ary, offset)
         {
+            inventory = new Dictionary<int, int>();
         }
         public void Copy(ItemEventPacket packet, byte type = (byte)STOC_OP.STOC_ITEM_GAIN)
         {
@@ -23,12 +24,11 @@ namespace mutant_server.Packets
         public override void ByteArrayToPacket()
         {
             base.ByteArrayToPacket();
-            itemName = ByteToString();
+            chestItem = new Tuple<int, int>(ByteToInt(), ByteToInt());
             int cnt = ByteToInt();
-            inventory = new Dictionary<string, int>();
             for (int i = 0; i < cnt; ++i)
             {
-                var tKey = ByteToString();
+                var tKey = ByteToInt();
                 var tVal = ByteToInt();
                 inventory.Add(tKey, tVal);
             }
@@ -37,7 +37,9 @@ namespace mutant_server.Packets
         public override void PacketToByteArray(byte type)
         {
             base.PacketToByteArray(type);
-            ConvertToByte(itemName);
+            ConvertToByte(chestItem.Item1);
+            ConvertToByte(chestItem.Item2);
+
             ConvertToByte(inventory.Count);
             foreach (var tuple in inventory)
             {

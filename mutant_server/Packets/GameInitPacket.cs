@@ -13,33 +13,15 @@ namespace mutant_server.Packets
         public List<MyVector3> positions;
         public List<byte> jobs;
         //어떤 위치의 상자가 어떤 아이템을 가지고 있는지
-        Dictionary<int, List<int>> chestItems;
+        public Dictionary<int, List<int>> chestItems;
         public GameInitPacket(byte[] ary, int p) : base(ary, p)
         {
             names = new List<string>();
             IDs = new List<int>();
             positions = new List<MyVector3>();
             jobs = new List<byte>();
-
-            chestItems = new Dictionary<int, List<int>>();
         }
 
-        public void SetItemChest()
-        {
-            //file io를 통한 아이템 생성
-            foreach (string line in File.ReadLines(@"..\..\Files\item.txt"))
-            {
-                string[] strs = line.Split(' ');
-                int index = Int32.Parse(strs[0]);
-                chestItems.Add(index, new List<int>());
-                Console.WriteLine();
-                for (int i = 1; i < strs.Length; ++i)
-                {
-                    chestItems[index].Add(Int32.Parse(strs[i]));
-                    Console.Write("{0} ", chestItems[index][i - 1]);
-                }
-            }
-        }
         public void Copy(GameInitPacket packet)
         {
             Array.Copy(packet.ary, packet.offset, ary, offset, Defines.BUF_SIZE);
