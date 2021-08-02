@@ -30,7 +30,7 @@ namespace mutant_server
         public Client(int id)
         {
             this.userID = id;
-            inventory = new Dictionary<string, int>();
+            inventory = new Dictionary<int, int>();
         }
     }
 }

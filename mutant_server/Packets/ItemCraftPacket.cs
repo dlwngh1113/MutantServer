@@ -6,7 +6,7 @@ namespace mutant_server.Packets
     public class ItemCraftPacket : MutantPacket
     {
         public string itemName;
-        public Dictionary<string, int> inventory;
+        public Dictionary<int, int> inventory;
         public Dictionary<string, int> globalItem;
         public ushort size
         {
@@ -25,10 +25,10 @@ namespace mutant_server.Packets
             base.ByteArrayToPacket();
             itemName = ByteToString();
             int cnt = ByteToInt();
-            inventory = new Dictionary<string, int>();
+            inventory = new Dictionary<int, int>();
             for (int i = 0; i < cnt; ++i)
             {
-                var tKey = ByteToString();
+                var tKey = ByteToInt();
                 var tVal = ByteToInt();
                 inventory.Add(tKey, tVal);
             }

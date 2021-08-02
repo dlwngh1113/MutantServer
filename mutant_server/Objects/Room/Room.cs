@@ -208,7 +208,7 @@ namespace mutant_server
                 }
             }
 
-            if(readyCount >= 2)
+            if(readyCount >= 1)
             {
                 SetGameInit();
                 ProcessGameStart();
@@ -472,7 +472,7 @@ namespace mutant_server
             ItemCraftPacket packet = new ItemCraftPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
             packet.ByteArrayToPacket();
 
-            ItemCraftPacket sendPacket = new ItemCraftPacket(token.writeEventArgs.Buffer, token.writeEventArgs.Offset);
+            ItemCraftPacket sendPacket = new ItemCraftPacket(new byte[Defines.BUF_SIZE], 0);
             sendPacket.id = packet.id;
             sendPacket.name = packet.name;
             sendPacket.time = packet.time;
@@ -486,22 +486,22 @@ namespace mutant_server
             switch (packet.itemName)
             {
                 case "Axe":
-                    _players[packet.id].inventory["Stick"] -= 1;
-                    _players[packet.id].inventory["Rock"] -= 1;
-                    if (!_players[packet.id].inventory.ContainsKey("Axe"))
+                    _players[packet.id].inventory[Defines.ITEM_STICK] -= 1;
+                    _players[packet.id].inventory[Defines.ITEM_ROCK] -= 1;
+                    if (!_players[packet.id].inventory.ContainsKey(Defines.ITEM_AXE))
                     {
-                        _players[packet.id].inventory.Add("Axe", 1);
+                        _players[packet.id].inventory.Add(Defines.ITEM_AXE, 1);
                     }
                     break;
                 case "Plane":
-                    _players[packet.id].inventory["Log"] -= 2;
+                    _players[packet.id].inventory[Defines.ITEM_LOG] -= 2;
                     break;
                 case "Sail":
-                    _players[packet.id].inventory["Rope"] -= 1;
-                    _players[packet.id].inventory["Log"] -= 1;
+                    _players[packet.id].inventory[Defines.ITEM_ROPE] -= 1;
+                    _players[packet.id].inventory[Defines.ITEM_LOG] -= 1;
                     break;
                 case "Paddle":
-                    _players[packet.id].inventory["Log"] -= 1;
+                    _players[packet.id].inventory[Defines.ITEM_LOG] -= 1;
                     break;
             }
             AddItemInGlobal(packet.itemName);
