@@ -18,7 +18,7 @@ namespace mutant_server
         public CloseMethod closeMethod;
 
         private Dictionary<int, List<int>> _chestItems;
-        private Dictionary<string, int> _globalItem;
+        private Dictionary<int, int> _globalItem;
         private Dictionary<string, int> _voteCounter;
         private byte[] jobArray = Defines.GenerateRandomJobs();
         private MyVector3[] initPosAry = { new MyVector3(95.05f, 15.4f, 47.55f),
@@ -52,7 +52,7 @@ namespace mutant_server
         {
             _players = new Dictionary<int, Client>();
             _messageResolver = new MessageResolver();
-            _globalItem = new Dictionary<string, int>();
+            _globalItem = new Dictionary<int, int>();
             _voteCounter = new Dictionary<string, int>();
             _chestItems = new Dictionary<int, List<int>>();
             SetItemChest();
@@ -374,19 +374,19 @@ namespace mutant_server
             }
         }
 
-        private void AddItemInGlobal(string itemName)
+        private void AddItemInGlobal(int itemNumber)
         {
-            if (itemName == "Axe")
+            if (itemNumber == Defines.ITEM_AXE)
             {
                 return;
             }
-            if (_globalItem.ContainsKey(itemName))
+            if (_globalItem.ContainsKey(itemNumber))
             {
-                _globalItem[itemName]++;
+                _globalItem[itemNumber]++;
             }
             else
             {
-                _globalItem.Add(itemName, 1);
+                _globalItem.Add(itemNumber, 1);
             }
         }
 
@@ -482,10 +482,10 @@ namespace mutant_server
                 return;
             }
 
-            Console.WriteLine("packet.itemName - {0}", packet.itemName);
-            switch (packet.itemName)
+            Console.WriteLine("packet.itemName - {0}", packet.itemNumber);
+            switch (packet.itemNumber)
             {
-                case "Axe":
+                case Defines.ITEM_AXE:
                     _players[packet.id].inventory[Defines.ITEM_STICK] -= 1;
                     _players[packet.id].inventory[Defines.ITEM_ROCK] -= 1;
                     if (!_players[packet.id].inventory.ContainsKey(Defines.ITEM_AXE))
@@ -493,21 +493,21 @@ namespace mutant_server
                         _players[packet.id].inventory.Add(Defines.ITEM_AXE, 1);
                     }
                     break;
-                case "Plane":
+                case Defines.ITEM_PADDLE:
                     _players[packet.id].inventory[Defines.ITEM_LOG] -= 2;
                     break;
-                case "Sail":
+                case Defines.ITEM_SAIL:
                     _players[packet.id].inventory[Defines.ITEM_ROPE] -= 1;
                     _players[packet.id].inventory[Defines.ITEM_LOG] -= 1;
                     break;
-                case "Paddle":
+                case Defines.ITEM_PLANE:
                     _players[packet.id].inventory[Defines.ITEM_LOG] -= 1;
                     break;
             }
-            AddItemInGlobal(packet.itemName);
+            AddItemInGlobal(packet.itemNumber);
 
             sendPacket.inventory = _players[packet.id].inventory;
-            sendPacket.itemName = packet.itemName;
+            sendPacket.itemNumber = packet.itemNumber;
             sendPacket.globalItem = _globalItem;
 
             sendPacket.PacketToByteArray((byte)STOC_OP.STOC_ITEM_CRAFTED);
@@ -537,7 +537,7 @@ namespace mutant_server
                     otherPacket.name = sendPacket.name;
                     otherPacket.time = sendPacket.time;
 
-                    otherPacket.itemName = sendPacket.itemName;
+                    otherPacket.itemNumber = sendPacket.itemNumber;
                     otherPacket.inventory = sendPacket.inventory;
                     otherPacket.globalItem = sendPacket.globalItem;
                     otherPacket.PacketToByteArray((byte)STOC_OP.STOC_ITEM_CRAFTED);

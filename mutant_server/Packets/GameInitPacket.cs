@@ -20,6 +20,8 @@ namespace mutant_server.Packets
             IDs = new List<int>();
             positions = new List<MyVector3>();
             jobs = new List<byte>();
+
+            chestItems = new Dictionary<int, List<int>>();
         }
 
         public void Copy(GameInitPacket packet)
@@ -31,7 +33,7 @@ namespace mutant_server.Packets
         {
             base.ByteArrayToPacket();
             pCount = ByteToInt();
-            for(int i=0;i< pCount; ++i)
+            for (int i = 0; i < pCount; ++i)
             {
                 names.Add(ByteToString());
                 IDs.Add(ByteToInt());
@@ -39,12 +41,12 @@ namespace mutant_server.Packets
                 jobs.Add(ByteToByte());
             }
 
-            for(int i=0;i<20;++i)
+            for (int i = 0; i < 20; ++i)
             {
                 int idx = ByteToInt();
                 chestItems.Add(idx, new List<int>());
                 int cnt = ByteToInt();
-                for(int j=0;j<cnt;++j)
+                for (int j = 0; j < cnt; ++j)
                 {
                     chestItems[idx].Add(ByteToInt());
                 }
@@ -55,7 +57,7 @@ namespace mutant_server.Packets
         {
             base.PacketToByteArray(type);
             ConvertToByte(pCount);
-            for(int i = 0;i< pCount; ++i)
+            for (int i = 0; i < pCount; ++i)
             {
                 ConvertToByte(names[i]);
                 ConvertToByte(IDs[i]);
@@ -63,11 +65,11 @@ namespace mutant_server.Packets
                 ConvertToByte(jobs[i]);
             }
 
-            foreach(var list in chestItems)
+            foreach (var list in chestItems)
             {
                 ConvertToByte(list.Key);
                 ConvertToByte(list.Value.Count);
-                for(int i=0;i<list.Value.Count;++i)
+                for (int i = 0; i < list.Value.Count; ++i)
                 {
                     ConvertToByte(list.Value[i]);
                 }

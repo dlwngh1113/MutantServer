@@ -5,9 +5,9 @@ namespace mutant_server.Packets
 {
     public class ItemCraftPacket : MutantPacket
     {
-        public string itemName;
+        public int itemNumber;
         public Dictionary<int, int> inventory;
-        public Dictionary<string, int> globalItem;
+        public Dictionary<int, int> globalItem;
         public ushort size
         {
             get => (ushort)(ary.Length - Header.size);
@@ -23,7 +23,7 @@ namespace mutant_server.Packets
         public override void ByteArrayToPacket()
         {
             base.ByteArrayToPacket();
-            itemName = ByteToString();
+            itemNumber = ByteToInt();
             int cnt = ByteToInt();
             inventory = new Dictionary<int, int>();
             for (int i = 0; i < cnt; ++i)
@@ -44,7 +44,7 @@ namespace mutant_server.Packets
         public override void PacketToByteArray(byte type)
         {
             base.PacketToByteArray(type);
-            ConvertToByte(itemName);
+            ConvertToByte(itemNumber);
             ConvertToByte(inventory.Count);
             foreach (var tuple in inventory)
             {
