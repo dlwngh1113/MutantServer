@@ -8,7 +8,7 @@ namespace mutant_server
         public Header header;
         public string name = null;
         public int id;
-        public int time;
+        public float time;
         public byte[] ary;
         public int offset = 0;
         public int startPos = 0;
@@ -134,7 +134,7 @@ namespace mutant_server
             this.offset++;
             this.name = ByteToString();
             this.id = ByteToInt();
-            this.time = ByteToInt();
+            this.time = ByteToFloat();
         }
     }
 }

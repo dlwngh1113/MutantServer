@@ -33,10 +33,10 @@ namespace mutant_server.Packets
                 inventory.Add(tKey, tVal);
             }
             cnt = ByteToInt();
-            globalItem = new Dictionary<string, int>();
+            globalItem = new Dictionary<int, int>();
             for (int i = 0; i < cnt; ++i)
             {
-                var tKey = ByteToString();
+                var tKey = ByteToInt();
                 var tVal = ByteToInt();
                 globalItem.Add(tKey, tVal);
             }

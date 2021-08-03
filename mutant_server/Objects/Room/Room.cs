@@ -24,6 +24,7 @@ namespace mutant_server
         private MyVector3[] initPosAry = { new MyVector3(95.05f, 15.4f, 47.55f),
             new MyVector3(94.05f, 15.4f, 45.18f), new MyVector3(91.49f, 15.4f, 45.57f),
             new MyVector3(89.98f, 15.4f, 48.5f), new MyVector3(92.11f, 15.4f, 50.36f) };
+        private bool[] isLoaded;
         private int globalOffset = 0;
         private string roomTitle;
         private byte gameState = Defines.ROOM_WAIT;
@@ -114,8 +115,8 @@ namespace mutant_server
                 case CTOS_OP.CTOS_READY:
                     ProcessReady(token);
                     break;
-                case CTOS_OP.CTOS_GAME_START:
-                    //ProcessGameStart(token);
+                case CTOS_OP.CTOS_LOADED:
+                    ProcessLoadGame(token);
                     break;
                 default:
                     throw new Exception("operation from client is not valid\n");
@@ -147,6 +148,10 @@ namespace mutant_server
                 c.inventory.Clear();
                 Interlocked.Increment(ref globalOffset);
             }
+
+            Interlocked.Exchange(ref globalOffset, 0);
+            isLoaded = new bool[_players.Count];
+            Console.WriteLine("isloaded[globalOffset] is {0}", isLoaded[globalOffset]);
         }
 
         private GameInitPacket SetGameInitPacket(MutantPacket packet)
@@ -182,12 +187,6 @@ namespace mutant_server
             sendPacket.PacketToByteArray((byte)STOC_OP.STOC_GAME_INIT);
 
             token.SendData(sendPacket);
-
-            System.Timers.Timer timer = new System.Timers.Timer();
-            timer.Interval = Defines.FrameRate;
-            timer.Elapsed += new ElapsedEventHandler(Update);
-
-            gameState = Defines.ROOM_PLAYING;
         }
 
         private void ProcessReady(AsyncUserToken token)
@@ -208,7 +207,7 @@ namespace mutant_server
                 }
             }
 
-            if(readyCount >= 1)
+            if(readyCount >= 2)
             {
                 SetGameInit();
                 ProcessGameStart();
@@ -231,6 +230,40 @@ namespace mutant_server
 
                     tmpToken.SendData(sendPacket);
                 }
+            }
+        }
+
+        private void ProcessLoadGame(AsyncUserToken token)
+        {
+            MutantPacket packet = new MutantPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
+            packet.ByteArrayToPacket();
+
+            isLoaded[globalOffset] = true;
+            Interlocked.Increment(ref globalOffset);
+
+            Console.WriteLine("isloaded[globalOffset] is {0}\n", isLoaded[globalOffset - 1]);
+            Console.WriteLine("scene load success packet id - {0}, name - {1}", packet.id, packet.name);
+
+            if(globalOffset >= _players.Count)
+            {
+                //Console.WriteLine("load {0}, count {1}", isLoaded[globalOffset - 1], _players.Count);
+                foreach(var p in _players)
+                {
+                    MutantPacket sendPacket = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
+                    sendPacket.id = p.Key;
+                    sendPacket.name = p.Value.userName;
+                    sendPacket.time = 0;
+
+                    sendPacket.PacketToByteArray((byte)STOC_OP.ALL_PLAYER_LOADED);
+
+                    p.Value.asyncUserToken.SendData(sendPacket);
+                }
+
+                System.Timers.Timer timer = new System.Timers.Timer();
+                timer.Interval = Defines.FrameRate;
+                timer.Elapsed += new ElapsedEventHandler(Update);
+
+                gameState = Defines.ROOM_PLAYING;
             }
         }
 
@@ -629,7 +662,7 @@ namespace mutant_server
             PlayerStatusPacket packet = new PlayerStatusPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
             packet.ByteArrayToPacket();
 
-            //Console.WriteLine("packet id - {0}, name - {1}", packet.id, packet.name);
+            //Console.WriteLine("move packet id - {0}, name - {1}", packet.id, packet.name);
             if (!(_players.ContainsKey(packet.id)))
             {
                 return;
@@ -645,10 +678,12 @@ namespace mutant_server
                     PlayerStatusPacket sendPacket = new PlayerStatusPacket(new byte[Defines.BUF_SIZE], 0);
                     sendPacket.id = packet.id;
                     sendPacket.name = packet.name;
-                    sendPacket.playerMotion = packet.playerMotion;
                     sendPacket.time = 0;
+
                     sendPacket.position = _players[packet.id].position;
                     sendPacket.rotation = _players[packet.id].rotation;
+                    sendPacket.playerMotion = packet.playerMotion;
+                    sendPacket.playerJob = _players[packet.id].job;
 
                     sendPacket.PacketToByteArray((byte)STOC_OP.STOC_STATUS_CHANGE);
 
@@ -677,7 +712,7 @@ namespace mutant_server
                 MutantPacket packet = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
                 packet.id = tuple.Key;
                 packet.name = tuple.Value.userName;
-                packet.time = 0;
+                packet.time = Defines.FrameRate;
 
                 packet.PacketToByteArray((byte)STOC_OP.STOC_SYSTEM_CHANGE);
 
