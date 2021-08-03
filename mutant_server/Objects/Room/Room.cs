@@ -526,14 +526,14 @@ namespace mutant_server
                         _players[packet.id].inventory.Add(Defines.ITEM_AXE, 1);
                     }
                     break;
-                case Defines.ITEM_PADDLE:
+                case Defines.ITEM_PLANE:
                     _players[packet.id].inventory[Defines.ITEM_LOG] -= 2;
                     break;
                 case Defines.ITEM_SAIL:
                     _players[packet.id].inventory[Defines.ITEM_ROPE] -= 1;
                     _players[packet.id].inventory[Defines.ITEM_LOG] -= 1;
                     break;
-                case Defines.ITEM_PLANE:
+                case Defines.ITEM_PADDLE:
                     _players[packet.id].inventory[Defines.ITEM_LOG] -= 1;
                     break;
             }
