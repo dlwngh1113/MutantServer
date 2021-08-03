@@ -572,7 +572,7 @@ namespace mutant_server
 
                     otherPacket.itemNumber = sendPacket.itemNumber;
                     otherPacket.inventory = sendPacket.inventory;
-                    otherPacket.globalItem = sendPacket.globalItem;
+                    otherPacket.globalItem = _globalItem;
                     otherPacket.PacketToByteArray((byte)STOC_OP.STOC_ITEM_CRAFTED);
 
                     tmpToken.SendData(otherPacket);
@@ -667,27 +667,31 @@ namespace mutant_server
             {
                 return;
             }
-            _players[packet.id].position = packet.position;
-            _players[packet.id].rotation = packet.rotation;
 
-            foreach (var tuple in _players)
+            lock (_players)
             {
-                if (tuple.Key != packet.id)
+                _players[packet.id].position = packet.position;
+                _players[packet.id].rotation = packet.rotation;
+
+                foreach (var tuple in _players)
                 {
-                    var tmpToken = tuple.Value.asyncUserToken;
-                    PlayerStatusPacket sendPacket = new PlayerStatusPacket(new byte[Defines.BUF_SIZE], 0);
-                    sendPacket.id = packet.id;
-                    sendPacket.name = packet.name;
-                    sendPacket.time = 0;
+                    if (tuple.Key != packet.id)
+                    {
+                        var tmpToken = tuple.Value.asyncUserToken;
+                        PlayerStatusPacket sendPacket = new PlayerStatusPacket(new byte[Defines.BUF_SIZE], 0);
+                        sendPacket.id = packet.id;
+                        sendPacket.name = packet.name;
+                        sendPacket.time = 0;
 
-                    sendPacket.position = _players[packet.id].position;
-                    sendPacket.rotation = _players[packet.id].rotation;
-                    sendPacket.playerMotion = packet.playerMotion;
-                    sendPacket.playerJob = _players[packet.id].job;
+                        sendPacket.position = _players[packet.id].position;
+                        sendPacket.rotation = _players[packet.id].rotation;
+                        sendPacket.playerMotion = packet.playerMotion;
+                        sendPacket.playerJob = _players[packet.id].job;
 
-                    sendPacket.PacketToByteArray((byte)STOC_OP.STOC_STATUS_CHANGE);
+                        sendPacket.PacketToByteArray((byte)STOC_OP.STOC_STATUS_CHANGE);
 
-                    tmpToken.SendData(sendPacket);
+                        tmpToken.SendData(sendPacket);
+                    }
                 }
             }
         }
@@ -706,17 +710,20 @@ namespace mutant_server
 
         public void Update(object elapsedTime, ElapsedEventArgs e)
         {
-            foreach (var tuple in _players)
+            lock (_players)
             {
-                var tmpToken = tuple.Value.asyncUserToken;
-                MutantPacket packet = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
-                packet.id = tuple.Key;
-                packet.name = tuple.Value.userName;
-                packet.time = Defines.FrameRate;
+                foreach (var tuple in _players)
+                {
+                    var tmpToken = tuple.Value.asyncUserToken;
+                    MutantPacket packet = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
+                    packet.id = tuple.Key;
+                    packet.name = tuple.Value.userName;
+                    packet.time = Defines.FrameRate;
 
-                packet.PacketToByteArray((byte)STOC_OP.STOC_SYSTEM_CHANGE);
+                    packet.PacketToByteArray((byte)STOC_OP.STOC_SYSTEM_CHANGE);
 
-                tmpToken.SendData(packet);
+                    tmpToken.SendData(packet);
+                }
             }
         }
     }

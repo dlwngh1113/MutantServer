@@ -375,6 +375,8 @@ namespace mutant_server
                 sendPacket.gameState.Add(room.GameState);
             }
 
+            Console.WriteLine("room refresh packet.id - {0}, packet.name - {1}", packet.id, packet.name);
+
             sendPacket.PacketToByteArray((byte)STOC_OP.STOC_ROOM_REFRESHED);
             token.SendData(sendPacket);
         }
