@@ -21,6 +21,7 @@ namespace mutant_server
         //ingame operation
         CTOS_GAME_INIT = 100,
         CTOS_LOADED,
+        CTOS_ITEM_DELETE,
         CTOS_STATUS_CHANGE,
         CTOS_LEAVE_GAME,
         CTOS_ATTACK,
@@ -59,6 +60,7 @@ namespace mutant_server
         STOC_ITEM_GAIN,
         STOC_ITEM_DENIED,
         STOC_ITEM_CRAFTED,
+        STOC_ITEM_DELETE,
         STOC_SYSTEM_CHANGE,
         STOC_KILLED,
         STOC_VOTE_START,

@@ -114,6 +114,9 @@ namespace mutant_server
                 case CTOS_OP.CTOS_LOADED:
                     ProcessLoadGame(token, data);
                     break;
+                case CTOS_OP.CTOS_ITEM_DELETE:
+                    ProcessItemDelete(token, data);
+                    break;
                 default:
                     throw new Exception("operation from client is not valid\n");
             }
@@ -203,7 +206,7 @@ namespace mutant_server
                 }
             }
 
-            if(readyCount >= 2)
+            if(readyCount >= 1)
             {
                 SetGameInit();
                 ProcessGameStart();
@@ -496,6 +499,61 @@ namespace mutant_server
             }
         }
 
+        private void ProcessItemEvent(AsyncUserToken token, byte[] data)
+        {
+            ItemEventPacket packet = new ItemEventPacket(data, 0);
+            packet.ByteArrayToPacket();
+            var cnt = 0;
+            //인벤토리에 존재하는 아이템의 개수 구하기
+            foreach (var tuple in _players[token.userID].inventory)
+            {
+                cnt += tuple.Value;
+            }
+
+            //만약 아이템의 총 개수가 3개보다 많다면 획득하지 못함
+            if (cnt > 2)
+            {
+                ItemEventPacket sendPacket = new ItemEventPacket(new byte[Defines.BUF_SIZE], 0);
+                sendPacket.id = packet.id;
+                sendPacket.name = packet.name;
+                sendPacket.chestItem = packet.chestItem;
+                sendPacket.inventory = packet.inventory;
+                sendPacket.canGainItem = false;
+                sendPacket.PacketToByteArray((byte)STOC_OP.STOC_ITEM_DENIED);
+            }
+            //그렇지 않은 경우는 아이템 획득 가능
+            else
+            {
+                _chestItems[packet.chestItem.Item1].Remove(packet.chestItem.Item2);
+                if (_players[packet.id].inventory.ContainsKey(packet.chestItem.Item2))
+                {
+                    _players[packet.id].inventory[packet.chestItem.Item2] += 1;
+                }
+                else
+                {
+                    _players[packet.id].inventory.Add(packet.chestItem.Item2, 1);
+                }
+
+                foreach (var tuple in _players)
+                {
+                    ItemEventPacket sendPacket = new ItemEventPacket(new byte[Defines.BUF_SIZE], 0);
+
+                    //foreach(var v in _players[packet.id].inventory)
+                    //{
+                    //    Console.WriteLine("id {0} {1} - {2}", packet.id, v.Key, v.Value);
+                    //}
+                    sendPacket.id = packet.id;
+                    sendPacket.name = packet.name;
+                    sendPacket.chestItem = packet.chestItem;
+                    sendPacket.inventory = _players[packet.id].inventory;
+                    sendPacket.canGainItem = true;
+                    sendPacket.PacketToByteArray((byte)STOC_OP.STOC_ITEM_GAIN);
+
+                    tuple.Value.asyncUserToken.SendData(sendPacket);
+                }
+            }
+        }
+
         private void ProcessItemCraft(AsyncUserToken token, byte[] data)
         {
             ItemCraftPacket packet = new ItemCraftPacket(data, 0);
@@ -575,6 +633,37 @@ namespace mutant_server
                 }
             }
         }
+
+        private void ProcessItemDelete(AsyncUserToken token, byte[] data)
+        {
+            ItemEventPacket packet = new ItemEventPacket(data, 0);
+            packet.ByteArrayToPacket();
+
+            foreach (var v in _players[packet.id].inventory)
+            {
+                Console.WriteLine("before delete {0} - {1}", v.Key, v.Value);
+            }
+
+            _players[packet.id].inventory[packet.chestItem.Item2] -= 1;
+
+            ItemEventPacket sendPacket = new ItemEventPacket(new byte[Defines.BUF_SIZE], 0);
+            sendPacket.id = packet.id;
+            sendPacket.name = packet.name;
+            sendPacket.time = 0;
+
+            foreach(var v in _players[packet.id].inventory)
+            {
+                Console.WriteLine("after delete {0} - {1}", v.Key, v.Value);
+            }
+
+            sendPacket.inventory = _players[packet.id].inventory;
+            sendPacket.chestItem = new Tuple<int, int>(0, 0);
+
+            sendPacket.PacketToByteArray((byte)STOC_OP.STOC_ITEM_DELETE);
+
+            token.SendData(sendPacket);
+        }
+
         private void ProcessAttack(AsyncUserToken token, byte[] data)
         {
             //누가 어떤 플레이어를 공격했는가?
@@ -599,58 +688,6 @@ namespace mutant_server
 
                 tmpToken.SendData(sendPacket);
             }
-        }
-
-        private void ProcessItemEvent(AsyncUserToken token, byte[] data)
-        {
-            ItemEventPacket packet = new ItemEventPacket(data, 0);
-            packet.ByteArrayToPacket();
-            var cnt = 0;
-            //인벤토리에 존재하는 아이템의 개수 구하기
-            foreach (var tuple in _players[token.userID].inventory)
-            {
-                cnt += tuple.Value;
-            }
-
-            ItemEventPacket sendPacket = new ItemEventPacket(new byte[Defines.BUF_SIZE], 0);
-
-            //만약 아이템의 총 개수가 3개보다 많다면 획득하지 못함
-            if (cnt > 2)
-            {
-                sendPacket.id = packet.id;
-                sendPacket.name = packet.name;
-                sendPacket.chestItem = packet.chestItem;
-                sendPacket.inventory = packet.inventory;
-                sendPacket.canGainItem = false;
-                sendPacket.PacketToByteArray((byte)STOC_OP.STOC_ITEM_DENIED);
-            }
-            //그렇지 않은 경우는 아이템 획득 가능
-            else
-            {
-                _chestItems[packet.chestItem.Item1].Remove(packet.chestItem.Item2);
-                if (_players[packet.id].inventory.ContainsKey(packet.chestItem.Item2))
-                {
-                    _players[packet.id].inventory[packet.chestItem.Item2] += 1;
-                }
-                else
-                {
-                    _players[packet.id].inventory.Add(packet.chestItem.Item2, 1);
-                }
-                sendPacket.id = packet.id;
-                sendPacket.name = packet.name;
-                sendPacket.chestItem = packet.chestItem;
-                sendPacket.inventory = _players[packet.id].inventory;
-                sendPacket.canGainItem = true;
-                sendPacket.PacketToByteArray((byte)STOC_OP.STOC_ITEM_GAIN);
-            }
-
-            foreach (var tuple in sendPacket.inventory)
-            {
-                Console.Write("key - {0}, value - {1}, player - {2}", tuple.Key, tuple.Value, packet.name);
-            }
-            Console.WriteLine("");
-
-            token.SendData(sendPacket);
         }
 
         private void ProcessStatus(AsyncUserToken token, byte[] data)
