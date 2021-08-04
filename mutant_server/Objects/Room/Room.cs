@@ -722,6 +722,8 @@ namespace mutant_server
 
                     packet.PacketToByteArray((byte)STOC_OP.STOC_SYSTEM_CHANGE);
 
+                    Console.WriteLine("update method called");
+
                     tmpToken.SendData(packet);
                 }
             }

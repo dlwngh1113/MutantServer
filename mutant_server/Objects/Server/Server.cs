@@ -24,6 +24,7 @@ namespace mutant_server
         public static List<Room> _roomsInServer;
         private DBConnector _dBConnector;
         private Dictionary<int, Client> _players;
+        private MessageResolver _messageResolver;
 
         public Server(int numConnections, int receiveBufferSize)
         {
@@ -39,6 +40,7 @@ namespace mutant_server
             _roomsInServer = new List<Room>();
             _dBConnector = new DBConnector();
             _players = new Dictionary<int, Client>();
+            _messageResolver = new MessageResolver();
         }
 
         public void Init()
@@ -133,10 +135,11 @@ namespace mutant_server
 
         private void ProcessReceive(SocketAsyncEventArgs e)
         {
-            AsyncUserToken token = (AsyncUserToken)e.UserToken;
-            if (e.BytesTransferred > 0 && e.SocketError == SocketError.Success)
+            byte[] data = _messageResolver.ResolveMessage(e.Buffer, e.Offset, e.BytesTransferred);
+            if(data != null)
             {
-                switch((CTOS_OP)e.Buffer[e.Offset])
+                AsyncUserToken token = (AsyncUserToken)e.UserToken;
+                switch ((CTOS_OP)token.readEventArgs.Buffer[token.readEventArgs.Offset])
                 {
                     case CTOS_OP.CTOS_LOGIN:
                         ProcessLogin(token);
@@ -163,6 +166,7 @@ namespace mutant_server
                         ProcessInRoom(token);
                         break;
                 }
+
                 try
                 {
                     bool willRaise = token.socket.ReceiveAsync(token.readEventArgs);

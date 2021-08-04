@@ -7,17 +7,12 @@ namespace mutant_server
         int offset;
         int leftBytes;
         int targetPos;
-        int msgSize;
-        public byte op;
         byte[] packetAry;
         public MessageResolver()
         {
             offset = 0;
             leftBytes = 0;
             targetPos = 0;
-            msgSize = 0;
-            op = 0;
-            packetAry = new byte[Defines.BUF_SIZE];
         }
         public byte[] ResolveMessage(byte[] ary, int aryOffset, int bytesTransferred)
         {
@@ -30,21 +25,6 @@ namespace mutant_server
             while (this.leftBytes > 0)
             {
                 bool finished = false;
-                //if (this.offset < Header.size)
-                //{
-                //    this.targetPos = Header.size;
-
-                //    finished = ReadDataBuffer(ary, ref srcOffset, offset, bytesTransferred);
-
-                //    if(!finished)
-                //    {
-                //        return null;
-                //    }
-
-                //    this.msgSize = GetHeaderAttributes();
-
-                //    this.targetPos = Header.size + this.msgSize;
-                //}
 
                 finished = ReadDataBuffer(ary, ref srcOffset, aryOffset, bytesTransferred);
                 if (finished)
@@ -56,12 +36,11 @@ namespace mutant_server
         }
         private void CleanVariables()
         {
-            Array.Clear(packetAry, 0, offset);
+            packetAry = new byte[Defines.BUF_SIZE];
             offset = 0;
         }
         private ushort GetHeaderAttributes()
         {
-            this.op = this.packetAry[2];
             return BitConverter.ToUInt16(this.packetAry, 0);
         }
         private bool ReadDataBuffer(byte[] ary, ref int srcOffset, int offset, int bytesTransferred)

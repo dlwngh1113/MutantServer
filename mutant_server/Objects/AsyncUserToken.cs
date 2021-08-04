@@ -50,7 +50,7 @@ namespace mutant_server
             {
                 var packet = this.sendQueue.Peek();
 
-                Array.Copy(packet.ary, packet.startPos, this.writeEventArgs.Buffer, this.writeEventArgs.Offset, Defines.BUF_SIZE);
+                Array.Copy(packet.ary, packet.startPos, this.writeEventArgs.Buffer, this.writeEventArgs.Offset, packet.offset);
 
                 try
                 {
@@ -76,55 +76,5 @@ namespace mutant_server
                 }
             }
         }
-
-        //private void ProcessEnterPlayer(byte[] data)
-        //{
-        //    MutantPacket packet = new MutantPacket(readEventArgs.Buffer, readEventArgs.Offset);
-        //    packet.ByteArrayToPacket();
-
-        //    PlayerStatusPacket sendPacket = new PlayerStatusPacket(new byte[Defines.BUF_SIZE], 0);
-        //    sendPacket.id = packet.id;
-        //    sendPacket.name = packet.name;
-        //    sendPacket.time = packet.time;
-        //    sendPacket.position = Server._players[packet.id].position;
-        //    sendPacket.rotation = Server._players[packet.id].rotation;
-        //    sendPacket.playerJob = Server._players[packet.id].job;
-
-        //    sendPacket.PacketToByteArray((byte)STOC_OP.STOC_PLAYER_ENTER);
-
-        //    SendData(sendPacket);
-
-        //    foreach (var tuple in Server._players)
-        //    {
-        //        if (tuple.Key != sendPacket.id)
-        //        {
-        //            var tmpToken = tuple.Value.asyncUserToken;
-
-        //            //기존의 플레이어에게 새로운 플레이어 정보 전달
-        //            PlayerStatusPacket curPacket = new PlayerStatusPacket(new byte[Defines.BUF_SIZE], 0);
-        //            curPacket.id = sendPacket.id;
-        //            curPacket.name = sendPacket.name;
-        //            curPacket.time = sendPacket.time;
-        //            curPacket.position = Server._players[sendPacket.id].position;
-        //            curPacket.rotation = Server._players[sendPacket.id].rotation;
-
-        //            curPacket.PacketToByteArray((byte)STOC_OP.STOC_PLAYER_ENTER);
-
-        //            tmpToken.SendData(curPacket);
-
-        //            //새로운 플레이어에게 기존의 플레이어 정보 전달
-        //            PlayerStatusPacket otherPacket = new PlayerStatusPacket(new byte[Defines.BUF_SIZE], 0);
-        //            otherPacket.id = tuple.Key;
-        //            otherPacket.name = tuple.Value.userName;
-        //            otherPacket.time = sendPacket.time;
-        //            otherPacket.position = tuple.Value.position;
-        //            otherPacket.rotation = tuple.Value.rotation;
-
-        //            otherPacket.PacketToByteArray((byte)STOC_OP.STOC_PLAYER_ENTER);
-
-        //            SendData(otherPacket);
-        //        }
-        //    }
-        //}
     }
 }
