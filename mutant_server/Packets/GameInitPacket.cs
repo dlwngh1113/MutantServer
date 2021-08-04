@@ -74,6 +74,8 @@ namespace mutant_server.Packets
                     ConvertToByte(list.Value[i]);
                 }
             }
+
+            base.AddHeader();
         }
     }
 }

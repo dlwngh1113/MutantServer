@@ -12,10 +12,6 @@ namespace mutant_server
         public byte[] ary;
         public int offset = 0;
         public int startPos = 0;
-        public ushort size
-        {
-            get => (ushort)(ary.Length - Header.size);
-        }
         public MutantPacket(byte[] ary, int p)
         {
             this.ary = ary;
@@ -65,6 +61,13 @@ namespace mutant_server
         protected void ConvertToByte(bool b)
         {
             byte[] tmp = BitConverter.GetBytes(b);
+            tmp.CopyTo(this.ary, this.offset);
+            this.offset += tmp.Length;
+        }
+
+        protected void ConvertToByte(ushort us)
+        {
+            byte[] tmp = BitConverter.GetBytes(us);
             tmp.CopyTo(this.ary, this.offset);
             this.offset += tmp.Length;
         }
@@ -120,21 +123,32 @@ namespace mutant_server
         }
         public virtual void PacketToByteArray(byte type)
         {
-            //ConvertToByte(this.header.bytes);
-            //ConvertToByte(this.header.op);
-            ary[offset++] = type;
+            this.header.op = type;
+            ConvertToByte(this.header.op);
+            ConvertToByte(this.header.bytes);
             ConvertToByte(this.name);
             ConvertToByte(this.id);
             ConvertToByte(this.time);
+
+            AddHeader();
         }
         public virtual void ByteArrayToPacket()
         {
-            //this.header.bytes = ByteToUshort();
-            //this.header.op = ByteToByte();
-            this.offset++;
+            this.header.op = ByteToByte();
+            this.header.bytes = ByteToUshort();
             this.name = ByteToString();
             this.id = ByteToInt();
             this.time = ByteToFloat();
+        }
+
+        public void AddHeader()
+        {
+            byte[] ary = BitConverter.GetBytes(header.op);
+            Array.Copy(ary, 0, this.ary, 0, ary.Length);
+
+            header.bytes = (ushort)(offset - Header.size);
+            ary = BitConverter.GetBytes(header.bytes);
+            Array.Copy(ary, 0, this.ary, 1, ary.Length);
         }
     }
 }

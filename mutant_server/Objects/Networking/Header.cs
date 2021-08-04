@@ -6,14 +6,19 @@ using System.Threading.Tasks;
 
 namespace mutant_server
 {
-    public class Header
+    public struct Header
     {
-        public ushort bytes;
         public byte op;
-        static public short size
+        public ushort bytes;
+
+        public Header(byte op, ushort bytes)
         {
-            get => 3;
+            this.op = op;
+            this.bytes = bytes;
         }
-        public Header() { }
+        public static int size
+        {
+            get => sizeof(byte) + sizeof(ushort);
+        }
     }
 }

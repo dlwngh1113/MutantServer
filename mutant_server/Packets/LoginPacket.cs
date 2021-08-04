@@ -26,6 +26,8 @@ namespace mutant_server.Packets
         {
             base.PacketToByteArray(type);
             ConvertToByte(passwd);
+
+            base.AddHeader();
         }
         public override void ByteArrayToPacket()
         {

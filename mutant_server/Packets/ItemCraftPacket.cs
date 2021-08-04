@@ -57,6 +57,8 @@ namespace mutant_server.Packets
                 ConvertToByte(tuple.Key);
                 ConvertToByte(tuple.Value);
             }
+
+            base.AddHeader();
         }
     }
 }

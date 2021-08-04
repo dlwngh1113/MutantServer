@@ -48,6 +48,8 @@
             ConvertToByte(playCountNocturn);
             ConvertToByte(playCountPsychy);
             ConvertToByte(playCountTanker);
+
+            base.AddHeader();
         }
     }
 }

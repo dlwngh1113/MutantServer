@@ -29,6 +29,8 @@ namespace mutant_server.Packets
                 ConvertToByte(numOfPlayers[i]);
                 ConvertToByte(gameState[i]);
             }
+
+            base.AddHeader();
         }
         public override void ByteArrayToPacket()
         {

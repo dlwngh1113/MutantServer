@@ -138,32 +138,33 @@ namespace mutant_server
             byte[] data = _messageResolver.ResolveMessage(e.Buffer, e.Offset, e.BytesTransferred);
             if(data != null)
             {
+                _messageResolver.CleanVariables();
                 AsyncUserToken token = (AsyncUserToken)e.UserToken;
-                switch ((CTOS_OP)token.readEventArgs.Buffer[token.readEventArgs.Offset])
+                switch ((CTOS_OP)data[0])
                 {
                     case CTOS_OP.CTOS_LOGIN:
-                        ProcessLogin(token);
+                        ProcessLogin(token, data);
                         break;
                     case CTOS_OP.CTOS_LOGOUT:
-                        ProcessLogout(token);
+                        ProcessLogout(token , data);
                         break;
                     case CTOS_OP.CTOS_CREATE_ROOM:
-                        ProcessCreateRoom(token);
+                        ProcessCreateRoom(token, data);
                         break;
                     case CTOS_OP.CTOS_SELECT_ROOM:
-                        ProcessSelectRoom(token);
+                        ProcessSelectRoom(token, data);
                         break;
                     case CTOS_OP.CTOS_REFRESH_ROOMS:
-                        ProcessRefreshRooms(token);
+                        ProcessRefreshRooms(token, data);
                         break;
                     case CTOS_OP.CTOS_CREATE_USER_INFO:
-                        ProcessCreateUser(token);
+                        ProcessCreateUser(token, data);
                         break;
                     case CTOS_OP.CTOS_GET_HISTORY:
-                        ProcessUserInfo(token);
+                        ProcessUserInfo(token, data);
                         break;
                     default:
-                        ProcessInRoom(token);
+                        ProcessInRoom(token, data);
                         break;
                 }
 
@@ -199,21 +200,21 @@ namespace mutant_server
             return false;
         }
 
-        private void ProcessInRoom(AsyncUserToken token)
+        private void ProcessInRoom(AsyncUserToken token, byte[] data)
         {
             foreach(var i in _roomsInServer)
             {
                 if (i.IsHavePlayer(token.userID))
                 {
-                    i.ResolveMessage(token);
+                    i.ResolveMessage(token, data);
                     return;
                 }
             }
         }
 
-        private void ProcessUserInfo(AsyncUserToken token)
+        private void ProcessUserInfo(AsyncUserToken token, byte[] data)
         {
-            MutantPacket packet = new MutantPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
+            MutantPacket packet = new MutantPacket(data, 0);
             packet.ByteArrayToPacket();
 
             UserInfoPacket sendPacket = new UserInfoPacket(new byte[Defines.BUF_SIZE], 0);
@@ -237,7 +238,7 @@ namespace mutant_server
             token.SendData(sendPacket);
         }
 
-        private void ProcessCreateUser(AsyncUserToken token)
+        private void ProcessCreateUser(AsyncUserToken token, byte[] data)
         {
             LoginPacket packet = new LoginPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
             packet.ByteArrayToPacket();
@@ -264,10 +265,16 @@ namespace mutant_server
             token.SendData(sendPacket);
         }
 
-        private void ProcessLogin(AsyncUserToken token)
+        private void ProcessLogin(AsyncUserToken token, byte[] data)
         {
-            LoginPacket packet = new LoginPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
+            LoginPacket packet = new LoginPacket(data, 0);
             packet.ByteArrayToPacket();
+
+            //Console.WriteLine("size - {0}, id - {1}, name - {2}, offset - {3}", packet.header.bytes, packet.id, packet.name, packet.offset); ;
+            //for(int i=0;i<packet.header.bytes + 3;++i)
+            //{
+            //    Console.Write("{0} ", packet.ary[i]);
+            //}
 
             MutantPacket sendPacket = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
             //서버에서 사용중이거나 잘못된 아이디, 비밀번호
@@ -348,7 +355,7 @@ namespace mutant_server
                 CloseClientSocket(e);
             }
         }
-        private void ProcessLogout(AsyncUserToken token)
+        private void ProcessLogout(AsyncUserToken token, byte[] data)
         {
             //현재까지의 게임 정보를 DB에 업데이트 후 접속 종료
 
@@ -362,7 +369,7 @@ namespace mutant_server
             CloseClientSocket(token.readEventArgs);
         }
 
-        private void ProcessRefreshRooms(AsyncUserToken token)
+        private void ProcessRefreshRooms(AsyncUserToken token, byte[] data)
         {
             MutantPacket packet = new MutantPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
             packet.ByteArrayToPacket();
@@ -385,7 +392,7 @@ namespace mutant_server
             token.SendData(sendPacket);
         }
 
-        private void ProcessSelectRoom(AsyncUserToken token)
+        private void ProcessSelectRoom(AsyncUserToken token, byte[] data)
         {
             RoomPacket packet = new RoomPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
             packet.ByteArrayToPacket();
@@ -436,9 +443,9 @@ namespace mutant_server
         }
 
 
-        private void ProcessCreateRoom(AsyncUserToken token)
+        private void ProcessCreateRoom(AsyncUserToken token, byte[] data)
         {
-            RoomPacket packet = new RoomPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
+            RoomPacket packet = new RoomPacket(data, 0);
             packet.ByteArrayToPacket();
 
             Room room = new Room();

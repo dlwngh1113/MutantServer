@@ -67,56 +67,52 @@ namespace mutant_server
             }
         }
 
-        public void ResolveMessage(AsyncUserToken token)
+        public void ResolveMessage(AsyncUserToken token, byte[] data)
         {
-            byte[] data = _messageResolver.ResolveMessage(token.readEventArgs.Buffer, token.readEventArgs.Offset, token.readEventArgs.BytesTransferred);
-            if (data != null)
-            {
-                RecvEventSelect(token);
-            }
+            RecvEventSelect(token, data);
         }
-        private void RecvEventSelect(AsyncUserToken token)
+        private void RecvEventSelect(AsyncUserToken token, byte[] data)
         {
-            switch ((CTOS_OP)token.readEventArgs.Buffer[token.readEventArgs.Offset])
+            switch ((CTOS_OP)data[0])
             {
                 case CTOS_OP.CTOS_GAME_INIT:
-                    ProcessGameInit(token);
+                    ProcessGameInit(token, data);
                     break;
                 case CTOS_OP.CTOS_STATUS_CHANGE:
-                    ProcessStatus(token);
+                    ProcessStatus(token, data);
                     break;
                 case CTOS_OP.CTOS_ATTACK:
-                    ProcessAttack(token);
+                    ProcessAttack(token, data);
                     break;
                 case CTOS_OP.CTOS_CHAT:
-                    ProcessChatting(token);
+                    ProcessChatting(token, data);
                     break;
                 case CTOS_OP.CTOS_LEAVE_ROOM:
-                    ProcessLeaveRoom(token);
+                    ProcessLeaveRoom(token, data);
                     break;
                 case CTOS_OP.CTOS_LEAVE_GAME:
-                    ProcessLeaveGame(token);
+                    ProcessLeaveGame(token, data);
                     break;
                 case CTOS_OP.CTOS_ITEM_CLICKED:
-                    ProcessItemEvent(token);
+                    ProcessItemEvent(token, data);
                     break;
                 case CTOS_OP.CTOS_GET_ROOM_USERS:
-                    ProcessGetRoomUsers(token);
+                    ProcessGetRoomUsers(token, data);
                     break;
                 case CTOS_OP.CTOS_ITEM_CRAFT_REQUEST:
-                    ProcessItemCraft(token);
+                    ProcessItemCraft(token, data);
                     break;
                 case CTOS_OP.CTOS_VOTE_SELECTED:
-                    ProcessVote(token);
+                    ProcessVote(token, data);
                     break;
                 case CTOS_OP.CTOS_VOTE_REQUEST:
-                    ProcessStartVote(token);
+                    ProcessStartVote(token, data);
                     break;
                 case CTOS_OP.CTOS_READY:
-                    ProcessReady(token);
+                    ProcessReady(token, data);
                     break;
                 case CTOS_OP.CTOS_LOADED:
-                    ProcessLoadGame(token);
+                    ProcessLoadGame(token, data);
                     break;
                 default:
                     throw new Exception("operation from client is not valid\n");
@@ -178,9 +174,9 @@ namespace mutant_server
             return sendPacket;
         }
 
-        private void ProcessGameInit(AsyncUserToken token)
+        private void ProcessGameInit(AsyncUserToken token, byte[] data)
         {
-            MutantPacket packet = new MutantPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
+            MutantPacket packet = new MutantPacket(data, 0);
             packet.ByteArrayToPacket();
 
             GameInitPacket sendPacket = SetGameInitPacket(packet);
@@ -189,9 +185,9 @@ namespace mutant_server
             token.SendData(sendPacket);
         }
 
-        private void ProcessReady(AsyncUserToken token)
+        private void ProcessReady(AsyncUserToken token, byte[] data)
         {
-            MutantPacket packet = new MutantPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
+            MutantPacket packet = new MutantPacket(data, 0);
             packet.ByteArrayToPacket();
 
             _players[packet.id].isReady = !_players[packet.id].isReady;
@@ -233,9 +229,9 @@ namespace mutant_server
             }
         }
 
-        private void ProcessLoadGame(AsyncUserToken token)
+        private void ProcessLoadGame(AsyncUserToken token, byte[] data)
         {
-            MutantPacket packet = new MutantPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
+            MutantPacket packet = new MutantPacket(data, 0);
             packet.ByteArrayToPacket();
 
             isLoaded[globalOffset] = true;
@@ -281,9 +277,9 @@ namespace mutant_server
                 tuple.Value.asyncUserToken.SendData(packet);
             }
         }
-        private void ProcessGetRoomUsers(AsyncUserToken token)
+        private void ProcessGetRoomUsers(AsyncUserToken token, byte[] data)
         {
-            MutantPacket packet = new MutantPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
+            MutantPacket packet = new MutantPacket(data, 0);
             packet.ByteArrayToPacket();
 
             foreach (var tuple in _players)
@@ -313,9 +309,9 @@ namespace mutant_server
             }
         }
 
-        private void ProcessLeaveRoom(AsyncUserToken token)
+        private void ProcessLeaveRoom(AsyncUserToken token, byte[] data)
         {
-            MutantPacket packet = new MutantPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
+            MutantPacket packet = new MutantPacket(data, 0);
             packet.ByteArrayToPacket();
 
             foreach (var tuple in _players)
@@ -348,9 +344,9 @@ namespace mutant_server
             }
         }
 
-        private void ProcessLeaveGame(AsyncUserToken token)
+        private void ProcessLeaveGame(AsyncUserToken token, byte[] data)
         {
-            MutantPacket packet = new MutantPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
+            MutantPacket packet = new MutantPacket(data, 0);
             packet.ByteArrayToPacket();
 
             foreach (var tuple in _players)
@@ -384,10 +380,10 @@ namespace mutant_server
                 }
             }
         }
-        private void ProcessChatting(AsyncUserToken token)
+        private void ProcessChatting(AsyncUserToken token, byte[] data)
         {
             //클라이언트에서 온 메세지를 모든 클라이언트에 전송
-            ChattingPakcet packet = new ChattingPakcet(token.readEventArgs.Buffer, token.readEventArgs.Offset);
+            ChattingPakcet packet = new ChattingPakcet(data, 0);
             packet.ByteArrayToPacket();
 
             foreach (var tuple in _players)
@@ -423,9 +419,9 @@ namespace mutant_server
             }
         }
 
-        public void ProcessStartVote(AsyncUserToken token)
+        public void ProcessStartVote(AsyncUserToken token, byte[] data)
         {
-            MutantPacket packet = new MutantPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
+            MutantPacket packet = new MutantPacket(data, 0);
             packet.ByteArrayToPacket();
 
             _voteCounter.Clear();
@@ -467,9 +463,9 @@ namespace mutant_server
                 tmpToken.SendData(sendPacket);
             }
         }
-        public void ProcessVote(AsyncUserToken token)
+        public void ProcessVote(AsyncUserToken token, byte[] data)
         {
-            VotePacket packet = new VotePacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
+            VotePacket packet = new VotePacket(data, 0);
             packet.ByteArrayToPacket();
 
             if (!_voteCounter.ContainsKey(packet.votedPersonID))
@@ -500,9 +496,9 @@ namespace mutant_server
             }
         }
 
-        private void ProcessItemCraft(AsyncUserToken token)
+        private void ProcessItemCraft(AsyncUserToken token, byte[] data)
         {
-            ItemCraftPacket packet = new ItemCraftPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
+            ItemCraftPacket packet = new ItemCraftPacket(data, 0);
             packet.ByteArrayToPacket();
 
             ItemCraftPacket sendPacket = new ItemCraftPacket(new byte[Defines.BUF_SIZE], 0);
@@ -579,11 +575,11 @@ namespace mutant_server
                 }
             }
         }
-        private void ProcessAttack(AsyncUserToken token)
+        private void ProcessAttack(AsyncUserToken token, byte[] data)
         {
             //누가 어떤 플레이어를 공격했는가?
             //공격당한 플레이어를 죽게 하고 공격한 플레이어 타이머 리셋
-            MutantPacket packet = new MutantPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
+            MutantPacket packet = new MutantPacket(data, 0);
             packet.ByteArrayToPacket();
 
             foreach (var tuple in _players)
@@ -605,9 +601,9 @@ namespace mutant_server
             }
         }
 
-        private void ProcessItemEvent(AsyncUserToken token)
+        private void ProcessItemEvent(AsyncUserToken token, byte[] data)
         {
-            ItemEventPacket packet = new ItemEventPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
+            ItemEventPacket packet = new ItemEventPacket(data, 0);
             packet.ByteArrayToPacket();
             var cnt = 0;
             //인벤토리에 존재하는 아이템의 개수 구하기
@@ -657,9 +653,9 @@ namespace mutant_server
             token.SendData(sendPacket);
         }
 
-        private void ProcessStatus(AsyncUserToken token)
+        private void ProcessStatus(AsyncUserToken token, byte[] data)
         {
-            PlayerStatusPacket packet = new PlayerStatusPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
+            PlayerStatusPacket packet = new PlayerStatusPacket(data, 0);
             packet.ByteArrayToPacket();
 
             //Console.WriteLine("move packet id - {0}, name - {1}", packet.id, packet.name);

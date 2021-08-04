@@ -29,6 +29,8 @@ namespace mutant_server.Packets
             ConvertToByte(this.rotation);
             ConvertToByte(this.playerMotion);
             ConvertToByte(this.playerJob);
+
+            base.AddHeader();
         }
         public override void ByteArrayToPacket()
         {
