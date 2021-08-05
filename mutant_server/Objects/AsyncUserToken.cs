@@ -29,6 +29,21 @@ namespace mutant_server
             this.socket = s;
         }
 
+        public byte[] ResolveMessage()
+        {
+            byte[] data = _messageResolver.ResolveMessage(readEventArgs.Buffer, readEventArgs.Offset, readEventArgs.BytesTransferred);
+            if(data != null)
+            { 
+                return data; 
+            }
+            return null;
+        }
+
+        public void ClearMessageBuffer()
+        {
+            _messageResolver.CleanVariables();
+        }
+
         public void SendData(MutantPacket packet)
         {
             lock(this.sendQueue)

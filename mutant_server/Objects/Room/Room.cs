@@ -117,6 +117,9 @@ namespace mutant_server
                 case CTOS_OP.CTOS_ITEM_DELETE:
                     ProcessItemDelete(token, data);
                     break;
+                case CTOS_OP.CTOS_SABOTAGI:
+                    ProcessSabotagi(token, data);
+                    break;
                 default:
                     throw new Exception("operation from client is not valid\n");
             }
@@ -206,7 +209,7 @@ namespace mutant_server
                 }
             }
 
-            if(readyCount >= 1)
+            if(readyCount >= 2)
             {
                 SetGameInit();
                 ProcessGameStart();
@@ -240,7 +243,7 @@ namespace mutant_server
             isLoaded[globalOffset] = true;
             Interlocked.Increment(ref globalOffset);
 
-            Console.WriteLine("isloaded[globalOffset] is {0}\n", isLoaded[globalOffset - 1]);
+            //Console.WriteLine("isloaded[globalOffset] is {0}\n", isLoaded[globalOffset - 1]);
             Console.WriteLine("scene load success packet id - {0}, name - {1}", packet.id, packet.name);
 
             if(globalOffset >= _players.Count)
@@ -261,6 +264,7 @@ namespace mutant_server
                 System.Timers.Timer timer = new System.Timers.Timer();
                 timer.Interval = Defines.FrameRate;
                 timer.Elapsed += new ElapsedEventHandler(Update);
+                //timer.Start();
 
                 gameState = Defines.ROOM_PLAYING;
             }
@@ -429,27 +433,27 @@ namespace mutant_server
 
             _voteCounter.Clear();
 
-            for (int i = 0; i < _players.Count; ++i)
-            {
-                var tuple = _players.ElementAt(i);
-                tuple.Value.position = tuple.Value.InitPos;
-                for (int j = i; j < _players.Count; ++j)
-                {
-                    var tmpToken = _players.ElementAt(j).Value.asyncUserToken;
-                    PlayerStatusPacket posPacket = new PlayerStatusPacket(new byte[Defines.BUF_SIZE], 0);
-                    posPacket.id = tuple.Key;
-                    posPacket.name = tuple.Value.userName;
-                    posPacket.time = 0;
+            //for (int i = 0; i < _players.Count; ++i)
+            //{
+            //    var tuple = _players.ElementAt(i);
+            //    tuple.Value.position = tuple.Value.InitPos;
+            //    for (int j = i; j < _players.Count; ++j)
+            //    {
+            //        var tmpToken = _players.ElementAt(j).Value.asyncUserToken;
+            //        PlayerStatusPacket posPacket = new PlayerStatusPacket(new byte[Defines.BUF_SIZE], 0);
+            //        posPacket.id = tuple.Key;
+            //        posPacket.name = tuple.Value.userName;
+            //        posPacket.time = 0;
 
-                    posPacket.position = tuple.Value.position;
-                    posPacket.rotation = tuple.Value.rotation;
-                    posPacket.playerMotion = Defines.PLAYER_IDLE;
+            //        posPacket.position = tuple.Value.position;
+            //        posPacket.rotation = tuple.Value.rotation;
+            //        posPacket.playerMotion = Defines.PLAYER_IDLE;
 
-                    posPacket.PacketToByteArray((byte)STOC_OP.STOC_STATUS_CHANGE);
+            //        posPacket.PacketToByteArray((byte)STOC_OP.STOC_STATUS_CHANGE);
 
-                    tmpToken.SendData(posPacket);
-                }
-            }
+            //        tmpToken.SendData(posPacket);
+            //    }
+            //}
 
             foreach (var tuple in _players)
             {
@@ -690,41 +694,56 @@ namespace mutant_server
             }
         }
 
+        private void ProcessSabotagi(AsyncUserToken token, byte[] data)
+        {
+            MutantPacket packet = new MutantPacket(data, 0);
+            packet.ByteArrayToPacket();
+
+            foreach(var p in _players)
+            {
+                MutantPacket sendPacket = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
+                sendPacket.id = packet.id;
+                sendPacket.name = packet.name;
+                sendPacket.time = 0;
+
+                sendPacket.PacketToByteArray((byte)STOC_OP.STOC_SABOTAGI);
+
+                p.Value.asyncUserToken.SendData(sendPacket);
+            }
+        }
+
         private void ProcessStatus(AsyncUserToken token, byte[] data)
         {
             PlayerStatusPacket packet = new PlayerStatusPacket(data, 0);
             packet.ByteArrayToPacket();
 
-            //Console.WriteLine("move packet id - {0}, name - {1}", packet.id, packet.name);
-            if (!(_players.ContainsKey(packet.id)))
-            {
-                return;
-            }
+            Console.WriteLine("move packet id - {0}, name - {1}", packet.id, packet.name);
+            //if (!(_players.ContainsKey(packet.id)))
+            //{
+            //    return;
+            //}
 
-            lock (_players)
-            {
-                _players[packet.id].position = packet.position;
-                _players[packet.id].rotation = packet.rotation;
+            _players[packet.id].position = packet.position;
+            _players[packet.id].rotation = packet.rotation;
 
-                foreach (var tuple in _players)
+            foreach (var tuple in _players)
+            {
+                if (tuple.Key != packet.id)
                 {
-                    if (tuple.Key != packet.id)
-                    {
-                        var tmpToken = tuple.Value.asyncUserToken;
-                        PlayerStatusPacket sendPacket = new PlayerStatusPacket(new byte[Defines.BUF_SIZE], 0);
-                        sendPacket.id = packet.id;
-                        sendPacket.name = packet.name;
-                        sendPacket.time = 0;
+                    var tmpToken = tuple.Value.asyncUserToken;
+                    PlayerStatusPacket sendPacket = new PlayerStatusPacket(new byte[Defines.BUF_SIZE], 0);
+                    sendPacket.id = packet.id;
+                    sendPacket.name = packet.name;
+                    sendPacket.time = 0;
 
-                        sendPacket.position = _players[packet.id].position;
-                        sendPacket.rotation = _players[packet.id].rotation;
-                        sendPacket.playerMotion = packet.playerMotion;
-                        sendPacket.playerJob = _players[packet.id].job;
+                    sendPacket.position = _players[packet.id].position;
+                    sendPacket.rotation = _players[packet.id].rotation;
+                    sendPacket.playerMotion = packet.playerMotion;
+                    sendPacket.playerJob = _players[packet.id].job;
 
-                        sendPacket.PacketToByteArray((byte)STOC_OP.STOC_STATUS_CHANGE);
+                    sendPacket.PacketToByteArray((byte)STOC_OP.STOC_STATUS_CHANGE);
 
-                        tmpToken.SendData(sendPacket);
-                    }
+                    tmpToken.SendData(sendPacket);
                 }
             }
         }
@@ -743,22 +762,17 @@ namespace mutant_server
 
         public void Update(object elapsedTime, ElapsedEventArgs e)
         {
-            lock (_players)
+            foreach (var tuple in _players)
             {
-                foreach (var tuple in _players)
-                {
-                    var tmpToken = tuple.Value.asyncUserToken;
-                    MutantPacket packet = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
-                    packet.id = tuple.Key;
-                    packet.name = tuple.Value.userName;
-                    packet.time = Defines.FrameRate;
+                var tmpToken = tuple.Value.asyncUserToken;
+                MutantPacket packet = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
+                packet.id = tuple.Key;
+                packet.name = tuple.Value.userName;
+                packet.time = 0.016f;
 
-                    packet.PacketToByteArray((byte)STOC_OP.STOC_SYSTEM_CHANGE);
+                packet.PacketToByteArray((byte)STOC_OP.STOC_SYSTEM_CHANGE);
 
-                    Console.WriteLine("update method called");
-
-                    tmpToken.SendData(packet);
-                }
+                tmpToken.SendData(packet);
             }
         }
     }

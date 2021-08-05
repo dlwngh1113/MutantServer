@@ -27,6 +27,7 @@ namespace mutant_server
         CTOS_ATTACK,
         CTOS_CHAT,
         CTOS_ITEM_CLICKED,
+        CTOS_SABOTAGI,
         CTOS_ITEM_CRAFT_REQUEST,
         CTOS_VOTE_REQUEST,
         CTOS_VOTE_SELECTED,
@@ -63,6 +64,7 @@ namespace mutant_server
         STOC_ITEM_DELETE,
         STOC_SYSTEM_CHANGE,
         STOC_KILLED,
+        STOC_SABOTAGI,
         STOC_VOTE_START,
         STOC_VOTED,
     }

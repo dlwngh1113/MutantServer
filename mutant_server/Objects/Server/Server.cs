@@ -135,11 +135,11 @@ namespace mutant_server
 
         private void ProcessReceive(SocketAsyncEventArgs e)
         {
-            byte[] data = _messageResolver.ResolveMessage(e.Buffer, e.Offset, e.BytesTransferred);
+            AsyncUserToken token = (AsyncUserToken)e.UserToken;
+            byte[] data = token.ResolveMessage();
             if(data != null)
             {
-                _messageResolver.CleanVariables();
-                AsyncUserToken token = (AsyncUserToken)e.UserToken;
+                token.ClearMessageBuffer();
                 switch ((CTOS_OP)data[0])
                 {
                     case CTOS_OP.CTOS_LOGIN:
@@ -270,7 +270,7 @@ namespace mutant_server
             LoginPacket packet = new LoginPacket(data, 0);
             packet.ByteArrayToPacket();
 
-            //Console.WriteLine("size - {0}, id - {1}, name - {2}, offset - {3}", packet.header.bytes, packet.id, packet.name, packet.offset); ;
+            Console.WriteLine("login packet size - {0}, id - {1}, name - {2}, offset - {3}", packet.header.bytes, packet.id, packet.name, packet.offset); ;
             //for(int i=0;i<packet.header.bytes + 3;++i)
             //{
             //    Console.Write("{0} ", packet.ary[i]);
@@ -361,7 +361,7 @@ namespace mutant_server
 
             //지금 게임에 존재하는 유저들에게 해당 유저가 게임을 종료했음을 알림
             //지금 게임을 같이 하고 있는 유저들을 어떻게 구분할 것인가?
-            MutantPacket packet = new MutantPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
+            MutantPacket packet = new MutantPacket(data, 0);
             packet.ByteArrayToPacket();
 
             _dBConnector.UpdateData(_players[packet.id]);
@@ -371,7 +371,7 @@ namespace mutant_server
 
         private void ProcessRefreshRooms(AsyncUserToken token, byte[] data)
         {
-            MutantPacket packet = new MutantPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
+            MutantPacket packet = new MutantPacket(data, 0);
             packet.ByteArrayToPacket();
 
             RoomPacket sendPacket = new RoomPacket(new byte[Defines.BUF_SIZE], 0);
@@ -394,7 +394,7 @@ namespace mutant_server
 
         private void ProcessSelectRoom(AsyncUserToken token, byte[] data)
         {
-            RoomPacket packet = new RoomPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
+            RoomPacket packet = new RoomPacket(data, 0);
             packet.ByteArrayToPacket();
 
             Room room = null;
