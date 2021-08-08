@@ -24,7 +24,6 @@ namespace mutant_server
         public static List<Room> _roomsInServer;
         private DBConnector _dBConnector;
         private Dictionary<int, Client> _players;
-        private MessageResolver _messageResolver;
 
         public Server(int numConnections, int receiveBufferSize)
         {
@@ -40,7 +39,6 @@ namespace mutant_server
             _roomsInServer = new List<Room>();
             _dBConnector = new DBConnector();
             _players = new Dictionary<int, Client>();
-            _messageResolver = new MessageResolver();
         }
 
         public void Init()

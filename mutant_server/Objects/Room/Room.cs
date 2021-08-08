@@ -244,6 +244,8 @@ namespace mutant_server
             MutantPacket packet = new MutantPacket(data, 0);
             packet.ByteArrayToPacket();
 
+            
+
             foreach(var player in _players)
             {
                 MutantPacket sendPacket = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
@@ -552,29 +554,29 @@ namespace mutant_server
                     Console.WriteLine("vote name = {0}, count = {1}", i.Key, i.Value);
                 }
 
-                int cnt = 0;
-                Client c = GetMaxVotedPerson(ref cnt);
-                if (c != null && cnt >= _players.Count)
-                {
-                    foreach(var player in _players)
-                    {
-                        PlayerStatusPacket sendPacket = new PlayerStatusPacket(new byte[Defines.BUF_SIZE], 0);
-                        sendPacket.id = c.userID;
-                        sendPacket.name = c.userName;
-                        sendPacket.time = 0;
+                //int cnt = 0;
+                //Client c = GetMaxVotedPerson(ref cnt);
+                //if (c != null && cnt >= _players.Count)
+                //{
+                //    foreach(var player in _players)
+                //    {
+                //        PlayerStatusPacket sendPacket = new PlayerStatusPacket(new byte[Defines.BUF_SIZE], 0);
+                //        sendPacket.id = c.userID;
+                //        sendPacket.name = c.userName;
+                //        sendPacket.time = 0;
 
-                        sendPacket.position = c.position;
-                        sendPacket.rotation = c.rotation;
-                        sendPacket.playerMotion = Defines.PLAYER_HIT;
-                        sendPacket.playerJob = c.job;
+                //        sendPacket.position = c.position;
+                //        sendPacket.rotation = c.rotation;
+                //        sendPacket.playerMotion = Defines.PLAYER_HIT;
+                //        sendPacket.playerJob = c.job;
 
-                        sendPacket.PacketToByteArray((byte)STOC_OP.STOC_VOTE_KILLED);
+                //        sendPacket.PacketToByteArray((byte)STOC_OP.STOC_VOTE_KILLED);
 
-                        player.Value.asyncUserToken.SendData(sendPacket);
-                    }
+                //        player.Value.asyncUserToken.SendData(sendPacket);
+                //    }
 
-                    return;
-                }
+                //    return;
+                //}
             }
 
             foreach (var tuple in _players)
@@ -882,18 +884,18 @@ namespace mutant_server
 
         public void Update(object elapsedTime, ElapsedEventArgs e)
         {
-            //foreach (var tuple in _players)
-            //{
-            //    var tmpToken = tuple.Value.asyncUserToken;
-            //    MutantPacket packet = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
-            //    packet.id = tuple.Key;
-            //    packet.name = tuple.Value.userName;
-            //    packet.time = 0.016f;
+            foreach (var tuple in _players)
+            {
+                var tmpToken = tuple.Value.asyncUserToken;
+                MutantPacket packet = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
+                packet.id = tuple.Key;
+                packet.name = tuple.Value.userName;
+                packet.time = 0.016f;
 
-            //    packet.PacketToByteArray((byte)STOC_OP.STOC_SYSTEM_CHANGE);
+                packet.PacketToByteArray((byte)STOC_OP.STOC_SYSTEM_CHANGE);
 
-            //    tmpToken.SendData(packet);
-            //}
+                tmpToken.SendData(packet);
+            }
         }
     }
 }
