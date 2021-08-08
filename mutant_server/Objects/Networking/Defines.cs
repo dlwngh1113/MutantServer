@@ -67,6 +67,9 @@ namespace mutant_server
         STOC_SABOTAGI,
         STOC_VOTE_START,
         STOC_VOTED,
+        STOC_VOTE_KILLED,
+        STOC_SURVIVOR_WIN,
+        STOC_SURVIVOR_LOSE
     }
     public class Defines
     {

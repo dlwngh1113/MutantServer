@@ -27,6 +27,7 @@ namespace mutant_server
         public Dictionary<int, int> inventory;
         public byte job;
         public bool isReady = false;
+        public bool isDead = false;
         public Client(int id)
         {
             this.userID = id;

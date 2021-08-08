@@ -219,25 +219,37 @@ namespace mutant_server
 
             Console.WriteLine("user info packet size - {0}, id - {1}, name - {2}, offset - {3}", packet.header.bytes, packet.id, packet.name, packet.offset);
 
-            UserInfoPacket sendPacket = new UserInfoPacket(new byte[Defines.BUF_SIZE], 0);
-            sendPacket.id = packet.id;
-            sendPacket.name = _players[packet.id].userName;
-            sendPacket.time = 0;
-            sendPacket.winCountTrator = _players[packet.id].winCountTrator;
-            sendPacket.winCountTanker = _players[packet.id].winCountTanker;
-            sendPacket.winCountResearcher = _players[packet.id].winCountResearcher;
-            sendPacket.winCountPsychy = _players[packet.id].winCountPsychy;
-            sendPacket.winCountNocturn = _players[packet.id].winCountNocturn;
+            Client c = null;
+            foreach(var p in _players)
+            {
+                if (p.Value.userName == packet.name)
+                {
+                    c = p.Value;
+                }
+            }
 
-            sendPacket.playCountTrator = _players[packet.id].playCountTrator;
-            sendPacket.playCountTanker = _players[packet.id].playCountTanker;
-            sendPacket.playCountResearcher = _players[packet.id].playCountResearcher;
-            sendPacket.playCountPsychy = _players[packet.id].playCountPsychy;
-            sendPacket.playCountNocturn = _players[packet.id].playCountNocturn;
+            if(c != null)
+            {
+                UserInfoPacket sendPacket = new UserInfoPacket(new byte[Defines.BUF_SIZE], 0);
+                sendPacket.id = c.userID;
+                sendPacket.name = c.userName;
+                sendPacket.time = 0;
+                sendPacket.winCountTrator = c.winCountTrator;
+                sendPacket.winCountTanker = c.winCountTanker;
+                sendPacket.winCountResearcher = c.winCountResearcher;
+                sendPacket.winCountPsychy = c.winCountPsychy;
+                sendPacket.winCountNocturn = c.winCountNocturn;
 
-            sendPacket.PacketToByteArray((byte)STOC_OP.STOC_PROVISION_HISTORY);
+                sendPacket.playCountTrator = c.playCountTrator;
+                sendPacket.playCountTanker = c.playCountTanker;
+                sendPacket.playCountResearcher = c.playCountResearcher;
+                sendPacket.playCountPsychy = c.playCountPsychy;
+                sendPacket.playCountNocturn = c.playCountNocturn;
 
-            token.SendData(sendPacket);
+                sendPacket.PacketToByteArray((byte)STOC_OP.STOC_PROVISION_HISTORY);
+
+                token.SendData(sendPacket);
+            }
         }
 
         private void ProcessCreateUser(AsyncUserToken token, byte[] data)
