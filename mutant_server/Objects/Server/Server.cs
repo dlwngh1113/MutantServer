@@ -217,6 +217,8 @@ namespace mutant_server
             MutantPacket packet = new MutantPacket(data, 0);
             packet.ByteArrayToPacket();
 
+            Console.WriteLine("user info packet size - {0}, id - {1}, name - {2}, offset - {3}", packet.header.bytes, packet.id, packet.name, packet.offset);
+
             UserInfoPacket sendPacket = new UserInfoPacket(new byte[Defines.BUF_SIZE], 0);
             sendPacket.id = packet.id;
             sendPacket.name = _players[packet.id].userName;
@@ -242,6 +244,8 @@ namespace mutant_server
         {
             LoginPacket packet = new LoginPacket(token.readEventArgs.Buffer, token.readEventArgs.Offset);
             packet.ByteArrayToPacket();
+
+            Console.WriteLine("user create packet size - {0}, id - {1}, name - {2}, offset - {3}", packet.header.bytes, packet.id, packet.name, packet.offset);
 
             DBPacket sendPacket = new DBPacket(new byte[Defines.BUF_SIZE], 0);
 
@@ -271,10 +275,6 @@ namespace mutant_server
             packet.ByteArrayToPacket();
 
             Console.WriteLine("login packet size - {0}, id - {1}, name - {2}, offset - {3}", packet.header.bytes, packet.id, packet.name, packet.offset); ;
-            //for(int i=0;i<packet.header.bytes + 3;++i)
-            //{
-            //    Console.Write("{0} ", packet.ary[i]);
-            //}
 
             MutantPacket sendPacket = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
             //서버에서 사용중이거나 잘못된 아이디, 비밀번호
@@ -374,6 +374,13 @@ namespace mutant_server
             MutantPacket packet = new MutantPacket(data, 0);
             packet.ByteArrayToPacket();
 
+            Console.WriteLine("refresh packet size - {0}, id - {1}, name - {2}, offset - {3}", packet.header.bytes, packet.id, packet.name, packet.offset);
+
+            if (packet.id == 0)
+            {
+                return;
+            }
+
             RoomPacket sendPacket = new RoomPacket(new byte[Defines.BUF_SIZE], 0);
             sendPacket.id = packet.id;
             sendPacket.name = packet.name;
@@ -386,8 +393,6 @@ namespace mutant_server
                 sendPacket.gameState.Add(room.GameState);
             }
 
-            Console.WriteLine("room refresh packet.id - {0}, packet.name - {1}", packet.id, packet.name);
-
             sendPacket.PacketToByteArray((byte)STOC_OP.STOC_ROOM_REFRESHED);
             token.SendData(sendPacket);
         }
@@ -396,6 +401,8 @@ namespace mutant_server
         {
             RoomPacket packet = new RoomPacket(data, 0);
             packet.ByteArrayToPacket();
+
+            Console.WriteLine("room select packet size - {0}, id - {1}, name - {2}, offset - {3}", packet.header.bytes, packet.id, packet.name, packet.offset);
 
             Room room = null;
             foreach (var v in _roomsInServer)
@@ -447,6 +454,8 @@ namespace mutant_server
         {
             RoomPacket packet = new RoomPacket(data, 0);
             packet.ByteArrayToPacket();
+
+            Console.WriteLine("room create packet size - {0}, id - {1}, name - {2}, offset - {3}", packet.header.bytes, packet.id, packet.name, packet.offset);
 
             Room room = new Room();
             room.closeMethod = CloseClientSocket;

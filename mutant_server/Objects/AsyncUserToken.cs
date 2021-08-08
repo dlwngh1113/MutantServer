@@ -65,6 +65,8 @@ namespace mutant_server
             {
                 var packet = this.sendQueue.Peek();
 
+                this.writeEventArgs.SetBuffer(writeEventArgs.Offset, packet.offset);
+
                 Array.Copy(packet.ary, packet.startPos, this.writeEventArgs.Buffer, this.writeEventArgs.Offset, packet.offset);
 
                 try

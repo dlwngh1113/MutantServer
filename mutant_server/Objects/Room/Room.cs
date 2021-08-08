@@ -164,7 +164,9 @@ namespace mutant_server
             sendPacket.time = packet.time;
             sendPacket.pCount = _players.Count;
 
-            for(int i=0;i<_players.Count;++i)
+            Console.WriteLine("game init packet size - {0}, id - {1}, name - {2}, offset - {3}", packet.header.bytes, packet.id, packet.name, packet.offset);
+
+            for (int i=0;i<_players.Count;++i)
             {
                 Client c = _players.ElementAt(i).Value;
                 sendPacket.names.Add(c.userName);
@@ -172,7 +174,7 @@ namespace mutant_server
                 sendPacket.positions.Add(c.InitPos);
                 sendPacket.jobs.Add(c.job);
 
-                Console.WriteLine("packet name {0}, name {1}, id {2}", packet.name, c.userName, c.userID);
+                //Console.WriteLine("packet name {0}, name {1}, id {2}", packet.name, c.userName, c.userID);
             }
 
             sendPacket.chestItems = _chestItems;
@@ -196,9 +198,11 @@ namespace mutant_server
             MutantPacket packet = new MutantPacket(data, 0);
             packet.ByteArrayToPacket();
 
+            Console.WriteLine("ready packet size - {0}, id - {1}, name - {2}, offset - {3}", packet.header.bytes, packet.id, packet.name, packet.offset);
+
             _players[packet.id].isReady = !_players[packet.id].isReady;
 
-            Console.WriteLine("{0} player ready is {1}", packet.name, _players[packet.id].isReady);
+            //Console.WriteLine("{0} player ready is {1}", packet.name, _players[packet.id].isReady);
 
             byte readyCount = 0;
             foreach(var t in _players)
@@ -243,12 +247,10 @@ namespace mutant_server
             isLoaded[globalOffset] = true;
             Interlocked.Increment(ref globalOffset);
 
-            //Console.WriteLine("isloaded[globalOffset] is {0}\n", isLoaded[globalOffset - 1]);
-            Console.WriteLine("scene load success packet id - {0}, name - {1}", packet.id, packet.name);
+            Console.WriteLine("load game packet size - {0}, id - {1}, name - {2}, offset - {3}", packet.header.bytes, packet.id, packet.name, packet.offset);
 
-            if(globalOffset >= _players.Count)
+            if (globalOffset >= _players.Count)
             {
-                //Console.WriteLine("load {0}, count {1}", isLoaded[globalOffset - 1], _players.Count);
                 foreach(var p in _players)
                 {
                     MutantPacket sendPacket = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
@@ -262,7 +264,7 @@ namespace mutant_server
                 }
 
                 System.Timers.Timer timer = new System.Timers.Timer();
-                timer.Interval = Defines.FrameRate;
+                timer.Interval = 16.6666f;
                 timer.Elapsed += new ElapsedEventHandler(Update);
                 //timer.Start();
 
@@ -288,6 +290,8 @@ namespace mutant_server
         {
             MutantPacket packet = new MutantPacket(data, 0);
             packet.ByteArrayToPacket();
+
+            Console.WriteLine("get room users packet size - {0}, id - {1}, name - {2}, offset - {3}", packet.header.bytes, packet.id, packet.name, packet.offset);
 
             foreach (var tuple in _players)
             {
@@ -320,6 +324,8 @@ namespace mutant_server
         {
             MutantPacket packet = new MutantPacket(data, 0);
             packet.ByteArrayToPacket();
+
+            Console.WriteLine("leave room packet size - {0}, id - {1}, name - {2}, offset - {3}", packet.header.bytes, packet.id, packet.name, packet.offset);
 
             foreach (var tuple in _players)
             {
@@ -355,6 +361,8 @@ namespace mutant_server
         {
             MutantPacket packet = new MutantPacket(data, 0);
             packet.ByteArrayToPacket();
+
+            Console.WriteLine("leave game packet size - {0}, id - {1}, name - {2}, offset - {3}", packet.header.bytes, packet.id, packet.name, packet.offset);
 
             foreach (var tuple in _players)
             {
@@ -393,6 +401,8 @@ namespace mutant_server
             ChattingPakcet packet = new ChattingPakcet(data, 0);
             packet.ByteArrayToPacket();
 
+            Console.WriteLine("chatting packet size - {0}, id - {1}, name - {2}, offset - {3}", packet.header.bytes, packet.id, packet.name, packet.offset);
+
             foreach (var tuple in _players)
             {
                 var tmpToken = tuple.Value.asyncUserToken;
@@ -430,6 +440,8 @@ namespace mutant_server
         {
             MutantPacket packet = new MutantPacket(data, 0);
             packet.ByteArrayToPacket();
+
+            Console.WriteLine("vote start packet size - {0}, id - {1}, name - {2}, offset - {3}", packet.header.bytes, packet.id, packet.name, packet.offset);
 
             _voteCounter.Clear();
 
@@ -475,6 +487,8 @@ namespace mutant_server
             VotePacket packet = new VotePacket(data, 0);
             packet.ByteArrayToPacket();
 
+            Console.WriteLine("vote packet size - {0}, id - {1}, name - {2}, offset - {3}", packet.header.bytes, packet.id, packet.name, packet.offset);
+
             if (!_voteCounter.ContainsKey(packet.votedPersonID))
             {
                 _voteCounter.Add(packet.votedPersonID, 1);
@@ -484,7 +498,10 @@ namespace mutant_server
                 _voteCounter[packet.votedPersonID] += 1;
             }
 
-            Console.WriteLine("name = {0}, id = {1}", packet.name, packet.id);
+            foreach (var i in _voteCounter)
+            {
+                Console.WriteLine("vote name = {0}, count = {1}", i.Key, i.Value);
+            }
 
             foreach (var tuple in _players)
             {
@@ -507,6 +524,9 @@ namespace mutant_server
         {
             ItemEventPacket packet = new ItemEventPacket(data, 0);
             packet.ByteArrayToPacket();
+
+            Console.WriteLine("item get packet size - {0}, id - {1}, name - {2}, offset - {3}", packet.header.bytes, packet.id, packet.name, packet.offset);
+
             var cnt = 0;
             //인벤토리에 존재하는 아이템의 개수 구하기
             foreach (var tuple in _players[token.userID].inventory)
@@ -542,10 +562,6 @@ namespace mutant_server
                 {
                     ItemEventPacket sendPacket = new ItemEventPacket(new byte[Defines.BUF_SIZE], 0);
 
-                    //foreach(var v in _players[packet.id].inventory)
-                    //{
-                    //    Console.WriteLine("id {0} {1} - {2}", packet.id, v.Key, v.Value);
-                    //}
                     sendPacket.id = packet.id;
                     sendPacket.name = packet.name;
                     sendPacket.chestItem = packet.chestItem;
@@ -562,6 +578,8 @@ namespace mutant_server
         {
             ItemCraftPacket packet = new ItemCraftPacket(data, 0);
             packet.ByteArrayToPacket();
+
+            Console.WriteLine("item craft packet size - {0}, id - {1}, name - {2}, offset - {3}", packet.header.bytes, packet.id, packet.name, packet.offset);
 
             ItemCraftPacket sendPacket = new ItemCraftPacket(new byte[Defines.BUF_SIZE], 0);
             sendPacket.id = packet.id;
@@ -643,6 +661,8 @@ namespace mutant_server
             ItemEventPacket packet = new ItemEventPacket(data, 0);
             packet.ByteArrayToPacket();
 
+            Console.WriteLine("item delete packet size - {0}, id - {1}, name - {2}, offset - {3}", packet.header.bytes, packet.id, packet.name, packet.offset);
+
             foreach (var v in _players[packet.id].inventory)
             {
                 Console.WriteLine("before delete {0} - {1}", v.Key, v.Value);
@@ -675,6 +695,8 @@ namespace mutant_server
             MutantPacket packet = new MutantPacket(data, 0);
             packet.ByteArrayToPacket();
 
+            Console.WriteLine("kill packet size - {0}, id - {1}, name - {2}, offset - {3}", packet.header.bytes, packet.id, packet.name, packet.offset);
+
             foreach (var tuple in _players)
             {
                 var tmpToken = tuple.Value.asyncUserToken;
@@ -699,7 +721,9 @@ namespace mutant_server
             MutantPacket packet = new MutantPacket(data, 0);
             packet.ByteArrayToPacket();
 
-            foreach(var p in _players)
+            Console.WriteLine("sabotagi packet size - {0}, id - {1}, name - {2}, offset - {3}", packet.header.bytes, packet.id, packet.name, packet.offset);
+
+            foreach (var p in _players)
             {
                 MutantPacket sendPacket = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
                 sendPacket.id = packet.id;
@@ -717,11 +741,12 @@ namespace mutant_server
             PlayerStatusPacket packet = new PlayerStatusPacket(data, 0);
             packet.ByteArrayToPacket();
 
-            Console.WriteLine("move packet id - {0}, name - {1}", packet.id, packet.name);
-            //if (!(_players.ContainsKey(packet.id)))
-            //{
-            //    return;
-            //}
+            Console.WriteLine("status packet size - {0}, id - {1}, name - {2}, offset - {3}", packet.header.bytes, packet.id, packet.name, packet.offset);
+
+            if (!(_players.ContainsKey(packet.id)))
+            {
+                return;
+            }
 
             _players[packet.id].position = packet.position;
             _players[packet.id].rotation = packet.rotation;
