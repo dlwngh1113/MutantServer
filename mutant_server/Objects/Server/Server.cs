@@ -432,7 +432,7 @@ namespace mutant_server
                 return;
             }
 
-            if(room.PlayerNum < 5)
+            if(room.PlayerNum < 5 && room.GameState == Defines.ROOM_WAIT)
             {
                 room.AddPlayer(packet.id, _players[packet.id]);
 

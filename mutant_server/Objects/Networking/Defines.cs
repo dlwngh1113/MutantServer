@@ -31,6 +31,7 @@ namespace mutant_server
         CTOS_ITEM_CRAFT_REQUEST,
         CTOS_VOTE_REQUEST,
         CTOS_VOTE_SELECTED,
+        CTOS_PLAYER_ESCAPE,
     }
 
     //server to client operation
@@ -69,7 +70,8 @@ namespace mutant_server
         STOC_VOTED,
         STOC_VOTE_KILLED,
         STOC_SURVIVOR_WIN,
-        STOC_SURVIVOR_LOSE
+        STOC_SURVIVOR_LOSE,
+        STOC_PLAYER_ESCAPE,
     }
     public class Defines
     {

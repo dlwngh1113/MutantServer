@@ -122,6 +122,9 @@ namespace mutant_server
                 case CTOS_OP.CTOS_SABOTAGI:
                     ProcessSabotagi(token, data);
                     break;
+                case CTOS_OP.CTOS_PLAYER_ESCAPE:
+                    ProcessPlayerEscape(token, data);
+                    break;
                 default:
                     throw new Exception("operation from client is not valid\n");
             }
@@ -210,7 +213,7 @@ namespace mutant_server
                 }
             }
 
-            if(readyCount >= 2)
+            if(readyCount >= 1)
             {
                 SetGameInit();
                 ProcessGameStart();
@@ -233,6 +236,24 @@ namespace mutant_server
 
                     tmpToken.SendData(sendPacket);
                 }
+            }
+        }
+
+        private void ProcessPlayerEscape(AsyncUserToken token, byte[] data)
+        {
+            MutantPacket packet = new MutantPacket(data, 0);
+            packet.ByteArrayToPacket();
+
+            foreach(var player in _players)
+            {
+                MutantPacket sendPacket = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
+                sendPacket.id = packet.id;
+                sendPacket.name = packet.name;
+                sendPacket.time = 0;
+
+                sendPacket.PacketToByteArray((byte)STOC_OP.STOC_PLAYER_ESCAPE);
+
+                player.Value.asyncUserToken.SendData(sendPacket);
             }
         }
 
@@ -861,18 +882,18 @@ namespace mutant_server
 
         public void Update(object elapsedTime, ElapsedEventArgs e)
         {
-            foreach (var tuple in _players)
-            {
-                var tmpToken = tuple.Value.asyncUserToken;
-                MutantPacket packet = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
-                packet.id = tuple.Key;
-                packet.name = tuple.Value.userName;
-                packet.time = 0.016f;
+            //foreach (var tuple in _players)
+            //{
+            //    var tmpToken = tuple.Value.asyncUserToken;
+            //    MutantPacket packet = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
+            //    packet.id = tuple.Key;
+            //    packet.name = tuple.Value.userName;
+            //    packet.time = 0.016f;
 
-                packet.PacketToByteArray((byte)STOC_OP.STOC_SYSTEM_CHANGE);
+            //    packet.PacketToByteArray((byte)STOC_OP.STOC_SYSTEM_CHANGE);
 
-                tmpToken.SendData(packet);
-            }
+            //    tmpToken.SendData(packet);
+            //}
         }
     }
 }
