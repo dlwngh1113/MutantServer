@@ -244,7 +244,8 @@ namespace mutant_server
             MutantPacket packet = new MutantPacket(data, 0);
             packet.ByteArrayToPacket();
 
-            
+            _players[packet.id].UpdateData(true);
+            Server._dBConnector.UpdateData(_players[packet.id]);
 
             foreach(var player in _players)
             {
@@ -256,6 +257,15 @@ namespace mutant_server
                 sendPacket.PacketToByteArray((byte)STOC_OP.STOC_PLAYER_ESCAPE);
 
                 player.Value.asyncUserToken.SendData(sendPacket);
+            }
+
+            lock(_players)
+            {
+                _players.Remove(packet.id);
+                if(PlayerNum < 1)
+                {
+                    Server._roomsInServer.Remove(this);
+                }
             }
         }
 
@@ -467,6 +477,10 @@ namespace mutant_server
             Console.WriteLine("vote start packet size - {0}, id - {1}, name - {2}, offset - {3}", packet.header.bytes, packet.id, packet.name, packet.offset);
 
             _voteCounter.Clear();
+            foreach(var player in _players)
+            {
+                _voteCounter.Add(player.Value.userName, 0);
+            }
 
             //for (int i = 0; i < _players.Count; ++i)
             //{

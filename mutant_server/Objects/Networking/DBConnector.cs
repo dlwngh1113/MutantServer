@@ -124,6 +124,7 @@ namespace mutant_server.Objects.Networking
             {
                 if(command.ExecuteNonQuery() == 1)
                 {
+                    _connection.Close();
                     return;
                 }
                 else
@@ -135,7 +136,6 @@ namespace mutant_server.Objects.Networking
             {
                 Console.WriteLine(ex.Message);
             }
-            _connection.Close();
         }
     }
 }
