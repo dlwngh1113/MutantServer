@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Sockets;
 using System.Threading;
 using System.Timers;
 
@@ -61,17 +62,28 @@ namespace mutant_server
             SetItemChest();
         }
 
-        public void AddPlayer(int id, Client c)
+        public void AddPlayer(Client c)
         {
             lock (this._players)
             {
-                this._players.Add(id, c);
+                c.asyncUserToken.readEventArgs.Completed += ReceiveCompleted;
+                this._players.Add(c.userID, c);
             }
         }
 
-        public void ResolveMessage(AsyncUserToken token, byte[] data)
+        private void ReceiveCompleted(object sender, SocketAsyncEventArgs e)
         {
-            RecvEventSelect(token, data);
+            ProcessReceive(e);
+        }
+
+        public void ProcessReceive(SocketAsyncEventArgs e)
+        {
+            AsyncUserToken token = (AsyncUserToken)e.UserToken;
+            byte[] data = token.ResolveMessage();
+            if(data != null)
+            {
+                RecvEventSelect(token, data);
+            }
         }
         private void RecvEventSelect(AsyncUserToken token, byte[] data)
         {
@@ -128,6 +140,16 @@ namespace mutant_server
                 default:
                     throw new Exception("operation from client is not valid\n");
             }
+
+            try
+            {
+                bool willRaise = token.socket.ReceiveAsync(token.readEventArgs);
+                if (!willRaise)
+                {
+                    ProcessReceive(token.readEventArgs);
+                }
+            }
+            catch (Exception ex) { }
         }
 
         private void SetItemChest()

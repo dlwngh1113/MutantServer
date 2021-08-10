@@ -162,7 +162,7 @@ namespace mutant_server
                         ProcessUserInfo(token, data);
                         break;
                     default:
-                        ProcessInRoom(token, data);
+                        //ProcessInRoom(token, data);
                         break;
                 }
 
@@ -204,7 +204,7 @@ namespace mutant_server
             {
                 if (i.IsHavePlayer(token.userID))
                 {
-                    i.ResolveMessage(token, data);
+                    //i.ResolveMessage(token, data);
                     return;
                 }
             }
@@ -321,50 +321,7 @@ namespace mutant_server
 
             token.SendData(sendPacket);
         }
-        private void CloseClientSocket(SocketAsyncEventArgs e)
-        {
-            AsyncUserToken token = e.UserToken as AsyncUserToken;
 
-            // close the socket associated with the client
-            try
-            {
-                token.socket.Shutdown(SocketShutdown.Both);
-            }
-            // throws if client process has already closed
-            catch (Exception) { }
-            lock (_players)
-            {
-                _players.Remove(token.userID);
-            }
-            token.socket.Close();
-
-            // decrement the counter keeping track of the total number of clients connected to the server
-            Interlocked.Decrement(ref _numConnectedSockets);
-
-            // Free the SocketAsyncEventArg so they can be reused by another client
-            _readPool.Push(token.readEventArgs);
-            _writePool.Push(token.writeEventArgs);
-
-            Console.WriteLine("A client - {0} has been disconnected from the server. There are {1} clients connected to the server", token.userID, _numConnectedSockets);
-        }
-
-        private void SendCompleted(object sender, SocketAsyncEventArgs e)
-        {
-            ProcessSend(e);
-        }
-        private void ProcessSend(SocketAsyncEventArgs e)
-        {
-            if (e.SocketError == SocketError.Success)
-            {
-                AsyncUserToken token = (AsyncUserToken)e.UserToken;
-
-                token.SendEnd();
-            }
-            else
-            {
-                CloseClientSocket(e);
-            }
-        }
         private void ProcessLogout(AsyncUserToken token, byte[] data)
         {
             //현재까지의 게임 정보를 DB에 업데이트 후 접속 종료
@@ -432,7 +389,12 @@ namespace mutant_server
 
             if(room.PlayerNum < 5 && room.GameState == Defines.ROOM_WAIT)
             {
-                room.AddPlayer(packet.id, _players[packet.id]);
+                _players[packet.id].asyncUserToken.readEventArgs.Completed -= ReceiveCompleted;
+                room.AddPlayer(_players[packet.id]);
+                lock (_players)
+                {
+                    _players.Remove(packet.id);
+                }
 
                 MutantPacket p = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
                 p.id = packet.id;
@@ -459,7 +421,6 @@ namespace mutant_server
             }
         }
 
-
         private void ProcessCreateRoom(AsyncUserToken token, byte[] data)
         {
             RoomPacket packet = new RoomPacket(data, 0);
@@ -475,8 +436,6 @@ namespace mutant_server
                 _roomsInServer.Add(room);
             }
 
-            room.AddPlayer(packet.id, _players[packet.id]);
-
             MutantPacket sendPacket = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
             sendPacket.id = packet.id;
             sendPacket.name = packet.name;
@@ -485,6 +444,57 @@ namespace mutant_server
             sendPacket.PacketToByteArray((byte)STOC_OP.STOC_ROOM_CREATE_SUCCESS);
 
             token.SendData(sendPacket);
+
+            token.readEventArgs.Completed -= ReceiveCompleted;
+            room.AddPlayer(_players[packet.id]);
+            lock(_players)
+            {
+                _players.Remove(packet.id);
+            }
+        }
+
+        private void CloseClientSocket(SocketAsyncEventArgs e)
+        {
+            AsyncUserToken token = e.UserToken as AsyncUserToken;
+
+            // close the socket associated with the client
+            try
+            {
+                token.socket.Shutdown(SocketShutdown.Both);
+            }
+            // throws if client process has already closed
+            catch (Exception) { }
+            lock (_players)
+            {
+                _players.Remove(token.userID);
+            }
+            token.socket.Close();
+
+            // decrement the counter keeping track of the total number of clients connected to the server
+            Interlocked.Decrement(ref _numConnectedSockets);
+
+            // Free the SocketAsyncEventArg so they can be reused by another client
+            _readPool.Push(token.readEventArgs);
+            _writePool.Push(token.writeEventArgs);
+
+            Console.WriteLine("A client - {0} has been disconnected from the server. There are {1} clients connected to the server", token.userID, _numConnectedSockets);
+        }
+        private void SendCompleted(object sender, SocketAsyncEventArgs e)
+        {
+            ProcessSend(e);
+        }
+        private void ProcessSend(SocketAsyncEventArgs e)
+        {
+            if (e.SocketError == SocketError.Success)
+            {
+                AsyncUserToken token = (AsyncUserToken)e.UserToken;
+
+                token.SendEnd();
+            }
+            else
+            {
+                CloseClientSocket(e);
+            }
         }
     }
 }

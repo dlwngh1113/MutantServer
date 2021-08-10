@@ -113,6 +113,7 @@
     <Compile Include="Objects\AsyncUserToken.cs" />
     <Compile Include="MemoryPools\BufferManager.cs" />
     <Compile Include="Objects\Networking\DBConnector.cs" />
+    <Compile Include="Objects\Networking\Mediator.cs" />
     <Compile Include="Objects\Server\Client.cs" />
     <Compile Include="Objects\Server\Listener.cs" />
     <Compile Include="Objects\Networking\Defines.cs" />
