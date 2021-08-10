@@ -244,6 +244,8 @@ namespace mutant_server
             MutantPacket packet = new MutantPacket(data, 0);
             packet.ByteArrayToPacket();
 
+            Console.WriteLine("escape packet size - {0}, id - {1}, name - {2}, offset - {3}", packet.header.bytes, packet.id, packet.name, packet.offset);
+
             _players[packet.id].UpdateData(true);
             Server._dBConnector.UpdateData(_players[packet.id]);
 
@@ -294,7 +296,7 @@ namespace mutant_server
                 }
 
                 System.Timers.Timer timer = new System.Timers.Timer();
-                timer.Interval = 5d;
+                timer.Interval = 50;
                 timer.Elapsed += new ElapsedEventHandler(Update);
                 timer.Start();
 
@@ -904,7 +906,7 @@ namespace mutant_server
                 MutantPacket packet = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
                 packet.id = tuple.Key;
                 packet.name = tuple.Value.userName;
-                packet.time = 0.016f;
+                packet.time = 0.05f;
 
                 packet.PacketToByteArray((byte)STOC_OP.STOC_SYSTEM_CHANGE);
 
