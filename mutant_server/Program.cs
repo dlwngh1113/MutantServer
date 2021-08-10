@@ -5,6 +5,7 @@ namespace mutant_server
 {
     public delegate void UpdateMethod(object elapsedTime);
     public delegate void CloseMethod(SocketAsyncEventArgs e);
+    public delegate void GetUserFromRoom(Client c);
     class Program
     {
         static public void Main(string[] args)

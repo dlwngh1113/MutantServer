@@ -8,7 +8,7 @@ using System.Threading;
 
 namespace mutant_server
 {
-    class Server
+    public class Server
     {
         private int _numConnections;   // the maximum number of connections the sample is designed to handle simultaneously
         private int _receiveBufferSize;// buffer size to use for each socket I/O operation
@@ -40,7 +40,6 @@ namespace mutant_server
             _dBConnector = new DBConnector();
             _players = new Dictionary<int, Client>();
         }
-
         public void Init()
         {
             _bufferManager.InitBuffer();
@@ -79,7 +78,6 @@ namespace mutant_server
                 }
             }
         }
-
         public void Start(IPEndPoint localEndPoint)
         {
             _listener = new Listener(localEndPoint);
@@ -90,11 +88,10 @@ namespace mutant_server
             Console.WriteLine("Press any key to terminate the server process....");
             Console.ReadKey();
         }
-        void AcceptEventArg_Completed(object sender, SocketAsyncEventArgs e)
+        private void AcceptEventArg_Completed(object sender, SocketAsyncEventArgs e)
         {
             ProcessAccept(e);
         }
-
         private void ProcessAccept(SocketAsyncEventArgs e)
         {
             Interlocked.Increment(ref _numConnectedSockets);
@@ -126,7 +123,7 @@ namespace mutant_server
             }
         }
 
-        private void ReceiveCompleted(object sender, SocketAsyncEventArgs e)
+        public void ReceiveCompleted(object sender, SocketAsyncEventArgs e)
         {
             ProcessReceive(e);
         }
@@ -148,21 +145,18 @@ namespace mutant_server
                         break;
                     case CTOS_OP.CTOS_CREATE_ROOM:
                         ProcessCreateRoom(token, data);
-                        break;
+                        return;
                     case CTOS_OP.CTOS_SELECT_ROOM:
                         ProcessSelectRoom(token, data);
-                        break;
+                        return;
                     case CTOS_OP.CTOS_REFRESH_ROOMS:
                         ProcessRefreshRooms(token, data);
                         break;
                     case CTOS_OP.CTOS_CREATE_USER_INFO:
                         ProcessCreateUser(token, data);
                         break;
-                    case CTOS_OP.CTOS_GET_HISTORY:
-                        ProcessUserInfo(token, data);
-                        break;
                     default:
-                        //ProcessInRoom(token, data);
+                        Console.WriteLine("room packet comes");
                         break;
                 }
 
@@ -198,6 +192,15 @@ namespace mutant_server
             return false;
         }
 
+        public void AddPlayer(Client c)
+        {
+            lock(_players)
+            {
+                c.asyncUserToken.readEventArgs.Completed += ReceiveCompleted;
+                _players.Add(c.userID, c);
+            }
+        }
+
         private void ProcessInRoom(AsyncUserToken token, byte[] data)
         {
             foreach(var i in _roomsInServer)
@@ -207,46 +210,6 @@ namespace mutant_server
                     //i.ResolveMessage(token, data);
                     return;
                 }
-            }
-        }
-
-        private void ProcessUserInfo(AsyncUserToken token, byte[] data)
-        {
-            MutantPacket packet = new MutantPacket(data, 0);
-            packet.ByteArrayToPacket();
-
-            Console.WriteLine("user info packet size - {0}, id - {1}, name - {2}, offset - {3}", packet.header.bytes, packet.id, packet.name, packet.offset);
-
-            Client c = null;
-            foreach(var p in _players)
-            {
-                if (p.Value.userName == packet.name)
-                {
-                    c = p.Value;
-                }
-            }
-
-            if(c != null)
-            {
-                UserInfoPacket sendPacket = new UserInfoPacket(new byte[Defines.BUF_SIZE], 0);
-                sendPacket.id = c.userID;
-                sendPacket.name = c.userName;
-                sendPacket.time = 0;
-                sendPacket.winCountTrator = c.winCountTrator;
-                sendPacket.winCountTanker = c.winCountTanker;
-                sendPacket.winCountResearcher = c.winCountResearcher;
-                sendPacket.winCountPsychy = c.winCountPsychy;
-                sendPacket.winCountNocturn = c.winCountNocturn;
-
-                sendPacket.playCountTrator = c.playCountTrator;
-                sendPacket.playCountTanker = c.playCountTanker;
-                sendPacket.playCountResearcher = c.playCountResearcher;
-                sendPacket.playCountPsychy = c.playCountPsychy;
-                sendPacket.playCountNocturn = c.playCountNocturn;
-
-                sendPacket.PacketToByteArray((byte)STOC_OP.STOC_PROVISION_HISTORY);
-
-                token.SendData(sendPacket);
             }
         }
 
@@ -430,6 +393,7 @@ namespace mutant_server
 
             Room room = new Room();
             room.closeMethod = CloseClientSocket;
+            room.getUserMethod = AddPlayer;
             room.SetRoomTitle(packet.names[0]);
             lock (_roomsInServer)
             {

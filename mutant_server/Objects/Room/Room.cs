@@ -9,13 +9,14 @@ using System.Timers;
 
 namespace mutant_server
 {
-    class Room
+    public class Room
     {
         /// <summary>
         /// player id, player class
         /// </summary>
         private Dictionary<int, Client> _players;
         public CloseMethod closeMethod;
+        public GetUserFromRoom getUserMethod;
 
         private Dictionary<int, List<int>> _chestItems;
         private Dictionary<int, int> _globalItem;
@@ -68,6 +69,12 @@ namespace mutant_server
             {
                 c.asyncUserToken.readEventArgs.Completed += ReceiveCompleted;
                 this._players.Add(c.userID, c);
+
+                bool willRaise = c.asyncUserToken.socket.ReceiveAsync(c.asyncUserToken.readEventArgs);
+                if(!willRaise)
+                {
+                    ProcessReceive(c.asyncUserToken.readEventArgs);
+                }
             }
         }
 
@@ -76,12 +83,13 @@ namespace mutant_server
             ProcessReceive(e);
         }
 
-        public void ProcessReceive(SocketAsyncEventArgs e)
+        private void ProcessReceive(SocketAsyncEventArgs e)
         {
             AsyncUserToken token = (AsyncUserToken)e.UserToken;
             byte[] data = token.ResolveMessage();
             if(data != null)
             {
+                token.ClearMessageBuffer();
                 RecvEventSelect(token, data);
             }
         }
@@ -137,6 +145,9 @@ namespace mutant_server
                 case CTOS_OP.CTOS_PLAYER_ESCAPE:
                     ProcessPlayerEscape(token, data);
                     break;
+                case CTOS_OP.CTOS_GET_HISTORY:
+                    ProcessUserInfo(token, data);
+                    break;
                 default:
                     throw new Exception("operation from client is not valid\n");
             }
@@ -150,6 +161,45 @@ namespace mutant_server
                 }
             }
             catch (Exception ex) { }
+        }
+        private void ProcessUserInfo(AsyncUserToken token, byte[] data)
+        {
+            MutantPacket packet = new MutantPacket(data, 0);
+            packet.ByteArrayToPacket();
+
+            Console.WriteLine("user info packet size - {0}, id - {1}, name - {2}, offset - {3}", packet.header.bytes, packet.id, packet.name, packet.offset);
+
+            Client c = null;
+            foreach (var p in _players)
+            {
+                if (p.Value.userName == packet.name)
+                {
+                    c = p.Value;
+                }
+            }
+
+            if (c != null)
+            {
+                UserInfoPacket sendPacket = new UserInfoPacket(new byte[Defines.BUF_SIZE], 0);
+                sendPacket.id = c.userID;
+                sendPacket.name = c.userName;
+                sendPacket.time = 0;
+                sendPacket.winCountTrator = c.winCountTrator;
+                sendPacket.winCountTanker = c.winCountTanker;
+                sendPacket.winCountResearcher = c.winCountResearcher;
+                sendPacket.winCountPsychy = c.winCountPsychy;
+                sendPacket.winCountNocturn = c.winCountNocturn;
+
+                sendPacket.playCountTrator = c.playCountTrator;
+                sendPacket.playCountTanker = c.playCountTanker;
+                sendPacket.playCountResearcher = c.playCountResearcher;
+                sendPacket.playCountPsychy = c.playCountPsychy;
+                sendPacket.playCountNocturn = c.playCountNocturn;
+
+                sendPacket.PacketToByteArray((byte)STOC_OP.STOC_PROVISION_HISTORY);
+
+                token.SendData(sendPacket);
+            }
         }
 
         private void SetItemChest()
@@ -285,6 +335,8 @@ namespace mutant_server
 
             lock(_players)
             {
+                _players[packet.id].asyncUserToken.readEventArgs.Completed -= ReceiveCompleted;
+                getUserMethod(_players[packet.id]);
                 _players.Remove(packet.id);
                 if(PlayerNum < 1)
                 {
@@ -340,6 +392,7 @@ namespace mutant_server
                 tuple.Value.asyncUserToken.SendData(packet);
             }
         }
+
         private void ProcessGetRoomUsers(AsyncUserToken token, byte[] data)
         {
             MutantPacket packet = new MutantPacket(data, 0);
@@ -399,6 +452,8 @@ namespace mutant_server
 
             lock (_players)
             {
+                _players[packet.id].asyncUserToken.readEventArgs.Completed -= ReceiveCompleted;
+                getUserMethod(_players[packet.id]);
                 _players.Remove(packet.id);
             }
 
@@ -436,10 +491,11 @@ namespace mutant_server
 
             lock(_players)
             {
+                _players[packet.id].asyncUserToken.readEventArgs.Completed -= ReceiveCompleted;
+                getUserMethod(_players[packet.id]);
+                closeMethod(token.readEventArgs);
                 _players.Remove(packet.id);
             }
-
-            closeMethod(token.readEventArgs);
 
             if (PlayerNum < 1)
             {
@@ -449,6 +505,7 @@ namespace mutant_server
                 }
             }
         }
+
         private void ProcessChatting(AsyncUserToken token, byte[] data)
         {
             //클라이언트에서 온 메세지를 모든 클라이언트에 전송
