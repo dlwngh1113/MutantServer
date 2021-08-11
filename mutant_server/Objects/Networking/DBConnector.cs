@@ -30,63 +30,66 @@ namespace mutant_server.Objects.Networking
 
         public bool InsertData(LoginPacket packet)
         {
-            string myQuery = "insert into lulus.mutant (nameMutant, pwMutant) values(\"" + packet.name + "\", \"" + packet.passwd + "\")";
-            Console.WriteLine("System(DB): " + myQuery);
-
-            _connection.Open();
-            MySqlCommand command = new MySqlCommand(myQuery, _connection);
+            MySqlCommand command = new MySqlCommand("InsertMethod", _connection);
+            command.CommandType = System.Data.CommandType.StoredProcedure;
+            command.Parameters.Add(new MySqlParameter("id", packet.name));
+            command.Parameters.Add(new MySqlParameter("passwd", packet.passwd));
+            command.Connection.Open();
             try
             {
-                if (command.ExecuteNonQuery() == 1)
+                if(command.ExecuteNonQuery() == 1)
                 {
-                    _connection.Close();
+                    command.Connection.Close();
                     return true;
                 }
                 else
                 {
                     Console.WriteLine("InsertData to Database is somethig wrong");
-                    _connection.Close();
+                    command.Connection.Close();
                     return false;
                 }
-            } 
-            catch (MySqlException ex)
+            }
+            catch(MySqlException ex)
             {
                 Console.WriteLine(ex.Message);
             }
 
-            _connection.Close();
-            return true;
+            return false;
         }
 
         public bool isValidData(LoginPacket packet)
         {
-            string myQuery = "select * from lulus.mutant where nameMutant=\"" + packet.name + "\" and pwMutant=\"" + packet.passwd + "\"";
+            MySqlCommand command = new MySqlCommand("SelectMethod", _connection);
+            command.CommandType = System.Data.CommandType.StoredProcedure;
+            command.Parameters.Add(new MySqlParameter("id", packet.name));
+            command.Parameters.Add(new MySqlParameter("passwd", packet.passwd));
+            command.Connection.Open();
 
-            _connection.Open();
-            MySqlCommand command = new MySqlCommand(myQuery, _connection);
-            MySqlDataReader table = command.ExecuteReader();
+            MySqlDataReader table = command.ExecuteReader(System.Data.CommandBehavior.CloseConnection);
 
             if(table.Read())
             {
-                _connection.Close();
+                command.Connection.Close();
                 return true;
             }
 
             Console.WriteLine("System(DB): id({0}), pwd({1}) is not created account", packet.name, packet.passwd);
-            _connection.Close();
+            table.Close();
             return false;
         }
 
         public Client GetUserData(string name, string passWd)
         {
-            string myQuery = "select * from lulus.mutant where nameMutant=\"" + name + "\" and pwMutant=\"" + passWd + "\"";
+            MySqlCommand command = new MySqlCommand("SelectMethod", _connection);
+            command.CommandType = System.Data.CommandType.StoredProcedure;
+            command.Parameters.Add(new MySqlParameter("id", name));
+            command.Parameters.Add(new MySqlParameter("passwd", passWd));
+            command.Connection.Open();
 
-            _connection.Open();
-            MySqlCommand command = new MySqlCommand(myQuery, _connection);
-            MySqlDataReader table = command.ExecuteReader();
+            MySqlDataReader table = command.ExecuteReader(System.Data.CommandBehavior.CloseConnection);
 
             Client c = new Client(0);
-            while(table.Read())
+            while (table.Read())
             {
                 c.userName = name;
                 c.passWd = passWd;
@@ -106,25 +109,33 @@ namespace mutant_server.Objects.Networking
                 Console.WriteLine("System(DB): id({0}), name({1}), pwd({2}) get user data", c.userID, c.userName, c.passWd);
             }
 
-            _connection.Close();
+            table.Close();
             return c;
         }
 
         public void UpdateData(Client client)
         {
-            string myQuery = "update lulus.mutant set winCountTrator=" + client.winCountTrator.ToString() + ", winCountResearcher=" + client.winCountResearcher.ToString() +
-                ", winCountNocturn=" + client.winCountNocturn.ToString() + ", winCountPsychy=" + client.winCountPsychy.ToString() + ", winCountTanker=" + client.winCountTanker.ToString() +
-                ", playCountTrator=" + client.playCountTrator.ToString() + ", playCountResearcher=" + client.playCountResearcher.ToString() +
-                ", playCountNocturn=" + client.playCountNocturn.ToString() + ", playCountPsychy=" + client.playCountPsychy.ToString() + ", playCountTanker=" + client.playCountTanker.ToString() +
-                " where nameMutant=\"" + client.userName + "\"";
-            Console.WriteLine("System(DB): " + myQuery);
-            _connection.Open();
-            MySqlCommand command = new MySqlCommand(myQuery, _connection);
+            MySqlCommand command = new MySqlCommand("UpdateMethod", _connection);
+            command.CommandType = System.Data.CommandType.StoredProcedure;
+            command.Parameters.Add(new MySqlParameter("winCountTrator", client.winCountTrator));
+            command.Parameters.Add(new MySqlParameter("winCountResearcher", client.winCountResearcher));
+            command.Parameters.Add(new MySqlParameter("winCountNocturn", client.winCountNocturn));
+            command.Parameters.Add(new MySqlParameter("winCountPsychy", client.winCountPsychy));
+            command.Parameters.Add(new MySqlParameter("winCountTanker", client.winCountTanker));
+
+            command.Parameters.Add(new MySqlParameter("playCountTrator", client.playCountTrator));
+            command.Parameters.Add(new MySqlParameter("playCountResearcher", client.playCountResearcher));
+            command.Parameters.Add(new MySqlParameter("playCountNocturn", client.playCountNocturn));
+            command.Parameters.Add(new MySqlParameter("playCountPsychy", client.playCountPsychy));
+            command.Parameters.Add(new MySqlParameter("playCountTanker", client.playCountTanker));
+
+            command.Connection.Open();
+
             try
             {
-                if(command.ExecuteNonQuery() == 1)
+                if (command.ExecuteNonQuery() == 1)
                 {
-                    _connection.Close();
+                    command.Connection.Close();
                     return;
                 }
                 else
@@ -132,7 +143,7 @@ namespace mutant_server.Objects.Networking
                     Console.WriteLine("UpdateData to Database is something wrong");
                 }
             }
-            catch(MySqlException ex)
+            catch (MySqlException ex)
             {
                 Console.WriteLine(ex.Message);
             }

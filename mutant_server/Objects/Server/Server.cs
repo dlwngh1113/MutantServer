@@ -25,6 +25,8 @@ namespace mutant_server
         public static DBConnector _dBConnector;
         private Dictionary<int, Client> _players;
 
+        private Thread _DBThread;
+
         public Server(int numConnections, int receiveBufferSize)
         {
             _numConnectedSockets = 0;
@@ -39,6 +41,8 @@ namespace mutant_server
             _roomsInServer = new List<Room>();
             _dBConnector = new DBConnector();
             _players = new Dictionary<int, Client>();
+
+            //_DBThread = new Thread();
         }
         public void Init()
         {
@@ -198,18 +202,6 @@ namespace mutant_server
             {
                 c.asyncUserToken.readEventArgs.Completed += ReceiveCompleted;
                 _players.Add(c.userID, c);
-            }
-        }
-
-        private void ProcessInRoom(AsyncUserToken token, byte[] data)
-        {
-            foreach(var i in _roomsInServer)
-            {
-                if (i.IsHavePlayer(token.userID))
-                {
-                    //i.ResolveMessage(token, data);
-                    return;
-                }
             }
         }
 
