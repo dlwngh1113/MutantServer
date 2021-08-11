@@ -202,6 +202,7 @@ namespace mutant_server
             {
                 c.asyncUserToken.readEventArgs.Completed += ReceiveCompleted;
                 _players.Add(c.userID, c);
+                _dBConnector.UpdateData(c);
             }
         }
 
@@ -435,10 +436,12 @@ namespace mutant_server
 
             Console.WriteLine("A client - {0} has been disconnected from the server. There are {1} clients connected to the server", token.userID, _numConnectedSockets);
         }
+
         private void SendCompleted(object sender, SocketAsyncEventArgs e)
         {
             ProcessSend(e);
         }
+
         private void ProcessSend(SocketAsyncEventArgs e)
         {
             if (e.SocketError == SocketError.Success)

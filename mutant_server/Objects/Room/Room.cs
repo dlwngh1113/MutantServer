@@ -93,6 +93,7 @@ namespace mutant_server
                 RecvEventSelect(token, data);
             }
         }
+
         private void RecvEventSelect(AsyncUserToken token, byte[] data)
         {
             switch ((CTOS_OP)data[0])
@@ -162,6 +163,7 @@ namespace mutant_server
             }
             catch (Exception ex) { }
         }
+
         private void ProcessUserInfo(AsyncUserToken token, byte[] data)
         {
             MutantPacket packet = new MutantPacket(data, 0);
@@ -319,7 +321,6 @@ namespace mutant_server
             Console.WriteLine("escape packet size - {0}, id - {1}, name - {2}, offset - {3}", packet.header.bytes, packet.id, packet.name, packet.offset);
 
             _players[packet.id].UpdateData(true);
-            Server._dBConnector.UpdateData(_players[packet.id]);
 
             foreach(var player in _players)
             {
