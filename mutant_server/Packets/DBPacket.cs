@@ -9,10 +9,11 @@ namespace mutant_server.Packets
         public DBPacket(byte[] ary, int p) : base(ary, p)
         {
         }
-        public void Copy(DBPacket packet, byte type = (byte)STOC_OP.STOC_CHAT)
+        public void Copy(DBPacket packet)
         {
-            Array.Copy(packet.ary, packet.offset, ary, offset, Defines.BUF_SIZE);
-            ary[offset] = type;
+            int len = packet.offset - packet.startPos;
+            Array.Copy(packet.ary, packet.startPos, ary, offset, len);
+            offset += len;
         }
         public override void PacketToByteArray(byte type)
         {

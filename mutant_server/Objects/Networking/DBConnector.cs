@@ -129,6 +129,8 @@ namespace mutant_server.Objects.Networking
             command.Parameters.Add(new MySqlParameter("playCountPsychy", client.playCountPsychy));
             command.Parameters.Add(new MySqlParameter("playCountTanker", client.playCountTanker));
 
+            command.Parameters.Add(new MySqlParameter("userName", client.userName));
+
             command.Connection.Open();
 
             try

@@ -16,10 +16,11 @@ namespace mutant_server.Packets
         public PlayerStatusPacket(byte[] ary, int offset) : base(ary, offset)
         {
         }
-        public void Copy(PlayerStatusPacket packet, byte type = (byte)STOC_OP.STOC_STATUS_CHANGE)
+        public void Copy(PlayerStatusPacket packet)
         {
-            Array.Copy(packet.ary, packet.offset, ary, offset, Defines.BUF_SIZE);
-            ary[offset] = type;
+            int len = packet.offset - packet.startPos;
+            Array.Copy(packet.ary, packet.startPos, ary, offset, len);
+            offset += len;
         }
         public override void PacketToByteArray(byte type)
         {

@@ -16,10 +16,11 @@ namespace mutant_server.Packets
         {
             inventory = new Dictionary<int, int>();
         }
-        public void Copy(ItemEventPacket packet, byte type = (byte)STOC_OP.STOC_ITEM_GAIN)
+        public void Copy(ItemEventPacket packet)
         {
-            Array.Copy(packet.ary, packet.offset, ary, offset, Defines.BUF_SIZE);
-            ary[offset] = type;
+            int len = packet.offset - packet.startPos;
+            Array.Copy(packet.ary, packet.startPos, ary, offset, len);
+            offset += len;
         }
         public override void ByteArrayToPacket()
         {

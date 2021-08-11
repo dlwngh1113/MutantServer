@@ -353,11 +353,9 @@ namespace mutant_server
                 }
 
                 MutantPacket p = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
-                p.id = packet.id;
-                p.name = packet.name;
-                p.time = 0;
+                p.Copy(packet);
 
-                p.PacketToByteArray((byte)STOC_OP.STOC_ROOM_ENTER_SUCCESS);
+                p.ary[0] = (byte)STOC_OP.STOC_ROOM_ENTER_SUCCESS;
 
                 token.SendData(p);
             }

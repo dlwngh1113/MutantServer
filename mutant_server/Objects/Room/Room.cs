@@ -324,12 +324,10 @@ namespace mutant_server
 
             foreach(var player in _players)
             {
-                MutantPacket sendPacket = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
-                sendPacket.id = packet.id;
-                sendPacket.name = packet.name;
-                sendPacket.time = 0;
+                MutantPacket sendPacket = new MutantPacket(new byte[packet.offset + 1], 0);
+                sendPacket.Copy(packet);
 
-                sendPacket.PacketToByteArray((byte)STOC_OP.STOC_PLAYER_ESCAPE);
+                sendPacket.ary[0] = (byte)STOC_OP.STOC_PLAYER_ESCAPE;
 
                 player.Value.asyncUserToken.SendData(sendPacket);
             }
@@ -406,12 +404,10 @@ namespace mutant_server
                 if (tuple.Key != packet.id)
                 {
                     //this player to other player
-                    MutantPacket sendPacket = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
-
-                    sendPacket.id = packet.id;
-                    sendPacket.name = packet.name;
-                    sendPacket.time = 0;
-                    sendPacket.PacketToByteArray((byte)STOC_OP.STOC_PLAYER_ENTER);
+                    MutantPacket sendPacket = new MutantPacket(new byte[packet.offset + 1], 0);
+                    sendPacket.Copy(packet);
+                    
+                    sendPacket.ary[0] = (byte)STOC_OP.STOC_PLAYER_ENTER;
 
                     tuple.Value.asyncUserToken.SendData(sendPacket);
 
@@ -440,12 +436,10 @@ namespace mutant_server
                 if (tuple.Key != packet.id)
                 {
                     var tmpToken = tuple.Value.asyncUserToken;
-                    MutantPacket sendPacket = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
-                    sendPacket.name = packet.name;
-                    sendPacket.id = packet.id;
-                    sendPacket.time = packet.time;
+                    MutantPacket sendPacket = new MutantPacket(new byte[packet.offset + 1], 0);
+                    sendPacket.Copy(packet);
 
-                    sendPacket.PacketToByteArray((byte)STOC_OP.STOC_PLAYER_LEAVE_ROOM);
+                    sendPacket.ary[0] = (byte)STOC_OP.STOC_PLAYER_LEAVE_ROOM;
 
                     tmpToken.SendData(sendPacket);
                 }
@@ -479,12 +473,10 @@ namespace mutant_server
                 if (tuple.Key != packet.id)
                 {
                     var tmpToken = tuple.Value.asyncUserToken;
-                    MutantPacket sendPacket = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
-                    sendPacket.name = packet.name;
-                    sendPacket.id = packet.id;
-                    sendPacket.time = packet.time;
+                    MutantPacket sendPacket = new MutantPacket(new byte[packet.offset + 1], 0);
+                    sendPacket.Copy(packet);
 
-                    sendPacket.PacketToByteArray((byte)STOC_OP.STOC_PLAYER_LEAVE_GAME);
+                    sendPacket.ary[0] = (byte)STOC_OP.STOC_PLAYER_LEAVE_GAME;
 
                     tmpToken.SendData(sendPacket);
                 }
@@ -522,13 +514,10 @@ namespace mutant_server
                     var tmpToken = tuple.Value.asyncUserToken;
 
                     //기존의 플레이어에게 새로운 플레이어 정보 전달
-                    ChattingPakcet sendPacket = new ChattingPakcet(new byte[Defines.BUF_SIZE], 0);
-                    sendPacket.id = packet.id;
-                    sendPacket.name = packet.name;
-                    sendPacket.time = 0;
+                    ChattingPakcet sendPacket = new ChattingPakcet(new byte[packet.offset + 1], 0);
+                    sendPacket.Copy(packet);
 
-                    sendPacket.message = packet.message;
-                    sendPacket.PacketToByteArray((byte)STOC_OP.STOC_CHAT);
+                    sendPacket.ary[0] = (byte)STOC_OP.STOC_CHAT;
 
                     tmpToken.SendData(sendPacket);
                 }
@@ -923,12 +912,10 @@ namespace mutant_server
 
             foreach (var p in _players)
             {
-                MutantPacket sendPacket = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
-                sendPacket.id = packet.id;
-                sendPacket.name = packet.name;
-                sendPacket.time = 0;
+                MutantPacket sendPacket = new MutantPacket(new byte[packet.offset + 1], 0);
+                sendPacket.Copy(packet);
 
-                sendPacket.PacketToByteArray((byte)STOC_OP.STOC_SABOTAGI);
+                sendPacket.ary[0] = (byte)STOC_OP.STOC_SABOTAGI;
 
                 p.Value.asyncUserToken.SendData(sendPacket);
             }
@@ -964,18 +951,6 @@ namespace mutant_server
                     tmpToken.SendData(sendPacket);
                 }
             }
-        }
-
-        public bool IsHavePlayer(int id)
-        {
-            foreach (var tuple in _players)
-            {
-                if(tuple.Key == id)
-                {
-                    return true;
-                }
-            }
-            return false;
         }
 
         public void Update(object elapsedTime, ElapsedEventArgs e)

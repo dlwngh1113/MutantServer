@@ -14,10 +14,11 @@ namespace mutant_server.Packets
             numOfPlayers = new List<int>();
             gameState = new List<byte>();
         }
-        public void Copy(RoomPacket packet, byte type = (byte)STOC_OP.STOC_ROOM_CREATE_SUCCESS)
+        public void Copy(RoomPacket packet)
         {
-            Array.Copy(packet.ary, packet.offset, ary, offset, Defines.BUF_SIZE);
-            ary[offset] = type;
+            int len = packet.offset - packet.startPos;
+            Array.Copy(packet.ary, packet.startPos, ary, offset, len);
+            offset += len;
         }
         public override void PacketToByteArray(byte type)
         {

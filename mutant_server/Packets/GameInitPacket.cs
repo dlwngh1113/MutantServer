@@ -26,7 +26,9 @@ namespace mutant_server.Packets
 
         public void Copy(GameInitPacket packet)
         {
-            Array.Copy(packet.ary, packet.offset, ary, offset, Defines.BUF_SIZE);
+            int len = packet.offset - packet.startPos;
+            Array.Copy(packet.ary, packet.startPos, ary, offset, len);
+            offset += len;
         }
 
         public override void ByteArrayToPacket()
