@@ -25,8 +25,6 @@ namespace mutant_server
         public static DBConnector _dBConnector;
         private Dictionary<int, Client> _players;
 
-        private Thread _DBThread;
-
         public Server(int numConnections, int receiveBufferSize)
         {
             _numConnectedSockets = 0;
@@ -41,8 +39,6 @@ namespace mutant_server
             _roomsInServer = new List<Room>();
             _dBConnector = new DBConnector();
             _players = new Dictionary<int, Client>();
-
-            //_DBThread = new Thread();
         }
         public void Init()
         {
