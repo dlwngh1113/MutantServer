@@ -8,27 +8,26 @@ namespace mutant_server
         //lobby, main server operation
         CTOS_LOGIN,
         CTOS_LOGOUT,
-        CTOS_LEAVE_ROOM,
         CTOS_CREATE_ROOM,
         CTOS_SELECT_ROOM,
-        CTOS_GET_ROOM_USERS,
         CTOS_REFRESH_ROOMS,
         CTOS_CREATE_USER_INFO,
-        CTOS_READY,
-        CTOS_GAME_START,
-        CTOS_GET_HISTORY,
 
         //ingame operation
         CTOS_GAME_INIT = 100,
+        CTOS_GET_HISTORY,
+        CTOS_GET_ROOM_USERS,
+        CTOS_READY,
+        CTOS_LEAVE_ROOM,
+        CTOS_LEAVE_GAME,
         CTOS_LOADED,
+        CTOS_ITEM_CLICKED,
+        CTOS_ITEM_CRAFT_REQUEST,
         CTOS_ITEM_DELETE,
         CTOS_STATUS_CHANGE,
-        CTOS_LEAVE_GAME,
         CTOS_ATTACK,
         CTOS_CHAT,
-        CTOS_ITEM_CLICKED,
         CTOS_SABOTAGI,
-        CTOS_ITEM_CRAFT_REQUEST,
         CTOS_VOTE_REQUEST,
         CTOS_VOTE_SELECTED,
         CTOS_PLAYER_ESCAPE,
@@ -36,7 +35,7 @@ namespace mutant_server
 
     //server to client operation
     public enum STOC_OP
-    { 
+    {
         //lobby, main server operation
         STOC_LOGIN_OK,
         STOC_LOGIN_FAIL,
@@ -56,6 +55,7 @@ namespace mutant_server
         //ingame operation
         STOC_GAME_INIT = 100,
         ALL_PLAYER_LOADED,
+        STOC_KILLED,
         STOC_STATUS_CHANGE,
         STOC_PLAYER_LEAVE_GAME,
         STOC_CHAT,
@@ -63,8 +63,6 @@ namespace mutant_server
         STOC_ITEM_DENIED,
         STOC_ITEM_CRAFTED,
         STOC_ITEM_DELETE,
-        STOC_SYSTEM_CHANGE,
-        STOC_KILLED,
         STOC_SABOTAGI,
         STOC_VOTE_START,
         STOC_VOTED,
@@ -72,6 +70,7 @@ namespace mutant_server
         STOC_SURVIVOR_WIN,
         STOC_SURVIVOR_LOSE,
         STOC_PLAYER_ESCAPE,
+        STOC_SYSTEM_CHANGE,
     }
     public class Defines
     {
@@ -115,7 +114,7 @@ namespace mutant_server
         public const byte ROOM_PLAYING = 1;
         public const byte ROOM_RESULT = 2;
 
-        public static void Swap<T> (ref T a, ref T b)
+        public static void Swap<T>(ref T a, ref T b)
         {
             var tmp = a;
             a = b;

@@ -101,6 +101,33 @@ namespace mutant_server
                 case CTOS_OP.CTOS_GAME_INIT:
                     ProcessGameInit(token, data);
                     break;
+                case CTOS_OP.CTOS_GET_HISTORY:
+                    ProcessUserInfo(token, data);
+                    break;
+                case CTOS_OP.CTOS_GET_ROOM_USERS:
+                    ProcessGetRoomUsers(token, data);
+                    break;
+                case CTOS_OP.CTOS_READY:
+                    ProcessReady(token, data);
+                    break;
+                case CTOS_OP.CTOS_LEAVE_ROOM:
+                    ProcessLeaveRoom(token, data);
+                    break;
+                case CTOS_OP.CTOS_LEAVE_GAME:
+                    ProcessLeaveGame(token, data);
+                    break;
+                case CTOS_OP.CTOS_LOADED:
+                    ProcessLoadGame(token, data);
+                    break;
+                case CTOS_OP.CTOS_ITEM_CLICKED:
+                    ProcessItemEvent(token, data);
+                    break;
+                case CTOS_OP.CTOS_ITEM_CRAFT_REQUEST:
+                    ProcessItemCraft(token, data);
+                    break;
+                case CTOS_OP.CTOS_ITEM_DELETE:
+                    ProcessItemDelete(token, data);
+                    break;
                 case CTOS_OP.CTOS_STATUS_CHANGE:
                     ProcessStatus(token, data);
                     break;
@@ -110,44 +137,17 @@ namespace mutant_server
                 case CTOS_OP.CTOS_CHAT:
                     ProcessChatting(token, data);
                     break;
-                case CTOS_OP.CTOS_LEAVE_ROOM:
-                    ProcessLeaveRoom(token, data);
-                    break;
-                case CTOS_OP.CTOS_LEAVE_GAME:
-                    ProcessLeaveGame(token, data);
-                    break;
-                case CTOS_OP.CTOS_ITEM_CLICKED:
-                    ProcessItemEvent(token, data);
-                    break;
-                case CTOS_OP.CTOS_GET_ROOM_USERS:
-                    ProcessGetRoomUsers(token, data);
-                    break;
-                case CTOS_OP.CTOS_ITEM_CRAFT_REQUEST:
-                    ProcessItemCraft(token, data);
-                    break;
-                case CTOS_OP.CTOS_VOTE_SELECTED:
-                    ProcessVote(token, data);
+                case CTOS_OP.CTOS_SABOTAGI:
+                    ProcessSabotagi(token, data);
                     break;
                 case CTOS_OP.CTOS_VOTE_REQUEST:
                     ProcessStartVote(token, data);
                     break;
-                case CTOS_OP.CTOS_READY:
-                    ProcessReady(token, data);
-                    break;
-                case CTOS_OP.CTOS_LOADED:
-                    ProcessLoadGame(token, data);
-                    break;
-                case CTOS_OP.CTOS_ITEM_DELETE:
-                    ProcessItemDelete(token, data);
-                    break;
-                case CTOS_OP.CTOS_SABOTAGI:
-                    ProcessSabotagi(token, data);
+                case CTOS_OP.CTOS_VOTE_SELECTED:
+                    ProcessVote(token, data);
                     break;
                 case CTOS_OP.CTOS_PLAYER_ESCAPE:
                     ProcessPlayerEscape(token, data);
-                    break;
-                case CTOS_OP.CTOS_GET_HISTORY:
-                    ProcessUserInfo(token, data);
                     break;
                 default:
                     throw new Exception("operation from client is not valid\n");
