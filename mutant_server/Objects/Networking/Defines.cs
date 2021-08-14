@@ -78,7 +78,7 @@ namespace mutant_server
         public const short MAX_USERS = 10000;
         public const short MAX_CHAT_LEN = 100;
         public const short PORT = 9000;
-        public const float FrameRate = (float)((1.0 / 100.0) * 1000);
+        public const float FrameRate = (float)(1.0 / 20);
         public const byte MAX_ROOM_USER = 5;
 
         /// <summary>
@@ -123,7 +123,7 @@ namespace mutant_server
 
         public static byte[] GenerateRandomJobs()
         {
-            byte[] ary = { JOB_TRACKER, JOB_PSYCHY, JOB_NOCTURN, JOB_RESEARCHER, JOB_TANKER };
+            byte[] ary = { JOB_TANKER, JOB_RESEARCHER, JOB_NOCTURN, JOB_PSYCHY, JOB_TRACKER };
             //Random random = new Random();
             //for(int i=0;i<ary.Length;++i)
             //{

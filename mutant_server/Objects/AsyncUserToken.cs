@@ -1,4 +1,5 @@
-﻿using System;
+﻿using mutant_server.Packets;
+using System;
 using System.Collections.Generic;
 using System.Net.Sockets;
 
@@ -24,17 +25,13 @@ namespace mutant_server
         {
 
         }
-        public AsyncUserToken(Socket s)
-        {
-            this.socket = s;
-        }
 
         public byte[] ResolveMessage()
         {
             byte[] data = _messageResolver.ResolveMessage(readEventArgs.Buffer, readEventArgs.Offset, readEventArgs.BytesTransferred);
             if(data != null)
-            { 
-                return data; 
+            {
+                return data;
             }
             return null;
         }
@@ -65,19 +62,29 @@ namespace mutant_server
             {
                 var packet = this.sendQueue.Peek();
 
-                this.writeEventArgs.SetBuffer(writeEventArgs.Offset, packet.offset);
+                bool willRaise;
 
-                Array.Copy(packet.ary, packet.startPos, this.writeEventArgs.Buffer, this.writeEventArgs.Offset, packet.offset);
+                //if(packet.ary[0] == 103)
+                //{
+                //    this.writeEventArgs.SetBuffer(writeEventArgs.Offset, packet.offset);
 
-                try
+                //    Array.Copy(packet.ary, packet.startPos, this.writeEventArgs.Buffer, this.writeEventArgs.Offset, packet.offset);
+
+                //    willRaise = socket.SendToAsync(writeEventArgs);
+                //}
+                //else
                 {
-                    bool willRaise = this.socket.SendAsync(this.writeEventArgs);
-                    if (!willRaise)
-                    {
-                        sendCallback(this.writeEventArgs);
-                    }
+                    this.writeEventArgs.SetBuffer(writeEventArgs.Offset, packet.offset);
+
+                    Array.Copy(packet.ary, packet.startPos, this.writeEventArgs.Buffer, this.writeEventArgs.Offset, packet.offset);
+
+                    willRaise = this.socket.SendAsync(this.writeEventArgs);
                 }
-                catch (Exception ex) { }
+
+                if (!willRaise)
+                {
+                    sendCallback(this.writeEventArgs);
+                }
             }
         }
 
@@ -92,6 +99,13 @@ namespace mutant_server
                     StartSend();
                 }
             }
+        }
+
+        public void UDPSend(PlayerStatusPacket packet)
+        {
+            //socket.SendTo(packet.ary, packet.offset, SocketFlags.None, socket.RemoteEndPoint);
+            socket.BeginSendTo(packet.ary, packet.startPos, packet.offset, SocketFlags.None,
+                socket.RemoteEndPoint, null, null);
         }
     }
 }

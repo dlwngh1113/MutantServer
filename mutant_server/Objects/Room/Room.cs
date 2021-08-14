@@ -32,6 +32,8 @@ namespace mutant_server
 
         private string roomTitle;
         private byte gameState = Defines.ROOM_WAIT;
+
+        private float serverTime = 0f;
         public byte GameState
         {
             get => gameState;
@@ -57,6 +59,9 @@ namespace mutant_server
         {
             _players = new Dictionary<int, Client>();
             _globalItem = new Dictionary<int, int>();
+            _globalItem.Add(Defines.ITEM_PADDLE, 0);
+            _globalItem.Add(Defines.ITEM_SAIL, 0);
+            _globalItem.Add(Defines.ITEM_PLANE, 0);
             _voteCounter = new Dictionary<string, int>();
             _chestItems = new Dictionary<int, List<int>>();
 
@@ -369,7 +374,7 @@ namespace mutant_server
                 }
 
                 System.Timers.Timer timer = new System.Timers.Timer();
-                timer.Interval = 50;
+                timer.Interval = Defines.FrameRate * 1000;
                 timer.Elapsed += new ElapsedEventHandler(Update);
                 timer.Start();
 
@@ -524,22 +529,6 @@ namespace mutant_server
             }
         }
 
-        private void AddItemInGlobal(int itemNumber)
-        {
-            if (itemNumber == Defines.ITEM_AXE)
-            {
-                return;
-            }
-            if (_globalItem.ContainsKey(itemNumber))
-            {
-                _globalItem[itemNumber]++;
-            }
-            else
-            {
-                _globalItem.Add(itemNumber, 1);
-            }
-        }
-
         public void ProcessStartVote(AsyncUserToken token, byte[] data)
         {
             MutantPacket packet = new MutantPacket(data, 0);
@@ -547,33 +536,14 @@ namespace mutant_server
 
             Console.WriteLine("vote start packet size - {0}, id - {1}, name - {2}, offset - {3}", packet.header.bytes, packet.id, packet.name, packet.offset);
 
-            _voteCounter.Clear();
-            foreach(var player in _players)
+            lock(_voteCounter)
             {
-                _voteCounter.Add(player.Value.userName, 0);
+                _voteCounter.Clear();
+                foreach (var player in _players)
+                {
+                    _voteCounter.Add(player.Value.userName, 0);
+                }
             }
-
-            //for (int i = 0; i < _players.Count; ++i)
-            //{
-            //    var tuple = _players.ElementAt(i);
-            //    tuple.Value.position = tuple.Value.InitPos;
-            //    for (int j = i; j < _players.Count; ++j)
-            //    {
-            //        var tmpToken = _players.ElementAt(j).Value.asyncUserToken;
-            //        PlayerStatusPacket posPacket = new PlayerStatusPacket(new byte[Defines.BUF_SIZE], 0);
-            //        posPacket.id = tuple.Key;
-            //        posPacket.name = tuple.Value.userName;
-            //        posPacket.time = 0;
-
-            //        posPacket.position = tuple.Value.position;
-            //        posPacket.rotation = tuple.Value.rotation;
-            //        posPacket.playerMotion = Defines.PLAYER_IDLE;
-
-            //        posPacket.PacketToByteArray((byte)STOC_OP.STOC_STATUS_CHANGE);
-
-            //        tmpToken.SendData(posPacket);
-            //    }
-            //}
 
             foreach (var tuple in _players)
             {
@@ -581,6 +551,8 @@ namespace mutant_server
                 PlayerStatusPacket sendPacket = new PlayerStatusPacket(new byte[Defines.BUF_SIZE], 0);
                 sendPacket.id = tuple.Value.userID;
                 sendPacket.name = tuple.Value.userName;
+                sendPacket.time = serverTime;
+
                 sendPacket.position = tuple.Value.InitPos;
                 sendPacket.rotation = tuple.Value.rotation;
                 sendPacket.playerMotion = Defines.PLAYER_IDLE;
@@ -662,22 +634,22 @@ namespace mutant_server
 
                 //    return;
                 //}
-            }
 
-            foreach (var tuple in _players)
-            {
-                var tmpToken = tuple.Value.asyncUserToken;
-                VotePacket sendPacket = new VotePacket(new byte[Defines.BUF_SIZE], 0);
-                sendPacket.name = packet.name;
-                sendPacket.id = packet.id;
-                sendPacket.time = packet.time;
+                foreach (var tuple in _players)
+                {
+                    var tmpToken = tuple.Value.asyncUserToken;
+                    VotePacket sendPacket = new VotePacket(new byte[Defines.BUF_SIZE], 0);
+                    sendPacket.name = packet.name;
+                    sendPacket.id = packet.id;
+                    sendPacket.time = packet.time;
 
-                sendPacket.votedPersonID = packet.votedPersonID;
-                sendPacket.votePairs = _voteCounter;
+                    sendPacket.votedPersonID = packet.votedPersonID;
+                    sendPacket.votePairs = _voteCounter;
 
-                sendPacket.PacketToByteArray((byte)STOC_OP.STOC_VOTED);
+                    sendPacket.PacketToByteArray((byte)STOC_OP.STOC_VOTED);
 
-                tmpToken.SendData(sendPacket);
+                    tmpToken.SendData(sendPacket);
+                }
             }
         }
 
@@ -740,6 +712,20 @@ namespace mutant_server
             }
         }
 
+        private void AddItemInGlobal(int itemNumber)
+        {
+            lock(_globalItem)
+            {
+                _globalItem[itemNumber]++;
+
+                foreach (var tuple in _globalItem)
+                {
+                    Console.Write("key - {0}, value - {1}", tuple.Key, tuple.Value);
+                }
+                Console.WriteLine("");
+            }
+        }
+
         private void ProcessItemCraft(AsyncUserToken token, byte[] data)
         {
             ItemCraftPacket packet = new ItemCraftPacket(data, 0);
@@ -752,12 +738,8 @@ namespace mutant_server
             sendPacket.name = packet.name;
             sendPacket.time = packet.time;
 
-            if (!_players.ContainsKey(packet.id))
-            {
-                return;
-            }
-
             Console.WriteLine("packet.itemName - {0}", packet.itemNumber);
+
             switch (packet.itemNumber)
             {
                 case Defines.ITEM_AXE:
@@ -770,16 +752,18 @@ namespace mutant_server
                     break;
                 case Defines.ITEM_PLANE:
                     _players[packet.id].inventory[Defines.ITEM_LOG] -= 2;
+                    AddItemInGlobal(packet.itemNumber);
                     break;
                 case Defines.ITEM_SAIL:
                     _players[packet.id].inventory[Defines.ITEM_ROPE] -= 1;
                     _players[packet.id].inventory[Defines.ITEM_LOG] -= 1;
+                    AddItemInGlobal(packet.itemNumber);
                     break;
                 case Defines.ITEM_PADDLE:
                     _players[packet.id].inventory[Defines.ITEM_LOG] -= 1;
+                    AddItemInGlobal(packet.itemNumber);
                     break;
             }
-            AddItemInGlobal(packet.itemNumber);
 
             sendPacket.inventory = _players[packet.id].inventory;
             sendPacket.itemNumber = packet.itemNumber;
@@ -790,12 +774,6 @@ namespace mutant_server
             token.SendData(sendPacket);
 
             foreach (var tuple in _players[packet.id].inventory)
-            {
-                Console.Write("key - {0}, value - {1}", tuple.Key, tuple.Value);
-            }
-            Console.WriteLine("");
-
-            foreach (var tuple in _globalItem)
             {
                 Console.Write("key - {0}, value - {1}", tuple.Key, tuple.Value);
             }
@@ -928,40 +906,48 @@ namespace mutant_server
 
             //Console.WriteLine("status packet size - {0}, id - {1}, name - {2}, offset - {3}", packet.header.bytes, packet.id, packet.name, packet.offset);
 
-            _players[packet.id].position = packet.position;
-            _players[packet.id].rotation = packet.rotation;
-
-            foreach (var tuple in _players)
+            lock(_players[packet.id])
             {
-                if (tuple.Key != packet.id)
+                _players[packet.id].position = packet.position;
+                _players[packet.id].rotation = packet.rotation;
+
+                foreach (var tuple in _players)
                 {
-                    var tmpToken = tuple.Value.asyncUserToken;
-                    PlayerStatusPacket sendPacket = new PlayerStatusPacket(new byte[Defines.BUF_SIZE], 0);
-                    sendPacket.id = packet.id;
-                    sendPacket.name = packet.name;
-                    sendPacket.time = 0;
+                    //if (tuple.Key != packet.id)
+                    {
+                        var tmpToken = tuple.Value.asyncUserToken;
+                        PlayerStatusPacket sendPacket = new PlayerStatusPacket(new byte[Defines.BUF_SIZE], 0);
+                        sendPacket.id = packet.id;
+                        sendPacket.name = packet.name;
+                        sendPacket.time = packet.time;
 
-                    sendPacket.position = _players[packet.id].position;
-                    sendPacket.rotation = _players[packet.id].rotation;
-                    sendPacket.playerMotion = packet.playerMotion;
-                    sendPacket.playerJob = _players[packet.id].job;
+                        sendPacket.position = _players[packet.id].position;
+                        sendPacket.rotation = _players[packet.id].rotation;
+                        sendPacket.playerMotion = packet.playerMotion;
+                        sendPacket.playerJob = _players[packet.id].job;
 
-                    sendPacket.PacketToByteArray((byte)STOC_OP.STOC_STATUS_CHANGE);
+                        sendPacket.PacketToByteArray((byte)STOC_OP.STOC_STATUS_CHANGE);
 
-                    tmpToken.SendData(sendPacket);
+                        tmpToken.SendData(sendPacket);
+                    }
                 }
             }
         }
 
         public void Update(object elapsedTime, ElapsedEventArgs e)
         {
+            float initValue, computeValue;
+            initValue = serverTime;
+            computeValue = initValue + Defines.FrameRate;
+            Interlocked.CompareExchange(ref serverTime, initValue, computeValue);
+
             foreach (var tuple in _players)
             {
                 var tmpToken = tuple.Value.asyncUserToken;
                 MutantPacket packet = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
                 packet.id = tuple.Key;
                 packet.name = tuple.Value.userName;
-                packet.time = 0.05f;
+                packet.time = serverTime;
 
                 packet.PacketToByteArray((byte)STOC_OP.STOC_SYSTEM_CHANGE);
 

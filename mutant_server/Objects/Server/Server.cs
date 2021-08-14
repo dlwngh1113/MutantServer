@@ -100,6 +100,7 @@ namespace mutant_server
 
             SocketAsyncEventArgs recv_event = _readPool.Pop();
             SocketAsyncEventArgs send_event = _writePool.Pop();
+            send_event.RemoteEndPoint = e.AcceptSocket.RemoteEndPoint;
 
             BeginIO(e.AcceptSocket, recv_event, send_event);
 
