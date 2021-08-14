@@ -33,7 +33,9 @@ namespace mutant_server
         private string roomTitle;
         private byte gameState = Defines.ROOM_WAIT;
 
-        private float serverTime = 0f;
+        private float serverTime = Defines.FrameRate;
+
+        private System.Timers.Timer _timer;
         public byte GameState
         {
             get => gameState;
@@ -373,10 +375,10 @@ namespace mutant_server
                     p.Value.asyncUserToken.SendData(sendPacket);
                 }
 
-                System.Timers.Timer timer = new System.Timers.Timer();
-                timer.Interval = Defines.FrameRate * 1000;
-                timer.Elapsed += new ElapsedEventHandler(Update);
-                timer.Start();
+                _timer = new System.Timers.Timer();
+                _timer.Interval = Defines.FrameRate * 1000;
+                _timer.Elapsed += new ElapsedEventHandler(Update);
+                _timer.Start();
 
                 gameState = Defines.ROOM_PLAYING;
             }
@@ -461,6 +463,7 @@ namespace mutant_server
             {
                 lock (Server._roomsInServer)
                 {
+                    _timer.Dispose();
                     Server._roomsInServer.Remove(this);
                 }
             }
@@ -499,6 +502,7 @@ namespace mutant_server
             {
                 lock (Server._roomsInServer)
                 {
+                    _timer.Dispose();
                     Server._roomsInServer.Remove(this);
                 }
             }
@@ -913,7 +917,7 @@ namespace mutant_server
 
                 foreach (var tuple in _players)
                 {
-                    //if (tuple.Key != packet.id)
+                    if (tuple.Key != packet.id)
                     {
                         var tmpToken = tuple.Value.asyncUserToken;
                         PlayerStatusPacket sendPacket = new PlayerStatusPacket(new byte[Defines.BUF_SIZE], 0);
@@ -936,10 +940,13 @@ namespace mutant_server
 
         public void Update(object elapsedTime, ElapsedEventArgs e)
         {
-            float initValue, computeValue;
-            initValue = serverTime;
-            computeValue = initValue + Defines.FrameRate;
-            Interlocked.CompareExchange(ref serverTime, initValue, computeValue);
+            //float initValue, computeValue;
+            //initValue = serverTime + Defines.FrameRate;
+            //computeValue = serverTime + Defines.FrameRate;
+            //Console.WriteLine("{0} {1}", initValue, computeValue);
+            //Interlocked.CompareExchange(ref serverTime, initValue, computeValue);
+            serverTime += Defines.FrameRate;
+            //Console.WriteLine("{0}", serverTime);
 
             foreach (var tuple in _players)
             {
