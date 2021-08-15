@@ -62,25 +62,11 @@ namespace mutant_server
             {
                 var packet = this.sendQueue.Peek();
 
-                bool willRaise;
+                this.writeEventArgs.SetBuffer(writeEventArgs.Offset, packet.offset);
 
-                //if(packet.ary[0] == 103)
-                //{
-                //    this.writeEventArgs.SetBuffer(writeEventArgs.Offset, packet.offset);
+                Array.Copy(packet.ary, packet.startPos, this.writeEventArgs.Buffer, this.writeEventArgs.Offset, packet.offset);
 
-                //    Array.Copy(packet.ary, packet.startPos, this.writeEventArgs.Buffer, this.writeEventArgs.Offset, packet.offset);
-
-                //    willRaise = socket.SendToAsync(writeEventArgs);
-                //}
-                //else
-                {
-                    this.writeEventArgs.SetBuffer(writeEventArgs.Offset, packet.offset);
-
-                    Array.Copy(packet.ary, packet.startPos, this.writeEventArgs.Buffer, this.writeEventArgs.Offset, packet.offset);
-
-                    willRaise = this.socket.SendAsync(this.writeEventArgs);
-                }
-
+                bool willRaise = this.socket.SendAsync(this.writeEventArgs);
                 if (!willRaise)
                 {
                     sendCallback(this.writeEventArgs);

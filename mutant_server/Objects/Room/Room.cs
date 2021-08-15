@@ -156,6 +156,9 @@ namespace mutant_server
                 case CTOS_OP.CTOS_PLAYER_ESCAPE:
                     ProcessPlayerEscape(token, data);
                     break;
+                case CTOS_OP.CTOS_ITEM_HOTKEY:
+                    ProcessItemHotkey(token, data);
+                    break;
                 default:
                     throw new Exception("operation from client is not valid\n");
             }
@@ -169,6 +172,30 @@ namespace mutant_server
                 }
             }
             catch (Exception ex) { }
+        }
+
+        private void ProcessItemHotkey(AsyncUserToken token, byte[] data)
+        {
+            MutantPacket packet = new MutantPacket(data, 0);
+            packet.ByteArrayToPacket();
+
+            AddItemInGlobal((int)packet.time);
+
+            ItemCraftPacket sendPacket = new ItemCraftPacket(new byte[Defines.BUF_SIZE], 0);
+            sendPacket.id = 0;
+            sendPacket.name = "";
+            sendPacket.time = 0;
+
+            sendPacket.itemNumber = (int)packet.time;
+            sendPacket.inventory = _globalItem;
+            sendPacket.globalItem = _globalItem;
+
+            sendPacket.PacketToByteArray((byte)STOC_OP.STOC_ITEM_HOTKEY);
+
+            foreach (var tuple in _players)
+            {
+                tuple.Value.asyncUserToken.SendData(sendPacket);
+            }
         }
 
         private void ProcessUserInfo(AsyncUserToken token, byte[] data)
@@ -940,13 +967,7 @@ namespace mutant_server
 
         public void Update(object elapsedTime, ElapsedEventArgs e)
         {
-            //float initValue, computeValue;
-            //initValue = serverTime + Defines.FrameRate;
-            //computeValue = serverTime + Defines.FrameRate;
-            //Console.WriteLine("{0} {1}", initValue, computeValue);
-            //Interlocked.CompareExchange(ref serverTime, initValue, computeValue);
             serverTime += Defines.FrameRate;
-            //Console.WriteLine("{0}", serverTime);
 
             foreach (var tuple in _players)
             {
