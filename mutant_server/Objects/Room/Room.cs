@@ -66,6 +66,7 @@ namespace mutant_server
             _globalItem.Add(Defines.ITEM_PLANE, 0);
             _voteCounter = new Dictionary<string, int>();
             _chestItems = new Dictionary<int, List<int>>();
+            _timer = new System.Timers.Timer();
 
             SetItemChest();
         }
@@ -160,7 +161,9 @@ namespace mutant_server
                     ProcessItemHotkey(token, data);
                     break;
                 default:
-                    throw new Exception("operation from client is not valid\n");
+                    closeMethod(token.readEventArgs);
+                    Console.WriteLine("Server op comes");
+                    break;
             }
 
             try
@@ -402,7 +405,6 @@ namespace mutant_server
                     p.Value.asyncUserToken.SendData(sendPacket);
                 }
 
-                _timer = new System.Timers.Timer();
                 _timer.Interval = Defines.FrameRate * 1000;
                 _timer.Elapsed += new ElapsedEventHandler(Update);
                 _timer.Start();
@@ -465,22 +467,22 @@ namespace mutant_server
 
             Console.WriteLine("leave room packet size - {0}, id - {1}, name - {2}, offset - {3}", packet.header.bytes, packet.id, packet.name, packet.offset);
 
-            foreach (var tuple in _players)
-            {
-                if (tuple.Key != packet.id)
-                {
-                    var tmpToken = tuple.Value.asyncUserToken;
-                    MutantPacket sendPacket = new MutantPacket(new byte[packet.offset + 1], 0);
-                    sendPacket.Copy(packet);
-
-                    sendPacket.ary[0] = (byte)STOC_OP.STOC_PLAYER_LEAVE_ROOM;
-
-                    tmpToken.SendData(sendPacket);
-                }
-            }
-
             lock (_players)
             {
+                foreach (var tuple in _players)
+                {
+                    if (tuple.Key != packet.id)
+                    {
+                        var tmpToken = tuple.Value.asyncUserToken;
+                        MutantPacket sendPacket = new MutantPacket(new byte[packet.offset + 1], 0);
+                        sendPacket.Copy(packet);
+
+                        sendPacket.ary[0] = (byte)STOC_OP.STOC_PLAYER_LEAVE_ROOM;
+
+                        tmpToken.SendData(sendPacket);
+                    }
+                }
+
                 _players[packet.id].asyncUserToken.readEventArgs.Completed -= ReceiveCompleted;
                 getUserMethod(_players[packet.id]);
                 _players.Remove(packet.id);
@@ -490,7 +492,10 @@ namespace mutant_server
             {
                 lock (Server._roomsInServer)
                 {
-                    _timer.Dispose();
+                    lock(_timer)
+                    {
+                        _timer.Dispose();
+                    }
                     Server._roomsInServer.Remove(this);
                 }
             }
@@ -503,22 +508,22 @@ namespace mutant_server
 
             Console.WriteLine("leave game packet size - {0}, id - {1}, name - {2}, offset - {3}", packet.header.bytes, packet.id, packet.name, packet.offset);
 
-            foreach (var tuple in _players)
+            lock (_players)
             {
-                if (tuple.Key != packet.id)
+                foreach (var tuple in _players)
                 {
-                    var tmpToken = tuple.Value.asyncUserToken;
-                    MutantPacket sendPacket = new MutantPacket(new byte[packet.offset + 1], 0);
-                    sendPacket.Copy(packet);
+                    if (tuple.Key != packet.id)
+                    {
+                        var tmpToken = tuple.Value.asyncUserToken;
+                        MutantPacket sendPacket = new MutantPacket(new byte[packet.offset + 1], 0);
+                        sendPacket.Copy(packet);
 
-                    sendPacket.ary[0] = (byte)STOC_OP.STOC_PLAYER_LEAVE_GAME;
+                        sendPacket.ary[0] = (byte)STOC_OP.STOC_PLAYER_LEAVE_GAME;
 
-                    tmpToken.SendData(sendPacket);
+                        tmpToken.SendData(sendPacket);
+                    }
                 }
-            }
 
-            lock(_players)
-            {
                 _players[packet.id].asyncUserToken.readEventArgs.Completed -= ReceiveCompleted;
                 getUserMethod(_players[packet.id]);
                 closeMethod(token.readEventArgs);
@@ -529,7 +534,10 @@ namespace mutant_server
             {
                 lock (Server._roomsInServer)
                 {
-                    _timer.Dispose();
+                    lock(_timer)
+                    {
+                        _timer.Dispose();
+                    }
                     Server._roomsInServer.Remove(this);
                 }
             }
@@ -642,29 +650,56 @@ namespace mutant_server
                     Console.WriteLine("vote name = {0}, count = {1}", i.Key, i.Value);
                 }
 
-                //int cnt = 0;
-                //Client c = GetMaxVotedPerson(ref cnt);
-                //if (c != null && cnt >= _players.Count)
-                //{
-                //    foreach(var player in _players)
-                //    {
-                //        PlayerStatusPacket sendPacket = new PlayerStatusPacket(new byte[Defines.BUF_SIZE], 0);
-                //        sendPacket.id = c.userID;
-                //        sendPacket.name = c.userName;
-                //        sendPacket.time = 0;
+                int cnt = 0;
+                Client c = GetMaxVotedPerson(ref cnt);
+                if (c != null && cnt >= 10)
+                {
+                    if(c.job == Defines.JOB_TRACKER)
+                    {
+                        lock(_players)
+                        {
+                            foreach (var player in _players)
+                            {
+                                MutantPacket sendPacket = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
+                                sendPacket.id = player.Key;
+                                sendPacket.name = player.Value.userName;
+                                sendPacket.time = 0;
 
-                //        sendPacket.position = c.position;
-                //        sendPacket.rotation = c.rotation;
-                //        sendPacket.playerMotion = Defines.PLAYER_HIT;
-                //        sendPacket.playerJob = c.job;
+                                sendPacket.PacketToByteArray((byte)STOC_OP.STOC_SURVIVOR_WIN);
 
-                //        sendPacket.PacketToByteArray((byte)STOC_OP.STOC_VOTE_KILLED);
+                                player.Value.asyncUserToken.SendData(sendPacket);
 
-                //        player.Value.asyncUserToken.SendData(sendPacket);
-                //    }
+                                player.Value.asyncUserToken.readEventArgs.Completed -= ReceiveCompleted;
+                                getUserMethod(player.Value);
+                                _players.Remove(player.Key);
+                            }
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        lock(_players)
+                        {
+                            foreach (var player in _players)
+                            {
+                                PlayerStatusPacket sendPacket = new PlayerStatusPacket(new byte[Defines.BUF_SIZE], 0);
+                                sendPacket.id = c.userID;
+                                sendPacket.name = c.userName;
+                                sendPacket.time = 0;
 
-                //    return;
-                //}
+                                sendPacket.position = c.position;
+                                sendPacket.rotation = c.rotation;
+                                sendPacket.playerMotion = Defines.PLAYER_HIT;
+                                sendPacket.playerJob = c.job;
+
+                                sendPacket.PacketToByteArray((byte)STOC_OP.STOC_VOTE_KILLED);
+
+                                player.Value.asyncUserToken.SendData(sendPacket);
+                                return;
+                            }
+                        }
+                    }
+                }
 
                 foreach (var tuple in _players)
                 {
@@ -876,7 +911,7 @@ namespace mutant_server
             {
                 _players[packet.id].isDead = true;
                 Interlocked.Increment(ref deadPlayerCount);
-                if (deadPlayerCount >= 3)
+                if (deadPlayerCount >= 2)
                 {
                     foreach (var tuple in _players)
                     {
@@ -937,7 +972,7 @@ namespace mutant_server
 
             //Console.WriteLine("status packet size - {0}, id - {1}, name - {2}, offset - {3}", packet.header.bytes, packet.id, packet.name, packet.offset);
 
-            lock(_players[packet.id])
+            lock(_players)
             {
                 _players[packet.id].position = packet.position;
                 _players[packet.id].rotation = packet.rotation;

@@ -181,11 +181,14 @@ namespace mutant_server
         {
             if(_dBConnector.isValidData(packet))
             {
-                foreach(var tuple in _players)
+                lock(_players)
                 {
-                    if(tuple.Value.userName == packet.name)
+                    foreach (var tuple in _players)
                     {
-                        return false;
+                        if (tuple.Value.userName == packet.name)
+                        {
+                            return false;
+                        }
                     }
                 }
                 return true;

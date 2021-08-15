@@ -63,9 +63,10 @@ namespace mutant_server.Objects.Networking
             command.CommandType = System.Data.CommandType.StoredProcedure;
             command.Parameters.Add(new MySqlParameter("id", packet.name));
             command.Parameters.Add(new MySqlParameter("passwd", packet.passwd));
+            //커넥션이 이미 있다고 에러생김
             command.Connection.Open();
 
-            MySqlDataReader table = command.ExecuteReader(System.Data.CommandBehavior.CloseConnection);
+            MySqlDataReader table = command.ExecuteReader();
 
             if(table.Read())
             {
@@ -135,7 +136,7 @@ namespace mutant_server.Objects.Networking
 
             try
             {
-                if (command.ExecuteNonQuery() == 1)
+                if (command.ExecuteNonQueryAsync().Result == 1)
                 {
                     command.Connection.Close();
                     return;
