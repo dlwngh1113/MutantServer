@@ -65,26 +65,20 @@ namespace mutant_server.Objects.Networking
             command.Parameters.Add(new MySqlParameter("id", packet.name));
             command.Parameters.Add(new MySqlParameter("passwd", packet.passwd));
             //커넥션이 이미 있다고 에러생김
-            try
+
+            _connection.Open();
+
+            MySqlDataReader table = command.ExecuteReader();
+
+            if (table.Read())
             {
-                command.Connection.Open();
-
-                MySqlDataReader table = command.ExecuteReader();
-
-                if (table.Read())
-                {
-                    command.Connection.Close();
-                    return true;
-                }
-
-                Console.WriteLine("System(DB): id({0}), pwd({1}) is not created account", packet.name, packet.passwd);
-                table.Close();
+                _connection.Close();
+                return true;
             }
-            catch(Exception ex) 
-            {
-                command.Connection.Close();
-                Console.WriteLine(ex.Message); 
-            }
+
+            Console.WriteLine("System(DB): id({0}), pwd({1}) is not created account", packet.name, packet.passwd);
+            _connection.Close();
+            table.Close();
 
             return false;
         }
@@ -98,41 +92,33 @@ namespace mutant_server.Objects.Networking
 
             Client c = new Client(0);
 
-            try
+            _connection.Open();
+
+            MySqlDataReader table = command.ExecuteReader();
+
+            while (table.Read())
             {
-                command.Connection.Open();
+                c.userName = name;
+                c.passWd = passWd;
+                c.userID = (int)table["idMutant"];
+                c.winCountTrator = (int)table["winCountTrator"];
+                c.winCountNocturn = (int)table["winCountNocturn"];
+                c.winCountPsychy = (int)table["winCountPsychy"];
+                c.winCountResearcher = (int)table["winCountResearcher"];
+                c.winCountTanker = (int)table["winCountTanker"];
 
-                MySqlDataReader table = command.ExecuteReader();
+                c.playCountTrator = (int)table["playCountTrator"];
+                c.playCountNocturn = (int)table["playCountNocturn"];
+                c.playCountResearcher = (int)table["playCountResearcher"];
+                c.playCountTanker = (int)table["playCountTanker"];
+                c.playCountPsychy = (int)table["playCountPsychy"];
 
-                while (table.Read())
-                {
-                    c.userName = name;
-                    c.passWd = passWd;
-                    c.userID = (int)table["idMutant"];
-                    c.winCountTrator = (int)table["winCountTrator"];
-                    c.winCountNocturn = (int)table["winCountNocturn"];
-                    c.winCountPsychy = (int)table["winCountPsychy"];
-                    c.winCountResearcher = (int)table["winCountResearcher"];
-                    c.winCountTanker = (int)table["winCountTanker"];
-
-                    c.playCountTrator = (int)table["playCountTrator"];
-                    c.playCountNocturn = (int)table["playCountNocturn"];
-                    c.playCountResearcher = (int)table["playCountResearcher"];
-                    c.playCountTanker = (int)table["playCountTanker"];
-                    c.playCountPsychy = (int)table["playCountPsychy"];
-
-                    Console.WriteLine("System(DB): id({0}), name({1}), pwd({2}) get user data", c.userID, c.userName, c.passWd);
-                }
-
-                command.Connection.Close();
-
-                table.Close();
+                Console.WriteLine("System(DB): id({0}), name({1}), pwd({2}) get user data", c.userID, c.userName, c.passWd);
             }
-            catch(Exception ex)
-            {
-                command.Connection.Close();
-                Console.WriteLine(ex.Message);
-            }
+
+            _connection.Close();
+
+            table.Close();
             return c;
         }
 
@@ -154,24 +140,19 @@ namespace mutant_server.Objects.Networking
 
             command.Parameters.Add(new MySqlParameter("userName", client.userName));
 
-            try
+            _connection.Open();
+
+            if (command.ExecuteNonQueryAsync().Result == 1)
             {
-                command.Connection.Open();
-                if (command.ExecuteNonQueryAsync().Result == 1)
-                {
-                    command.Connection.Close();
-                    return;
-                }
-                else
-                {
-                    Console.WriteLine("UpdateData to Database is something wrong");
-                }
+                _connection.Close();
+                return;
             }
-            catch (MySqlException ex)
+            else
             {
-                command.Connection.Close();
-                Console.WriteLine(ex.Message);
+                Console.WriteLine("UpdateData to Database is something wrong");
             }
+
+            _connection.Close();
         }
     }
 }

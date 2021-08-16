@@ -190,13 +190,14 @@ namespace mutant_server
         private void ProcessGotoLobby(AsyncUserToken token, byte[] data)
         {
             MutantPacket packet = new MutantPacket(data, 0);
+            packet.ByteArrayToPacket();
             packet.ary[0] = (byte)STOC_OP.STOC_GOTO_LOBBY;
 
             token.SendData(packet);
 
-            token.readEventArgs.Completed -= ReceiveCompleted;
             lock(_players)
             {
+                token.readEventArgs.Completed -= ReceiveCompleted;
                 getUserMethod(_players[packet.id]);
                 _players.Remove(packet.id);
                 if (PlayerNum < 1)
@@ -224,9 +225,12 @@ namespace mutant_server
 
             sendPacket.PacketToByteArray((byte)STOC_OP.STOC_ITEM_HOTKEY);
 
-            foreach (var tuple in _players)
+            lock (_players)
             {
-                tuple.Value.asyncUserToken.SendData(sendPacket);
+                foreach (var tuple in _players)
+                {
+                    tuple.Value.asyncUserToken.SendData(sendPacket);
+                }
             }
         }
 
@@ -356,7 +360,7 @@ namespace mutant_server
                 }
             }
 
-            if(readyCount >= 3)
+            if(readyCount >= 2)
             {
                 SetGameInit();
                 ProcessGameStart();
@@ -592,19 +596,22 @@ namespace mutant_server
 
             Console.WriteLine("chatting packet size - {0}, id - {1}, name - {2}, offset - {3}", packet.header.bytes, packet.id, packet.name, packet.offset);
 
-            foreach (var tuple in _players)
+            lock(_players)
             {
-                if(packet.id != tuple.Key)
+                foreach (var tuple in _players)
                 {
-                    var tmpToken = tuple.Value.asyncUserToken;
+                    if (packet.id != tuple.Key)
+                    {
+                        var tmpToken = tuple.Value.asyncUserToken;
 
-                    //기존의 플레이어에게 새로운 플레이어 정보 전달
-                    ChattingPakcet sendPacket = new ChattingPakcet(new byte[packet.offset + 1], 0);
-                    sendPacket.Copy(packet);
+                        //기존의 플레이어에게 새로운 플레이어 정보 전달
+                        ChattingPakcet sendPacket = new ChattingPakcet(new byte[packet.offset + 1], 0);
+                        sendPacket.Copy(packet);
 
-                    sendPacket.ary[0] = (byte)STOC_OP.STOC_CHAT;
+                        sendPacket.ary[0] = (byte)STOC_OP.STOC_CHAT;
 
-                    tmpToken.SendData(sendPacket);
+                        tmpToken.SendData(sendPacket);
+                    }
                 }
             }
         }
@@ -629,7 +636,6 @@ namespace mutant_server
             {
                 foreach (var tuple in _players)
                 {
-                    var tmpToken = tuple.Value.asyncUserToken;
                     PlayerStatusPacket sendPacket = new PlayerStatusPacket(new byte[Defines.BUF_SIZE], 0);
                     sendPacket.id = tuple.Value.userID;
                     sendPacket.name = tuple.Value.userName;
@@ -638,12 +644,13 @@ namespace mutant_server
                     sendPacket.position = tuple.Value.InitPos;
                     sendPacket.rotation = tuple.Value.rotation;
                     sendPacket.playerMotion = Defines.PLAYER_IDLE;
+                    sendPacket.playerJob = tuple.Value.job;
 
                     sendPacket.PacketToByteArray((byte)STOC_OP.STOC_VOTE_START);
 
                     Console.WriteLine("{0} {1} sended", tuple.Key, tuple.Value.userName);
 
-                    tmpToken.SendData(sendPacket);
+                    tuple.Value.asyncUserToken.SendData(sendPacket);
                 }
             }
         }
@@ -651,20 +658,23 @@ namespace mutant_server
         public Client GetMaxVotedPerson(ref int cnt)
         {
             KeyValuePair<string, int> pair = new KeyValuePair<string, int>();
-            foreach(var tuple in _voteCounter)
+            foreach (var tuple in _voteCounter)
             {
                 cnt += tuple.Value;
-                if(tuple.Value > pair.Value)
+                if (tuple.Value > pair.Value)
                 {
                     pair = tuple;
                 }
             }
 
-            foreach(var player in _players)
+            lock (_players)
             {
-                if (pair.Key == player.Value.userName)
+                foreach (var player in _players)
                 {
-                    return player.Value;
+                    if (pair.Key == player.Value.userName)
+                    {
+                        return player.Value;
+                    }
                 }
             }
 
@@ -678,7 +688,10 @@ namespace mutant_server
 
             Console.WriteLine("vote packet size - {0}, id - {1}, name - {2}, offset - {3}", packet.header.bytes, packet.id, packet.name, packet.offset);
 
-            lock(_voteCounter)
+            int cnt = 0;
+            Client c;
+            
+            lock (_voteCounter)
             {
                 if (!_voteCounter.ContainsKey(packet.votedPersonID))
                 {
@@ -693,61 +706,10 @@ namespace mutant_server
                 {
                     Console.WriteLine("vote name = {0}, count = {1}", i.Key, i.Value);
                 }
-
-                int cnt = 0;
-                Client c = GetMaxVotedPerson(ref cnt);
-                if (c != null && cnt >= 10)
-                {
-                    if(c.job == Defines.JOB_TRACKER)
-                    {
-                        lock(_players)
-                        {
-                            foreach (var player in _players)
-                            {
-                                MutantPacket sendPacket = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
-                                sendPacket.id = player.Key;
-                                sendPacket.name = player.Value.userName;
-                                sendPacket.time = 0;
-
-                                sendPacket.PacketToByteArray((byte)STOC_OP.STOC_SURVIVOR_WIN);
-
-                                player.Value.asyncUserToken.SendData(sendPacket);
-
-                                player.Value.asyncUserToken.readEventArgs.Completed -= ReceiveCompleted;
-                                getUserMethod(player.Value);
-                                _players.Remove(player.Key);
-                            }
-                            return;
-                        }
-                    }
-                    else
-                    {
-                        lock(_players)
-                        {
-                            foreach (var player in _players)
-                            {
-                                PlayerStatusPacket sendPacket = new PlayerStatusPacket(new byte[Defines.BUF_SIZE], 0);
-                                sendPacket.id = c.userID;
-                                sendPacket.name = c.userName;
-                                sendPacket.time = 0;
-
-                                sendPacket.position = c.position;
-                                sendPacket.rotation = c.rotation;
-                                sendPacket.playerMotion = Defines.PLAYER_HIT;
-                                sendPacket.playerJob = c.job;
-
-                                sendPacket.PacketToByteArray((byte)STOC_OP.STOC_VOTE_KILLED);
-
-                                player.Value.asyncUserToken.SendData(sendPacket);
-                                return;
-                            }
-                        }
-                    }
-                }
+                c = GetMaxVotedPerson(ref cnt);
 
                 foreach (var tuple in _players)
                 {
-                    var tmpToken = tuple.Value.asyncUserToken;
                     VotePacket sendPacket = new VotePacket(new byte[Defines.BUF_SIZE], 0);
                     sendPacket.name = packet.name;
                     sendPacket.id = packet.id;
@@ -758,7 +720,57 @@ namespace mutant_server
 
                     sendPacket.PacketToByteArray((byte)STOC_OP.STOC_VOTED);
 
-                    tmpToken.SendData(sendPacket);
+                    tuple.Value.asyncUserToken.SendData(sendPacket);
+                }
+            }
+
+            if (c != null && cnt >= 10)
+            {
+                if(c.job == Defines.JOB_TRACKER)
+                {
+                    lock(_players)
+                    {
+                        foreach (var player in _players)
+                        {
+                            MutantPacket sendPacket = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
+                            sendPacket.id = player.Key;
+                            sendPacket.name = player.Value.userName;
+                            sendPacket.time = 0;
+
+                            sendPacket.PacketToByteArray((byte)STOC_OP.STOC_SURVIVOR_WIN);
+
+                            player.Value.asyncUserToken.SendData(sendPacket);
+
+                            player.Value.asyncUserToken.readEventArgs.Completed -= ReceiveCompleted;
+                            getUserMethod(player.Value);
+                            _players.Remove(player.Key);
+                        }
+                        return;
+                    }
+                }
+                else
+                {
+                    lock(_players)
+                    {
+                        foreach (var player in _players)
+                        {
+                            PlayerStatusPacket sendPacket = new PlayerStatusPacket(new byte[Defines.BUF_SIZE], 0);
+                            sendPacket.id = c.userID;
+                            sendPacket.name = c.userName;
+                            sendPacket.time = 0;
+
+                            sendPacket.position = c.position;
+                            sendPacket.rotation = c.rotation;
+                            sendPacket.playerMotion = Defines.PLAYER_HIT;
+                            sendPacket.playerJob = c.job;
+
+                            sendPacket.PacketToByteArray((byte)STOC_OP.STOC_VOTE_KILLED);
+
+                            player.Value.asyncUserToken.ClearQueue();
+                            player.Value.asyncUserToken.SendData(sendPacket);
+                        }
+                        return;
+                    }
                 }
             }
         }
@@ -806,18 +818,21 @@ namespace mutant_server
                     Console.WriteLine("item - {0}, count - {1}", p.Key, p.Value);
                 }
 
-                foreach (var tuple in _players)
+                lock(_players)
                 {
-                    ItemEventPacket sendPacket = new ItemEventPacket(new byte[Defines.BUF_SIZE], 0);
+                    foreach (var tuple in _players)
+                    {
+                        ItemEventPacket sendPacket = new ItemEventPacket(new byte[Defines.BUF_SIZE], 0);
 
-                    sendPacket.id = packet.id;
-                    sendPacket.name = packet.name;
-                    sendPacket.chestItem = packet.chestItem;
-                    sendPacket.inventory = _players[packet.id].inventory;
-                    sendPacket.canGainItem = true;
-                    sendPacket.PacketToByteArray((byte)STOC_OP.STOC_ITEM_GAIN);
+                        sendPacket.id = packet.id;
+                        sendPacket.name = packet.name;
+                        sendPacket.chestItem = packet.chestItem;
+                        sendPacket.inventory = _players[packet.id].inventory;
+                        sendPacket.canGainItem = true;
+                        sendPacket.PacketToByteArray((byte)STOC_OP.STOC_ITEM_GAIN);
 
-                    tuple.Value.asyncUserToken.SendData(sendPacket);
+                        tuple.Value.asyncUserToken.SendData(sendPacket);
+                    }
                 }
             }
         }
@@ -993,7 +1008,6 @@ namespace mutant_server
                     {
                         foreach (var tuple in _players)
                         {
-                            Console.WriteLine("{0}", tuple.Key);
                             var tmpToken = tuple.Value.asyncUserToken;
 
                             tmpToken.SendData(sendPacket);
