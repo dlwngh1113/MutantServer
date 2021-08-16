@@ -34,10 +34,10 @@ namespace mutant_server.Objects.Networking
             command.CommandType = System.Data.CommandType.StoredProcedure;
             command.Parameters.Add(new MySqlParameter("id", packet.name));
             command.Parameters.Add(new MySqlParameter("passwd", packet.passwd));
-            command.Connection.Open();
             try
             {
-                if(command.ExecuteNonQuery() == 1)
+                command.Connection.Open();
+                if (command.ExecuteNonQuery() == 1)
                 {
                     command.Connection.Close();
                     return true;
@@ -51,6 +51,7 @@ namespace mutant_server.Objects.Networking
             }
             catch(MySqlException ex)
             {
+                command.Connection.Close();
                 Console.WriteLine(ex.Message);
             }
 
@@ -64,18 +65,27 @@ namespace mutant_server.Objects.Networking
             command.Parameters.Add(new MySqlParameter("id", packet.name));
             command.Parameters.Add(new MySqlParameter("passwd", packet.passwd));
             //커넥션이 이미 있다고 에러생김
-            command.Connection.Open();
+            try
+            {
+                command.Connection.Open();
 
-            MySqlDataReader table = command.ExecuteReader();
+                MySqlDataReader table = command.ExecuteReader();
 
-            if(table.Read())
+                if (table.Read())
+                {
+                    command.Connection.Close();
+                    return true;
+                }
+
+                Console.WriteLine("System(DB): id({0}), pwd({1}) is not created account", packet.name, packet.passwd);
+                table.Close();
+            }
+            catch(Exception ex) 
             {
                 command.Connection.Close();
-                return true;
+                Console.WriteLine(ex.Message); 
             }
 
-            Console.WriteLine("System(DB): id({0}), pwd({1}) is not created account", packet.name, packet.passwd);
-            table.Close();
             return false;
         }
 
@@ -85,32 +95,42 @@ namespace mutant_server.Objects.Networking
             command.CommandType = System.Data.CommandType.StoredProcedure;
             command.Parameters.Add(new MySqlParameter("id", name));
             command.Parameters.Add(new MySqlParameter("passwd", passWd));
-            command.Connection.Open();
-
-            MySqlDataReader table = command.ExecuteReader(System.Data.CommandBehavior.CloseConnection);
 
             Client c = new Client(0);
-            while (table.Read())
+
+            try
             {
-                c.userName = name;
-                c.passWd = passWd;
-                c.userID = (int)table["idMutant"];
-                c.winCountTrator = (int)table["winCountTrator"];
-                c.winCountNocturn = (int)table["winCountNocturn"];
-                c.winCountPsychy = (int)table["winCountPsychy"];
-                c.winCountResearcher = (int)table["winCountResearcher"];
-                c.winCountTanker = (int)table["winCountTanker"];
+                command.Connection.Open();
 
-                c.playCountTrator = (int)table["playCountTrator"];
-                c.playCountNocturn = (int)table["playCountNocturn"];
-                c.playCountResearcher = (int)table["playCountResearcher"];
-                c.playCountTanker = (int)table["playCountTanker"];
-                c.playCountPsychy = (int)table["playCountPsychy"];
+                MySqlDataReader table = command.ExecuteReader(System.Data.CommandBehavior.CloseConnection);
 
-                Console.WriteLine("System(DB): id({0}), name({1}), pwd({2}) get user data", c.userID, c.userName, c.passWd);
+                while (table.Read())
+                {
+                    c.userName = name;
+                    c.passWd = passWd;
+                    c.userID = (int)table["idMutant"];
+                    c.winCountTrator = (int)table["winCountTrator"];
+                    c.winCountNocturn = (int)table["winCountNocturn"];
+                    c.winCountPsychy = (int)table["winCountPsychy"];
+                    c.winCountResearcher = (int)table["winCountResearcher"];
+                    c.winCountTanker = (int)table["winCountTanker"];
+
+                    c.playCountTrator = (int)table["playCountTrator"];
+                    c.playCountNocturn = (int)table["playCountNocturn"];
+                    c.playCountResearcher = (int)table["playCountResearcher"];
+                    c.playCountTanker = (int)table["playCountTanker"];
+                    c.playCountPsychy = (int)table["playCountPsychy"];
+
+                    Console.WriteLine("System(DB): id({0}), name({1}), pwd({2}) get user data", c.userID, c.userName, c.passWd);
+                }
+
+                table.Close();
             }
-
-            table.Close();
+            catch(Exception ex)
+            {
+                command.Connection.Close();
+                Console.WriteLine(ex.Message);
+            }
             return c;
         }
 

@@ -155,8 +155,11 @@ namespace mutant_server
                     case CTOS_OP.CTOS_CREATE_USER_INFO:
                         ProcessCreateUser(token, data);
                         break;
+                    case CTOS_OP.CTOS_LEAVE_GAME:
+                        ProcessLogout(token, data);
+                        break;
                     default:
-                        Console.WriteLine("room packet comes");
+                        Console.WriteLine("op is {0} room packet comes", data[0]);
                         break;
                 }
 
@@ -291,9 +294,12 @@ namespace mutant_server
             MutantPacket packet = new MutantPacket(data, 0);
             packet.ByteArrayToPacket();
 
-            _dBConnector.UpdateData(_players[packet.id]);
+            if(packet.id != 0)
+            {
+                _dBConnector.UpdateData(_players[packet.id]);
 
-            CloseClientSocket(token.readEventArgs);
+                CloseClientSocket(token.readEventArgs);
+            }
         }
 
         private void ProcessRefreshRooms(AsyncUserToken token, byte[] data)

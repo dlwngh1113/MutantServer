@@ -166,8 +166,13 @@ namespace mutant_server
                     break;
                 default:
                     token.readEventArgs.Completed -= ReceiveCompleted;
+                    _players.Remove(token.userID);
+                    if(PlayerNum < 1)
+                    {
+                        Server._roomsInServer.Remove(this);
+                    }
                     getUserEvent(token.readEventArgs);
-                    Console.WriteLine("Server op comes");
+                    Console.WriteLine("op is {0} Server op comes", data[0]);
                     break;
             }
 
@@ -417,16 +422,19 @@ namespace mutant_server
 
             if (globalOffset >= _players.Count)
             {
-                foreach(var p in _players)
+                lock(_players)
                 {
-                    MutantPacket sendPacket = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
-                    sendPacket.id = p.Key;
-                    sendPacket.name = p.Value.userName;
-                    sendPacket.time = 0;
+                    foreach (var p in _players)
+                    {
+                        MutantPacket sendPacket = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
+                        sendPacket.id = p.Key;
+                        sendPacket.name = p.Value.userName;
+                        sendPacket.time = 0;
 
-                    sendPacket.PacketToByteArray((byte)STOC_OP.ALL_PLAYER_LOADED);
+                        sendPacket.PacketToByteArray((byte)STOC_OP.ALL_PLAYER_LOADED);
 
-                    p.Value.asyncUserToken.SendData(sendPacket);
+                        p.Value.asyncUserToken.SendData(sendPacket);
+                    }
                 }
 
                 _timer.Interval = Defines.FrameRate * 1000;
@@ -1007,16 +1015,19 @@ namespace mutant_server
                     {
                         var tmpToken = tuple.Value.asyncUserToken;
                         PlayerStatusPacket sendPacket = new PlayerStatusPacket(new byte[Defines.BUF_SIZE], 0);
-                        sendPacket.id = packet.id;
-                        sendPacket.name = packet.name;
-                        sendPacket.time = packet.time;
+                        sendPacket.Copy(packet);
 
-                        sendPacket.position = _players[packet.id].position;
-                        sendPacket.rotation = _players[packet.id].rotation;
-                        sendPacket.playerMotion = packet.playerMotion;
-                        sendPacket.playerJob = _players[packet.id].job;
+                        sendPacket.ary[0] = (byte)STOC_OP.STOC_STATUS_CHANGE;
+                        //sendPacket.id = packet.id;
+                        //sendPacket.name = packet.name;
+                        //sendPacket.time = packet.time;
 
-                        sendPacket.PacketToByteArray((byte)STOC_OP.STOC_STATUS_CHANGE);
+                        //sendPacket.position = _players[packet.id].position;
+                        //sendPacket.rotation = _players[packet.id].rotation;
+                        //sendPacket.playerMotion = packet.playerMotion;
+                        //sendPacket.playerJob = _players[packet.id].job;
+
+                        //sendPacket.PacketToByteArray((byte)STOC_OP.STOC_STATUS_CHANGE);
 
                         tmpToken.SendData(sendPacket);
                     }
