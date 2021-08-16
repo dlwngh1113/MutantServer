@@ -32,6 +32,7 @@ namespace mutant_server
         CTOS_VOTE_SELECTED,
         CTOS_PLAYER_ESCAPE,
         CTOS_ITEM_HOTKEY,
+        CTOS_GOTO_LOBBY,
     }
 
     //server to client operation
@@ -73,6 +74,7 @@ namespace mutant_server
         STOC_PLAYER_ESCAPE,
         STOC_SYSTEM_CHANGE,
         STOC_ITEM_HOTKEY,
+        STOC_GOTO_LOBBY,
     }
     public class Defines
     {

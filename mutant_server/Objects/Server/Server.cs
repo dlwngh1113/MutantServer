@@ -100,7 +100,6 @@ namespace mutant_server
 
             SocketAsyncEventArgs recv_event = _readPool.Pop();
             SocketAsyncEventArgs send_event = _writePool.Pop();
-            send_event.RemoteEndPoint = e.AcceptSocket.RemoteEndPoint;
 
             BeginIO(e.AcceptSocket, recv_event, send_event);
 
@@ -204,6 +203,11 @@ namespace mutant_server
                 _players.Add(c.userID, c);
                 _dBConnector.UpdateData(c);
             }
+        }
+
+        public void AddEvent(SocketAsyncEventArgs e)
+        {
+            e.Completed += ReceiveCompleted;
         }
 
         private void ProcessCreateUser(AsyncUserToken token, byte[] data)
@@ -385,6 +389,7 @@ namespace mutant_server
             Room room = new Room();
             room.closeMethod = CloseClientSocket;
             room.getUserMethod = AddPlayer;
+            room.getUserEvent = AddEvent;
             room.SetRoomTitle(packet.names[0]);
             lock (_roomsInServer)
             {

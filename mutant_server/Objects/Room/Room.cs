@@ -17,6 +17,7 @@ namespace mutant_server
         private Dictionary<int, Client> _players;
         public CloseMethod closeMethod;
         public GetUserFromRoom getUserMethod;
+        public GetUserEvent getUserEvent;
 
         private Dictionary<int, List<int>> _chestItems;
         private Dictionary<int, int> _globalItem;
@@ -160,8 +161,12 @@ namespace mutant_server
                 case CTOS_OP.CTOS_ITEM_HOTKEY:
                     ProcessItemHotkey(token, data);
                     break;
+                case CTOS_OP.CTOS_GOTO_LOBBY:
+                    ProcessGotoLobby(token, data);
+                    break;
                 default:
-                    closeMethod(token.readEventArgs);
+                    token.readEventArgs.Completed -= ReceiveCompleted;
+                    getUserEvent(token.readEventArgs);
                     Console.WriteLine("Server op comes");
                     break;
             }
@@ -175,6 +180,25 @@ namespace mutant_server
                 }
             }
             catch (Exception ex) { }
+        }
+
+        private void ProcessGotoLobby(AsyncUserToken token, byte[] data)
+        {
+            MutantPacket packet = new MutantPacket(data, 0);
+            packet.ary[0] = (byte)STOC_OP.STOC_GOTO_LOBBY;
+
+            token.SendData(packet);
+
+            token.readEventArgs.Completed -= ReceiveCompleted;
+            lock(_players)
+            {
+                getUserMethod(_players[packet.id]);
+                _players.Remove(packet.id);
+                if (PlayerNum < 1)
+                {
+                    Server._roomsInServer.Remove(this);
+                }
+            }
         }
 
         private void ProcessItemHotkey(AsyncUserToken token, byte[] data)
