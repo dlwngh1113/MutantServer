@@ -102,7 +102,7 @@ namespace mutant_server.Objects.Networking
             {
                 command.Connection.Open();
 
-                MySqlDataReader table = command.ExecuteReader(System.Data.CommandBehavior.CloseConnection);
+                MySqlDataReader table = command.ExecuteReader();
 
                 while (table.Read())
                 {
@@ -123,6 +123,8 @@ namespace mutant_server.Objects.Networking
 
                     Console.WriteLine("System(DB): id({0}), name({1}), pwd({2}) get user data", c.userID, c.userName, c.passWd);
                 }
+
+                command.Connection.Close();
 
                 table.Close();
             }
@@ -152,10 +154,9 @@ namespace mutant_server.Objects.Networking
 
             command.Parameters.Add(new MySqlParameter("userName", client.userName));
 
-            command.Connection.Open();
-
             try
             {
+                command.Connection.Open();
                 if (command.ExecuteNonQueryAsync().Result == 1)
                 {
                     command.Connection.Close();
@@ -168,6 +169,7 @@ namespace mutant_server.Objects.Networking
             }
             catch (MySqlException ex)
             {
+                command.Connection.Close();
                 Console.WriteLine(ex.Message);
             }
         }
