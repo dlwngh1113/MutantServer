@@ -361,7 +361,7 @@ namespace mutant_server
                 }
             }
 
-            if(readyCount >= 3)
+            if(readyCount >= 1)
             {
                 SetGameInit();
                 ProcessGameStart();
@@ -463,6 +463,7 @@ namespace mutant_server
             {
                 foreach (var tuple in _players)
                 {
+                    tuple.Value.isReady = false;
                     MutantPacket packet = new MutantPacket(new byte[Defines.BUF_SIZE], 0);
                     packet.id = tuple.Key;
                     packet.name = tuple.Value.userName;
@@ -766,7 +767,6 @@ namespace mutant_server
 
                             sendPacket.PacketToByteArray((byte)STOC_OP.STOC_VOTE_KILLED);
 
-                            player.Value.asyncUserToken.ClearQueue();
                             player.Value.asyncUserToken.SendData(sendPacket);
                         }
                     }

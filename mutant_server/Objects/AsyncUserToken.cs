@@ -22,8 +22,6 @@ namespace mutant_server
         public RecvCallback recvCallback;
         public RecvCallback sendCallback;
         public CloseMethod closeMethod;
-
-        public bool clearQueue = false;
         public AsyncUserToken()
         {
 
@@ -42,11 +40,6 @@ namespace mutant_server
         public void ClearMessageBuffer()
         {
             _messageResolver.CleanVariables();
-        }
-
-        public void ClearQueue()
-        {
-            clearQueue = true;
         }
 
         public void SendData(MutantPacket packet)
@@ -88,23 +81,11 @@ namespace mutant_server
             {
                 this.sendQueue.Dequeue();
 
-                if(clearQueue)
-                {
-                    sendQueue.Clear();
-                    clearQueue = false;
-                }
-                else if(this.sendQueue.Count > 0)
+                if(this.sendQueue.Count > 0)
                 {
                     StartSend();
                 }
             }
-        }
-
-        public void UDPSend(PlayerStatusPacket packet)
-        {
-            //socket.SendTo(packet.ary, packet.offset, SocketFlags.None, socket.RemoteEndPoint);
-            socket.BeginSendTo(packet.ary, packet.startPos, packet.offset, SocketFlags.None,
-                socket.RemoteEndPoint, null, null);
         }
     }
 }
